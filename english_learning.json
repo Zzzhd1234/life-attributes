@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "created": "2026-04-21",
+    "description": "English phrases & expressions learning tracker"
+  },
+  "phrases": [
+    {
+      "id": 1,
+      "phrase": "bite the bullet",
+      "meaning": "忍痛接受困难的事情，硬撑过去",
+      "example": "I hate going to the dentist, but I'll just have to bite the bullet.",
+      "source": "示例",
+      "tags": ["idiom", "daily"],
+      "added_date": "2026-04-21",
+      "review": {
+        "stage": 0,
+        "next_review": "2026-04-21",
+        "correct_count": 0,
+        "wrong_count": 0
+      }
+    }
+  ],
+  "review_stages": {
+    "0": "新词 — 当天复习",
+    "1": "1天后复习",
+    "2": "3天后复习",
+    "3": "7天后复习",
+    "4": "14天后复习",
+    "5": "已掌握"
+  }
+}
