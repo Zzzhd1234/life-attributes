@@ -555,6 +555,55 @@ body {
   cursor: pointer; font-weight: 500; white-space: nowrap; flex-shrink: 0;
 }
 
+/* ===== HABIT CALENDAR ===== */
+.habit-cal-header { display:flex; align-items:center; justify-content:space-between; padding:8px 16px 12px; }
+.habit-cal-nav { background:none; border:none; font-size:22px; color:var(--accent); cursor:pointer; padding:0 8px; }
+.habit-cal-month { font-size:16px; font-weight:600; }
+.habit-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:0 12px 8px; }
+.habit-cal-dow { text-align:center; font-size:11px; color:var(--muted); font-weight:500; padding:4px 0; }
+.habit-cal-day { aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; }
+.habit-cal-day.checked { background:var(--accent); color:white; font-weight:600; }
+.habit-cal-day.today { box-shadow:0 0 0 1.5px var(--accent); }
+.habit-cal-day.today.checked { box-shadow:none; }
+.habit-cal-stat { padding:4px 16px 12px; font-size:13px; color:var(--muted); text-align:center; }
+
+/* ===== CALENDAR PAGE ===== */
+.cal-nav { display:flex; align-items:center; justify-content:space-between; padding:10px 16px 4px; }
+.cal-nav button { background:none; border:none; font-size:22px; color:var(--accent); cursor:pointer; padding:0 8px; }
+.cal-nav span { font-size:17px; font-weight:600; }
+.cal-grid-wrap { padding:0 12px 8px; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cal-dow { text-align:center; font-size:11px; color:var(--muted); font-weight:500; padding:6px 0 4px; }
+.cal-cell { aspect-ratio:0.85; border-radius:8px; display:flex; flex-direction:column; align-items:center; padding:4px 0 3px; cursor:pointer; }
+.cal-cell:active { background:rgba(0,0,0,0.05); }
+.cal-day-num { font-size:13px; font-weight:500; line-height:22px; min-width:22px; text-align:center; border-radius:50%; }
+.cal-day-num.other-month { color:#C7C7CC; }
+.cal-cell.today .cal-day-num { background:var(--accent); color:white; }
+.cal-dots { display:flex; gap:2px; margin-top:2px; flex-wrap:wrap; justify-content:center; }
+.cal-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+
+/* ===== REMINDERS ===== */
+.reminder-item { display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:0.5px solid var(--border); }
+.reminder-item:last-child { border-bottom:none; }
+.reminder-icon { width:40px; height:40px; border-radius:10px; background:rgba(255,149,0,0.12); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.reminder-info { flex:1; min-width:0; }
+.reminder-title { font-size:15px; font-weight:600; }
+.reminder-time { font-size:12px; color:var(--muted); margin-top:2px; }
+.reminder-time.soon { color:var(--warning); font-weight:500; }
+.reminder-time.overdue { color:var(--danger); font-weight:500; }
+.reminder-done .reminder-title { text-decoration:line-through; color:var(--muted); }
+.reminder-del { background:none; border:none; color:#C7C7CC; font-size:18px; cursor:pointer; padding:0 2px; flex-shrink:0; }
+.reminder-add-row { display:flex; align-items:center; padding:13px 16px; color:var(--accent); font-size:15px; cursor:pointer; gap:8px; border-top:0.5px solid var(--border); }
+.reminder-empty { padding:20px; text-align:center; font-size:14px; color:#C7C7CC; }
+.remind-select { border:none; outline:none; font-size:15px; color:var(--accent); background:transparent; -webkit-appearance:none; text-align:right; }
+
+/* ===== DAY DETAIL ===== */
+.day-detail-section { padding:10px 16px 6px; font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+.day-detail-item { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:0.5px solid var(--border); font-size:15px; }
+.day-detail-item:last-child { border-bottom:none; }
+.day-detail-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.day-detail-empty { padding:16px; text-align:center; font-size:14px; color:#C7C7CC; }
+
 /* ===== TOAST ===== */
 .toast {
   position: fixed; bottom: 105px; left: 50%; transform: translateX(-50%) translateY(8px);
@@ -736,6 +785,79 @@ body {
     <button class="sheet-close" onclick="closeTodoDetail()">✕</button>
   </div>
   <div id="todoDetailContent"></div>
+</div>
+
+<!-- ===== HABIT CALENDAR SHEET ===== -->
+<div class="sheet-overlay" id="habitCalOverlay" onclick="closeHabitCalendar()"></div>
+<div class="settings-sheet" id="habitCalSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="habitCalTitle">打卡记录</div>
+    <button class="sheet-close" onclick="closeHabitCalendar()">✕</button>
+  </div>
+  <div id="habitCalContent"></div>
+</div>
+
+<!-- ===== REMINDER ADD SHEET ===== -->
+<div class="sheet-overlay" id="reminderAddOverlay" onclick="closeReminderAddSheet()"></div>
+<div class="settings-sheet" id="reminderAddSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">新增提醒</div>
+    <button class="sheet-close" onclick="closeReminderAddSheet()">✕</button>
+  </div>
+  <div class="section-label">事件名称</div>
+  <div class="card">
+    <div class="settings-row">
+      <input id="reminderTitle" type="text" placeholder="如：周三会议、CA1234 航班"
+             style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent"
+             onkeydown="if(event.key==='Enter')document.getElementById('reminderDate').focus()">
+    </div>
+  </div>
+  <div class="section-label">开始时间</div>
+  <div class="card">
+    <div class="settings-row">
+      <span class="settings-label">日期</span>
+      <input type="date" id="reminderDate"
+             style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">时间</span>
+      <input type="time" id="reminderTime"
+             style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
+    </div>
+  </div>
+  <div class="section-label">提前提醒</div>
+  <div class="card">
+    <div class="settings-row" style="border-bottom:none">
+      <span class="settings-label">提醒时间</span>
+      <select class="remind-select" id="reminderAdvance">
+        <option value="none">不提醒</option>
+        <option value="15min" selected>提前 15 分钟</option>
+        <option value="1hour">提前 1 小时</option>
+        <option value="1day">提前 1 天</option>
+      </select>
+    </div>
+  </div>
+  <div class="section-label">备注（可选）</div>
+  <div class="card">
+    <div class="settings-row" style="border-bottom:none">
+      <input id="reminderNote" type="text" placeholder="添加备注"
+             style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-top:4px" onclick="addReminder()">添加提醒</button>
+</div>
+
+<!-- ===== DAY DETAIL SHEET ===== -->
+<div class="sheet-overlay" id="dayDetailOverlay" onclick="closeDayDetail()"></div>
+<div class="settings-sheet" id="dayDetailSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="dayDetailTitle"></div>
+    <button class="sheet-close" onclick="closeDayDetail()">✕</button>
+  </div>
+  <div id="dayDetailContent"></div>
 </div>
 
 <!-- ===== HABIT ADD SHEET ===== -->
@@ -924,6 +1046,36 @@ body {
   </div>
 </div>
 
+<!-- ===== PAGE: 日历 ===== -->
+<div id="page-calendar" class="page">
+  <div class="page-header"><h1>日历</h1></div>
+  <div class="card">
+    <div class="cal-nav">
+      <button onclick="changeCalMonth(-1)">‹</button>
+      <span id="calMonthLabel"></span>
+      <button onclick="changeCalMonth(1)">›</button>
+    </div>
+    <div class="cal-grid-wrap">
+      <div class="cal-grid" id="calDowRow"></div>
+      <div class="cal-grid" id="calDayGrid"></div>
+    </div>
+    <div style="display:flex;gap:12px;padding:8px 16px 14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+        <div class="cal-dot" style="background:var(--accent)"></div>习惯
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+        <div class="cal-dot" style="background:var(--success)"></div>待办
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+        <div class="cal-dot" style="background:var(--warning)"></div>提醒
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">近期提醒</div>
+  <div class="card" id="reminderList"></div>
+</div>
+
 <!-- ===== TAB BAR ===== -->
 <div class="tab-bar">
   <div class="tab-item active" onclick="switchTab('profile',this)">
@@ -931,6 +1083,9 @@ body {
   </div>
   <div class="tab-item" onclick="switchTab('habits',this)">
     <div class="tab-icon">✅</div><div class="tab-label">习惯</div>
+  </div>
+  <div class="tab-item" onclick="switchTab('calendar',this)">
+    <div class="tab-icon">📅</div><div class="tab-label">日历</div>
   </div>
   <div class="tab-item" onclick="switchTab('records',this)">
     <div class="tab-icon">📝</div><div class="tab-label">记录</div>
@@ -948,10 +1103,11 @@ const DEFAULTS = {
   abilities: { 颜值:50, 魅力:50, 智商:50, 体质:50, 专注力:50, 认知:50 },
   name: '玩家一', age: 20,
   habits: {
-    nofap:      { name:'戒色',  icon:'🔒', desc:'体质&魅力&专注力',        checkedToday:false, pendingUndo:false, weekCount:0 },
-    reading:    { name:'阅读',  icon:'📚', desc:'认知+0.1 · 专注力+0.1',   checkedToday:false, pendingUndo:false, weekCount:0 },
-    meditation: { name:'冥想',  icon:'🧘', desc:'专注力+0.2 · 智商+0.05',  checkedToday:false, pendingUndo:false, weekCount:0 },
+    nofap:      { name:'戒色',  icon:'🔒', desc:'体质&魅力&专注力',        checkedToday:false, pendingUndo:false, weekCount:0, history:[] },
+    reading:    { name:'阅读',  icon:'📚', desc:'认知+0.1 · 专注力+0.1',   checkedToday:false, pendingUndo:false, weekCount:0, history:[] },
+    meditation: { name:'冥想',  icon:'🧘', desc:'专注力+0.2 · 智商+0.05',  checkedToday:false, pendingUndo:false, weekCount:0, history:[] },
   },
+  reminders: [],
   streak: 0, streakCheckedToday: false, streakPendingUndo: false,
   transactions: [], wealth: 0,
   sleepHistory: [], sleepLoggedToday: false, sleepTodayEffect: 0,
@@ -980,6 +1136,7 @@ function load() {
       const h = saved.habits?.[k] ? {...def, ...saved.habits[k]} : {...def};
       if (isNewDay) { h.checkedToday = false; h.pendingUndo = false; }
       if (isNewDay && isMonday) h.weekCount = 0;
+      if (!h.history) h.history = [];
       habits[k] = h;
     });
     if (saved.habits) {
@@ -988,6 +1145,7 @@ function load() {
           const ch = {...h};
           if (isNewDay) { ch.checkedToday = false; ch.pendingUndo = false; }
           if (isNewDay && isMonday) ch.weekCount = 0;
+          if (!ch.history) ch.history = [];
           habits[k] = ch;
         }
       });
@@ -1009,6 +1167,7 @@ function load() {
       fontSize:    saved.fontSize    ?? 16,
       accentColor: saved.accentColor ?? '#5856D6',
       todoLabels:  saved.todoLabels  || [...DEFAULTS.todoLabels],
+      reminders:   saved.reminders   || [],
     };
   } catch { return {...DEFAULTS, lastDate: TODAY}; }
 }
@@ -1187,7 +1346,7 @@ function renderHabits() {
       ? `<button class="habit-del" onclick="deleteCustomHabit('${key}')">×</button>` : '';
     return `<div>
       <div class="habit-row">
-        <div class="habit-icon-tile">${h.icon}</div>
+        <div class="habit-icon-tile" onclick="openHabitCalendar('${key}')" style="cursor:pointer">${h.icon}</div>
         <div class="habit-info">
           <div class="habit-name">${h.name}</div>
           <div class="habit-meta">${metaLine}</div>
@@ -1210,6 +1369,8 @@ function toggleHabit(key) {
     h.checkedToday = true;
     h.pendingUndo = true;
     h.weekCount = Math.min(7, (h.weekCount || 0) + 1);
+    if (!h.history) h.history = [];
+    if (!h.history.includes(TODAY)) h.history.push(TODAY);
     Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, d));
     if (key === 'nofap') {
       state.streak++;
@@ -1226,6 +1387,7 @@ function toggleHabit(key) {
     h.checkedToday = false;
     h.pendingUndo = false;
     h.weekCount = Math.max(0, (h.weekCount || 0) - 1);
+    if (h.history) h.history = h.history.filter(d => d !== TODAY);
     clearTimeout(undoTimers[key]);
     Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, -d));
     if (key === 'nofap') {
@@ -1660,7 +1822,7 @@ function saveCustomHabit() {
   const fxDesc = desc || Object.entries(merged).map(([a,v])=>`${a}+${v}`).join(' · ');
   state.habits[key] = {
     name, icon, desc: fxDesc,
-    checkedToday: false, pendingUndo: false, weekCount: 0,
+    checkedToday: false, pendingUndo: false, weekCount: 0, history: [],
     isCustom: true, tags: [...selectedHabitTags],
   };
   if (selectedHabitIntensity !== 1) {
@@ -1943,11 +2105,13 @@ function toggleTodo(id) {
   if (!t) return;
   if (!t.done && t.recurrence) {
     t.done = true;
+    t.completedAt = TODAY;
     const next = nextDeadline(t);
     state.todos.push({ id: Date.now(), text: t.text, deadline: next, done: false, recurrence: t.recurrence });
     showToast(`已完成，下次：${next.slice(5).replace('-','/')}`);
   } else {
     t.done = !t.done;
+    t.completedAt = t.done ? TODAY : null;
   }
   save(); renderTodos();
 }
@@ -2098,6 +2262,255 @@ function todoItemHTML(t) {
   </div>`;
 }
 
+// ===== HABIT CALENDAR =====
+let habitCalKey = null;
+let habitCalYear = new Date().getFullYear();
+let habitCalMonth = new Date().getMonth();
+
+function openHabitCalendar(key) {
+  habitCalKey = key;
+  habitCalYear = new Date().getFullYear();
+  habitCalMonth = new Date().getMonth();
+  document.getElementById('habitCalTitle').textContent = state.habits[key]?.icon + ' ' + state.habits[key]?.name + ' 打卡记录';
+  renderHabitCalContent();
+  toggleSheet('habitCalSheet', 'habitCalOverlay', true);
+}
+function closeHabitCalendar() { toggleSheet('habitCalSheet', 'habitCalOverlay', false); }
+
+function changeHabitCalMonth(delta) {
+  habitCalMonth += delta;
+  if (habitCalMonth > 11) { habitCalMonth = 0; habitCalYear++; }
+  if (habitCalMonth < 0)  { habitCalMonth = 11; habitCalYear--; }
+  renderHabitCalContent();
+}
+
+function renderHabitCalContent() {
+  const h = state.habits[habitCalKey];
+  if (!h) return;
+  const history = h.history || [];
+  const year = habitCalYear, month = habitCalMonth;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = new Date(year, month, 1).getDay();
+  const monthLabel = `${year}年${month + 1}月`;
+  const checkedCount = history.filter(d => d.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)).length;
+  const DOWS = ['日','一','二','三','四','五','六'];
+  const dowRow = DOWS.map(d => `<div class="habit-cal-dow">${d}</div>`).join('');
+  let cells = '';
+  for (let i = 0; i < firstDow; i++) cells += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isChecked = history.includes(dateStr);
+    const isToday = dateStr === TODAY;
+    cells += `<div class="habit-cal-day${isChecked?' checked':''}${isToday?' today':''}">${d}</div>`;
+  }
+  document.getElementById('habitCalContent').innerHTML = `
+    <div class="habit-cal-header">
+      <button class="habit-cal-nav" onclick="changeHabitCalMonth(-1)">‹</button>
+      <span class="habit-cal-month">${monthLabel}</span>
+      <button class="habit-cal-nav" onclick="changeHabitCalMonth(1)">›</button>
+    </div>
+    <div class="habit-cal-grid">${dowRow}</div>
+    <div class="habit-cal-grid">${cells}</div>
+    <div class="habit-cal-stat">本月已打卡 ${checkedCount} 天 · 累计 ${history.length} 天</div>
+  `;
+}
+
+// ===== CALENDAR PAGE =====
+let calPageYear = new Date().getFullYear();
+let calPageMonth = new Date().getMonth();
+
+function changeCalMonth(delta) {
+  calPageMonth += delta;
+  if (calPageMonth > 11) { calPageMonth = 0; calPageYear++; }
+  if (calPageMonth < 0)  { calPageMonth = 11; calPageYear--; }
+  renderCalendarPage();
+}
+
+function renderCalendarPage() {
+  const year = calPageYear, month = calPageMonth;
+  document.getElementById('calMonthLabel').textContent = `${year}年${month + 1}月`;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = new Date(year, month, 1).getDay();
+  const DOWS = ['日','一','二','三','四','五','六'];
+  document.getElementById('calDowRow').innerHTML = DOWS.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  // Build index of activity per day
+  const habitHistory = {};
+  Object.values(state.habits).forEach(h => {
+    (h.history || []).forEach(date => {
+      if (!habitHistory[date]) habitHistory[date] = 0;
+      habitHistory[date]++;
+    });
+  });
+  const todoDone = {};
+  state.todos.filter(t => t.done && t.completedAt).forEach(t => {
+    todoDone[t.completedAt] = (todoDone[t.completedAt] || 0) + 1;
+  });
+  const reminderDates = {};
+  state.reminders.forEach(r => {
+    const d = r.datetime?.slice(0, 10);
+    if (d) reminderDates[d] = (reminderDates[d] || 0) + 1;
+  });
+  let cells = '';
+  for (let i = 0; i < firstDow; i++) {
+    cells += `<div class="cal-cell"><div class="cal-day-num other-month"></div></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr === TODAY;
+    const dots = [];
+    const hc = habitHistory[dateStr] || 0;
+    const tc = todoDone[dateStr] || 0;
+    const rc = reminderDates[dateStr] || 0;
+    for (let i = 0; i < Math.min(hc, 3); i++) dots.push(`<div class="cal-dot" style="background:var(--accent)"></div>`);
+    for (let i = 0; i < Math.min(tc, 2); i++) dots.push(`<div class="cal-dot" style="background:var(--success)"></div>`);
+    if (rc) dots.push(`<div class="cal-dot" style="background:var(--warning)"></div>`);
+    cells += `<div class="cal-cell${isToday?' today':''}" onclick="openDayDetail('${dateStr}')">
+      <div class="cal-day-num">${d}</div>
+      <div class="cal-dots">${dots.join('')}</div>
+    </div>`;
+  }
+  document.getElementById('calDayGrid').innerHTML = cells;
+  renderReminders();
+}
+
+function openDayDetail(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  document.getElementById('dayDetailTitle').textContent = `${parseInt(m)}月${parseInt(d)}日`;
+  const checkedHabits = Object.entries(state.habits)
+    .filter(([, h]) => (h.history || []).includes(dateStr));
+  const doneTodos = state.todos.filter(t => t.done && t.completedAt === dateStr);
+  const dayReminders = state.reminders.filter(r => r.datetime?.startsWith(dateStr));
+  let html = '';
+  if (checkedHabits.length) {
+    html += `<div class="day-detail-section">习惯打卡</div><div class="card">`;
+    checkedHabits.forEach(([, h]) => {
+      html += `<div class="day-detail-item"><div class="cal-dot" style="background:var(--accent)"></div>${h.icon} ${h.name}</div>`;
+    });
+    html += '</div>';
+  }
+  if (doneTodos.length) {
+    html += `<div class="day-detail-section">已完成待办</div><div class="card">`;
+    doneTodos.forEach(t => {
+      html += `<div class="day-detail-item"><div class="cal-dot" style="background:var(--success)"></div>${t.text}</div>`;
+    });
+    html += '</div>';
+  }
+  if (dayReminders.length) {
+    html += `<div class="day-detail-section">提醒事项</div><div class="card">`;
+    dayReminders.forEach(r => {
+      const timeStr = r.datetime?.slice(11, 16) || '';
+      html += `<div class="day-detail-item"><div class="cal-dot" style="background:var(--warning)"></div>${timeStr ? timeStr + ' ' : ''}${r.title}</div>`;
+    });
+    html += '</div>';
+  }
+  if (!html) html = '<div class="day-detail-empty">这天没有记录</div>';
+  document.getElementById('dayDetailContent').innerHTML = html;
+  toggleSheet('dayDetailSheet', 'dayDetailOverlay', true);
+}
+function closeDayDetail() { toggleSheet('dayDetailSheet', 'dayDetailOverlay', false); }
+
+// ===== REMINDERS =====
+function renderReminders() {
+  const el = document.getElementById('reminderList');
+  if (!el) return;
+  const now = Date.now();
+  const sorted = [...state.reminders].sort((a, b) => a.datetime.localeCompare(b.datetime));
+  if (!sorted.length) {
+    el.innerHTML = '<div class="reminder-empty">暂无提醒事项</div>' +
+      '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
+    return;
+  }
+  el.innerHTML = sorted.map(r => {
+    const dtMs = new Date(r.datetime.replace(' ', 'T')).getTime();
+    const diffMs = dtMs - now;
+    const diffMin = Math.round(diffMs / 60000);
+    let timeClass = '', timeStr = '';
+    const dateLabel = r.datetime.slice(5, 10).replace('-', '/') + ' ' + r.datetime.slice(11, 16);
+    if (r.done) {
+      timeStr = `${dateLabel} · 已过`;
+    } else if (diffMs < 0) {
+      timeStr = `${dateLabel} · 已过`;
+      timeClass = 'overdue';
+    } else if (diffMin < 60) {
+      timeStr = `${dateLabel} · 还有 ${diffMin} 分钟`;
+      timeClass = 'soon';
+    } else if (diffMin < 1440) {
+      timeStr = `${dateLabel} · 还有 ${Math.round(diffMin/60)} 小时`;
+      timeClass = diffMin < 120 ? 'soon' : '';
+    } else {
+      timeStr = dateLabel;
+    }
+    return `<div class="reminder-item${r.done?' reminder-done':''}">
+      <div class="reminder-icon">🔔</div>
+      <div class="reminder-info">
+        <div class="reminder-title">${r.title}</div>
+        <div class="reminder-time ${timeClass}">${timeStr}${r.note ? ' · ' + r.note : ''}</div>
+      </div>
+      <button class="reminder-del" onclick="deleteReminder(${r.id})">×</button>
+    </div>`;
+  }).join('') + '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
+}
+
+function openReminderAddSheet() {
+  document.getElementById('reminderTitle').value = '';
+  document.getElementById('reminderDate').value = TODAY;
+  document.getElementById('reminderTime').value = '';
+  document.getElementById('reminderNote').value = '';
+  document.getElementById('reminderAdvance').value = '15min';
+  toggleSheet('reminderAddSheet', 'reminderAddOverlay', true);
+  setTimeout(() => document.getElementById('reminderTitle').focus(), 320);
+}
+function closeReminderAddSheet() { toggleSheet('reminderAddSheet', 'reminderAddOverlay', false); }
+
+function addReminder() {
+  const title = document.getElementById('reminderTitle').value.trim();
+  const date  = document.getElementById('reminderDate').value;
+  const time  = document.getElementById('reminderTime').value;
+  const note  = document.getElementById('reminderNote').value.trim();
+  const advance = document.getElementById('reminderAdvance').value;
+  if (!title || !date || !time) { showToast('请填写名称、日期和时间'); return; }
+  const r = { id: Date.now(), title, datetime: `${date} ${time}`, remind: advance, note, done: false };
+  state.reminders.push(r);
+  save();
+  closeReminderAddSheet();
+  renderReminders();
+  scheduleOneReminder(r);
+  showToast('提醒已添加');
+}
+
+function deleteReminder(id) {
+  state.reminders = state.reminders.filter(r => r.id !== id);
+  save(); renderReminders();
+}
+
+// ===== NOTIFICATIONS =====
+function scheduleOneReminder(r) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const eventMs = new Date(r.datetime.replace(' ', 'T')).getTime();
+  const advanceMs = { '15min': 15*60000, '1hour': 60*60000, '1day': 24*60*60000, 'none': 0 }[r.remind] || 0;
+  const fireMs = eventMs - advanceMs;
+  const delay = fireMs - Date.now();
+  if (delay > 0 && delay < 24 * 60 * 60000) {
+    setTimeout(() => {
+      const label = advanceMs > 0 ? `提前 ${r.remind === '15min' ? '15 分钟' : r.remind === '1hour' ? '1 小时' : '1 天'}` : '现在开始';
+      new Notification('人生属性 · ' + r.title, {
+        body: r.datetime.slice(5, 16).replace('-', '/') + ' · ' + label + (r.note ? '\n' + r.note : ''),
+        icon: './icon-192.png',
+      });
+    }, delay);
+  }
+}
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') await Notification.requestPermission();
+}
+
+function checkAndNotify() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  state.reminders.filter(r => !r.done).forEach(r => scheduleOneReminder(r));
+}
+
 // ===== NAVIGATION =====
 function switchTab(name, el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -2105,6 +2518,7 @@ function switchTab(name, el) {
   document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
   if (name === 'report') renderReport();
+  if (name === 'calendar') renderCalendarPage();
 }
 
 // ===== TOAST =====
@@ -2139,6 +2553,8 @@ selectCardio(0);
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
 }
+
+requestNotifPermission().then(checkAndNotify);
 </script>
 </body>
 </html>
