@@ -534,6 +534,27 @@ body {
 .dev-font-val { font-size: 18px; font-weight: 700; min-width: 46px; text-align: center; color: var(--text); }
 .dev-color-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 2px 0; }
 
+/* ===== TODO LABEL ===== */
+.todo-label-tag {
+  display: inline-block; font-size: 10px; padding: 1px 7px;
+  border-radius: 10px; font-weight: 600; margin-left: 5px;
+  vertical-align: middle;
+}
+.todo-label-add-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px 12px;
+}
+.todo-label-add-row input {
+  flex: 1; border: 1px solid #E5E5EA; border-radius: 8px;
+  padding: 6px 10px; font-size: 14px; outline: none;
+  color: var(--text); background: #f9f9f9;
+}
+.todo-label-add-btn {
+  padding: 6px 12px; border-radius: 8px; border: none;
+  background: var(--accent); color: white; font-size: 14px;
+  cursor: pointer; font-weight: 500; white-space: nowrap; flex-shrink: 0;
+}
+
 /* ===== TOAST ===== */
 .toast {
   position: fixed; bottom: 105px; left: 50%; transform: translateX(-50%) translateY(8px);
@@ -668,6 +689,14 @@ body {
              style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
     </div>
   </div>
+  <div class="section-label">分类标签（可选）</div>
+  <div class="tag-chip-grid" id="todoLabelPicker" style="padding-bottom:4px"></div>
+  <div class="todo-label-add-row">
+    <input type="text" id="newTodoLabelInput" placeholder="新建分类标签，回车添加"
+           onkeydown="if(event.key==='Enter')addCustomTodoLabel()">
+    <button class="todo-label-add-btn" onclick="addCustomTodoLabel()">添加</button>
+  </div>
+
   <div class="section-label">循环</div>
   <div class="card">
     <div class="recur-check-row" style="border-top:none">
@@ -932,6 +961,7 @@ const DEFAULTS = {
   habitPointMultipliers: {},
   fontSize: 16,
   accentColor: '#5856D6',
+  todoLabels: ['工作', '学习', '生活', '健康'],
 };
 
 const STORAGE_KEY = 'lifeapp_v2';
@@ -978,6 +1008,7 @@ function load() {
       habitPointMultipliers: saved.habitPointMultipliers || {},
       fontSize:    saved.fontSize    ?? 16,
       accentColor: saved.accentColor ?? '#5856D6',
+      todoLabels:  saved.todoLabels  || [...DEFAULTS.todoLabels],
     };
   } catch { return {...DEFAULTS, lastDate: TODAY}; }
 }
@@ -1757,6 +1788,51 @@ function resetDevSettings() {
 // ===== TODOS =====
 let selectedDays = [];
 let recurEnabled = false;
+let selectedTodoLabel = null;
+
+const LABEL_COLORS = [
+  { bg: 'rgba(88,86,214,0.12)',  text: '#5856D6' },
+  { bg: 'rgba(255,149,0,0.12)',  text: '#CC7700' },
+  { bg: 'rgba(52,199,89,0.12)',  text: '#248A3D' },
+  { bg: 'rgba(255,45,85,0.12)',  text: '#C0143C' },
+  { bg: 'rgba(90,200,250,0.15)', text: '#0077A8' },
+  { bg: 'rgba(175,82,222,0.12)', text: '#8944AB' },
+  { bg: 'rgba(255,107,53,0.12)', text: '#C03C00' },
+  { bg: 'rgba(48,176,199,0.12)', text: '#007A87' },
+];
+function labelColor(label) {
+  let h = 0;
+  for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) % LABEL_COLORS.length;
+  return LABEL_COLORS[h];
+}
+
+function renderTodoLabelPicker() {
+  const el = document.getElementById('todoLabelPicker');
+  if (!el) return;
+  el.innerHTML = state.todoLabels.map(lb => {
+    const sel = selectedTodoLabel === lb;
+    return `<div class="tag-chip ${sel ? 'sel' : ''}" onclick="selectTodoLabel('${lb.replace(/'/g,"\\'")}')">
+      ${lb}
+    </div>`;
+  }).join('');
+}
+
+function selectTodoLabel(label) {
+  selectedTodoLabel = selectedTodoLabel === label ? null : label;
+  renderTodoLabelPicker();
+}
+
+function addCustomTodoLabel() {
+  const input = document.getElementById('newTodoLabelInput');
+  const val = input?.value.trim();
+  if (!val) return;
+  if (state.todoLabels.includes(val)) { selectTodoLabel(val); input.value = ''; return; }
+  state.todoLabels.push(val);
+  selectedTodoLabel = val;
+  save();
+  input.value = '';
+  renderTodoLabelPicker();
+}
 
 function toggleRecurCheck() {
   recurEnabled = !recurEnabled;
@@ -1844,6 +1920,8 @@ function openTodoAddSheet() {
   document.getElementById('todoDate').value = TODAY;
   document.getElementById('todoTime').value = '';
   if (recurEnabled) toggleRecurCheck();
+  selectedTodoLabel = null;
+  renderTodoLabelPicker();
   toggleSheet('todoAddSheet', 'todoAddOverlay', true);
   setTimeout(() => document.getElementById('todoText').focus(), 320);
 }
@@ -1855,7 +1933,7 @@ function addTodo() {
   if (!text || !date) { showToast('请填写内容和截止日期'); return; }
   const recurrence = getRecurrence();
   const time = document.getElementById('todoTime').value || null;
-  state.todos.push({ id: Date.now(), text, deadline: date, deadlineTime: time, done: false, recurrence });
+  state.todos.push({ id: Date.now(), text, deadline: date, deadlineTime: time, done: false, recurrence, label: selectedTodoLabel });
   closeTodoAddSheet();
   save(); renderTodos();
 }
@@ -1998,6 +2076,7 @@ function renderTodos() {
 function todoItemHTML(t) {
   const isOverdue = !t.done && t.deadline < TODAY;
   const dlLabel   = t.deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3') + (t.deadlineTime ? ' ' + t.deadlineTime : '');
+  const labelTag  = t.label ? (() => { const c = labelColor(t.label); return `<span class="todo-label-tag" style="background:${c.bg};color:${c.text}">${t.label}</span>`; })() : '';
   const subs = t.subtasks || [];
   let badge = '';
   if (subs.length) {
@@ -2010,7 +2089,7 @@ function todoItemHTML(t) {
   return `<div class="todo-item">
     <div class="todo-check ${t.done?'done':''}" onclick="toggleTodo(${t.id})">${t.done?'✓':''}</div>
     <div class="todo-body" onclick="openTodoDetail(${t.id})">
-      <div class="todo-text ${t.done?'done':''}">${t.text}${recurTag(t.recurrence)}</div>
+      <div class="todo-text ${t.done?'done':''}">${t.text}${recurTag(t.recurrence)}${labelTag}</div>
       <div class="todo-deadline ${isOverdue?'overdue':''}">截止 ${dlLabel}${isOverdue?' · 已逾期':''}</div>
       ${badge}
     </div>
