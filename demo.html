@@ -604,6 +604,16 @@ body {
 .day-detail-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .day-detail-empty { padding:16px; text-align:center; font-size:14px; color:#C7C7CC; }
 
+/* ===== TIME LOG ===== */
+.timelog-item { display:flex; align-items:flex-start; gap:12px; padding:12px 16px; border-bottom:0.5px solid var(--border); }
+.timelog-item:last-child { border-bottom:none; }
+.timelog-bar { width:3px; border-radius:2px; background:#5AC8FA; align-self:stretch; flex-shrink:0; margin-top:2px; }
+.timelog-body { flex:1; min-width:0; }
+.timelog-title { font-size:15px; font-weight:600; }
+.timelog-time { font-size:12px; color:var(--muted); margin-top:2px; }
+.timelog-del { background:none; border:none; color:#C7C7CC; font-size:18px; cursor:pointer; padding:0 2px; flex-shrink:0; line-height:1; }
+.timelog-add-row { display:flex; align-items:center; padding:13px 16px; color:var(--accent); font-size:15px; cursor:pointer; gap:8px; border-top:0.5px solid var(--border); }
+
 /* ===== TOAST ===== */
 .toast {
   position: fixed; bottom: 105px; left: 50%; transform: translateX(-50%) translateY(8px);
@@ -860,6 +870,49 @@ body {
   <div id="dayDetailContent"></div>
 </div>
 
+<!-- ===== TIME LOG ADD SHEET ===== -->
+<div class="sheet-overlay" id="timeLogOverlay" onclick="closeTimeLogSheet()"></div>
+<div class="settings-sheet" id="timeLogSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">记录事项</div>
+    <button class="sheet-close" onclick="closeTimeLogSheet()">✕</button>
+  </div>
+  <div class="section-label">事项名称</div>
+  <div class="card">
+    <div class="settings-row">
+      <input id="timeLogTitle" type="text" placeholder="做了什么"
+             style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+    </div>
+  </div>
+  <div class="section-label">时间</div>
+  <div class="card">
+    <div class="settings-row">
+      <span class="settings-label">日期</span>
+      <input type="date" id="timeLogDate"
+             style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">开始时间</span>
+      <input type="time" id="timeLogStart"
+             style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
+    </div>
+    <div class="settings-row" style="border-bottom:none">
+      <span class="settings-label">结束时间</span>
+      <input type="time" id="timeLogEnd"
+             style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
+    </div>
+  </div>
+  <div class="section-label">备注（可选）</div>
+  <div class="card">
+    <div class="settings-row" style="border-bottom:none">
+      <input id="timeLogNote" type="text" placeholder="添加备注"
+             style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-top:4px" onclick="addTimeLog()">保存记录</button>
+</div>
+
 <!-- ===== HABIT ADD SHEET ===== -->
 <div class="sheet-overlay" id="habitOverlay" onclick="closeHabitSheet()"></div>
 <div class="settings-sheet" id="habitSheet">
@@ -1069,6 +1122,9 @@ body {
       <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
         <div class="cal-dot" style="background:var(--warning)"></div>提醒
       </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+        <div class="cal-dot" style="background:#5AC8FA"></div>记录
+      </div>
     </div>
   </div>
 
@@ -1108,6 +1164,7 @@ const DEFAULTS = {
     meditation: { name:'冥想',  icon:'🧘', desc:'专注力+0.2 · 智商+0.05',  checkedToday:false, pendingUndo:false, weekCount:0, history:[] },
   },
   reminders: [],
+  timeLogs: [],
   streak: 0, streakCheckedToday: false, streakPendingUndo: false,
   transactions: [], wealth: 0,
   sleepHistory: [], sleepLoggedToday: false, sleepTodayEffect: 0,
@@ -1168,6 +1225,7 @@ function load() {
       accentColor: saved.accentColor ?? '#5856D6',
       todoLabels:  saved.todoLabels  || [...DEFAULTS.todoLabels],
       reminders:   saved.reminders   || [],
+      timeLogs:    saved.timeLogs    || [],
     };
   } catch { return {...DEFAULTS, lastDate: TODAY}; }
 }
@@ -2350,6 +2408,10 @@ function renderCalendarPage() {
     const d = r.datetime?.slice(0, 10);
     if (d) reminderDates[d] = (reminderDates[d] || 0) + 1;
   });
+  const timeLogDates = {};
+  (state.timeLogs || []).forEach(l => {
+    timeLogDates[l.date] = (timeLogDates[l.date] || 0) + 1;
+  });
   let cells = '';
   for (let i = 0; i < firstDow; i++) {
     cells += `<div class="cal-cell"><div class="cal-day-num other-month"></div></div>`;
@@ -2364,6 +2426,7 @@ function renderCalendarPage() {
     for (let i = 0; i < Math.min(hc, 3); i++) dots.push(`<div class="cal-dot" style="background:var(--accent)"></div>`);
     for (let i = 0; i < Math.min(tc, 2); i++) dots.push(`<div class="cal-dot" style="background:var(--success)"></div>`);
     if (rc) dots.push(`<div class="cal-dot" style="background:var(--warning)"></div>`);
+    if (timeLogDates[dateStr]) dots.push(`<div class="cal-dot" style="background:#5AC8FA"></div>`);
     cells += `<div class="cal-cell${isToday?' today':''}" onclick="openDayDetail('${dateStr}')">
       <div class="cal-day-num">${d}</div>
       <div class="cal-dots">${dots.join('')}</div>
@@ -2403,7 +2466,25 @@ function openDayDetail(dateStr) {
     });
     html += '</div>';
   }
+  const dayLogs = (state.timeLogs || [])
+    .filter(l => l.date === dateStr)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  if (dayLogs.length) {
+    html += `<div class="day-detail-section">时间记录</div><div class="card">`;
+    dayLogs.forEach(l => {
+      html += `<div class="timelog-item">
+        <div class="timelog-bar"></div>
+        <div class="timelog-body">
+          <div class="timelog-title">${l.title}</div>
+          <div class="timelog-time">${l.startTime} – ${l.endTime}${l.note ? ' · ' + l.note : ''}</div>
+        </div>
+        <button class="timelog-del" onclick="deleteTimeLog(${l.id});openDayDetail('${dateStr}')">×</button>
+      </div>`;
+    });
+    html += '</div>';
+  }
   if (!html) html = '<div class="day-detail-empty">这天没有记录</div>';
+  html += `<div class="timelog-add-row" onclick="closeDayDetail();openTimeLogSheet('${dateStr}')">＋ 记录事项</div>`;
   document.getElementById('dayDetailContent').innerHTML = html;
   toggleSheet('dayDetailSheet', 'dayDetailOverlay', true);
 }
@@ -2509,6 +2590,43 @@ async function requestNotifPermission() {
 function checkAndNotify() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   state.reminders.filter(r => !r.done).forEach(r => scheduleOneReminder(r));
+}
+
+// ===== TIME LOGS =====
+let timeLogDateContext = null;
+
+function openTimeLogSheet(dateStr) {
+  timeLogDateContext = dateStr || TODAY;
+  document.getElementById('timeLogTitle').value = '';
+  document.getElementById('timeLogDate').value = timeLogDateContext;
+  document.getElementById('timeLogStart').value = '';
+  document.getElementById('timeLogEnd').value = '';
+  document.getElementById('timeLogNote').value = '';
+  toggleSheet('timeLogSheet', 'timeLogOverlay', true);
+  setTimeout(() => document.getElementById('timeLogTitle').focus(), 320);
+}
+function closeTimeLogSheet() { toggleSheet('timeLogSheet', 'timeLogOverlay', false); }
+
+function addTimeLog() {
+  const title = document.getElementById('timeLogTitle').value.trim();
+  const date  = document.getElementById('timeLogDate').value;
+  const start = document.getElementById('timeLogStart').value;
+  const end   = document.getElementById('timeLogEnd').value;
+  const note  = document.getElementById('timeLogNote').value.trim();
+  if (!title || !date || !start || !end) { showToast('请填写名称、日期和时间段'); return; }
+  if (end <= start) { showToast('结束时间必须晚于开始时间'); return; }
+  state.timeLogs.push({ id: Date.now(), title, date, startTime: start, endTime: end, note });
+  save();
+  closeTimeLogSheet();
+  if (document.getElementById('dayDetailSheet').classList.contains('open')) openDayDetail(date);
+  renderCalendarPage();
+  showToast('记录已保存');
+}
+
+function deleteTimeLog(id) {
+  state.timeLogs = state.timeLogs.filter(l => l.id !== id);
+  save();
+  renderCalendarPage();
 }
 
 // ===== NAVIGATION =====
