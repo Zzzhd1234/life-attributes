@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>英语口语学习 · SpeakUp</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222637;
+      --border: #2e3248;
+      --accent: #6c63ff;
+      --accent2: #ff6584;
+      --green: #43e97b;
+      --text: #e8eaf0;
+      --text2: #9099b5;
+      --text3: #5a6080;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,17,23,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 60px;
+    }
+    .nav-logo { font-size: 1.3rem; font-weight: 700; color: var(--accent); letter-spacing: -.5px; }
+    .nav-logo span { color: var(--accent2); }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab {
+      padding: 6px 16px; border-radius: 8px; border: none;
+      background: transparent; color: var(--text2); cursor: pointer;
+      font-size: .9rem; transition: all .2s;
+    }
+    .nav-tab:hover { background: var(--surface2); color: var(--text); }
+    .nav-tab.active { background: var(--accent); color: #fff; }
+
+    /* PAGES */
+    .page { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* HERO */
+    .hero {
+      text-align: center; padding: 60px 20px 48px;
+    }
+    .hero h1 { font-size: 2.6rem; font-weight: 800; line-height: 1.2; margin-bottom: 14px; }
+    .hero h1 span { background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: var(--text2); font-size: 1.1rem; max-width: 520px; margin: 0 auto 32px; }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      padding: 11px 26px; border-radius: 10px; border: none;
+      font-size: .95rem; font-weight: 600; cursor: pointer; transition: all .2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #7b74ff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,.4); }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* STATS ROW */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 16px; margin-bottom: 36px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px;
+    }
+    .stat-card .num { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .stat-card .label { color: var(--text2); font-size: .85rem; margin-top: 4px; }
+
+    /* SECTION HEADER */
+    .sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .sec-title { font-size: 1.2rem; font-weight: 700; }
+    .sec-title span { color: var(--accent); }
+    .tag-filter { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); font-size: .8rem; color: var(--text2); cursor: pointer; transition: all .2s; background: transparent; }
+    .tag:hover, .tag.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* PHRASE CARDS GRID */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); gap: 16px; }
+    .phrase-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      cursor: pointer; transition: all .25s; position: relative; overflow: hidden;
+    }
+    .phrase-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .phrase-card .phrase-en { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .phrase-card .phrase-cn { font-size: .9rem; color: var(--text2); margin-bottom: 10px; }
+    .phrase-card .phrase-ex { font-size: .85rem; color: var(--text3); font-style: italic; border-left: 2px solid var(--accent); padding-left: 10px; line-height: 1.5; }
+    .ex-source-tag { display:inline-block; margin-top:5px; font-size:.73rem; font-style:normal; padding:2px 8px; border-radius:20px; background:rgba(139,92,246,.15); color:#a78bfa; border:1px solid rgba(139,92,246,.25); letter-spacing:.02em; }
+    .phrase-card .badge-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+    .badge { font-size: .72rem; padding: 2px 8px; border-radius: 20px; background: var(--surface2); color: var(--text2); }
+    .badge.idiom { background: rgba(108,99,255,.15); color: var(--accent); }
+    .badge.daily { background: rgba(67,233,123,.12); color: var(--green); }
+    .badge.formal { background: rgba(255,101,132,.12); color: var(--accent2); }
+    .card-stage {
+      position: absolute; top: 14px; right: 14px;
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .stage-new { background: var(--accent2); }
+    .stage-learning { background: #f7b731; }
+    .stage-mastered { background: var(--green); }
+
+    /* FLASHCARD */
+    .flashcard-wrap { max-width: 560px; margin: 0 auto; }
+    .flashcard-box {
+      perspective: 1200px; height: 280px; margin-bottom: 24px; cursor: pointer;
+    }
+    .flashcard-inner {
+      position: relative; width: 100%; height: 100%;
+      transform-style: preserve-3d; transition: transform .5s;
+    }
+    .flashcard-box.flipped .flashcard-inner { transform: rotateY(180deg); }
+    .flashcard-face {
+      position: absolute; inset: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 32px;
+      backface-visibility: hidden;
+    }
+    .flashcard-face.back { transform: rotateY(180deg); background: var(--surface2); }
+    .fc-label { font-size: .75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 16px; }
+    .fc-phrase { font-size: 1.6rem; font-weight: 700; text-align: center; margin-bottom: 8px; }
+    .fc-cn { color: var(--text2); font-size: 1rem; text-align: center; }
+    .fc-example { color: var(--text3); font-size: .9rem; font-style: italic; text-align: center; margin-top: 12px; line-height: 1.6; }
+    .fc-hint { color: var(--text3); font-size: .8rem; }
+    .flashcard-controls { display: flex; gap: 12px; justify-content: center; }
+    .btn-wrong { background: rgba(255,101,132,.15); color: var(--accent2); border: 1px solid rgba(255,101,132,.3); }
+    .btn-wrong:hover { background: rgba(255,101,132,.25); }
+    .btn-right { background: rgba(67,233,123,.12); color: var(--green); border: 1px solid rgba(67,233,123,.3); }
+    .btn-right:hover { background: rgba(67,233,123,.22); }
+    .fc-progress { text-align: center; color: var(--text3); font-size: .85rem; margin-bottom: 20px; }
+    .fc-progress span { color: var(--text2); font-weight: 600; }
+
+    /* SCENARIOS */
+    .scenario-list { display: grid; gap: 16px; }
+    .scenario-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .scenario-header {
+      padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+      cursor: pointer; transition: background .2s;
+    }
+    .scenario-header:hover { background: var(--surface2); }
+    .scenario-icon { font-size: 1.4rem; }
+    .scenario-title { font-weight: 600; flex: 1; }
+    .scenario-meta { font-size: .8rem; color: var(--text3); }
+    .scenario-arrow { color: var(--text3); transition: transform .3s; }
+    .scenario-card.open .scenario-arrow { transform: rotate(90deg); }
+    .scenario-body { display: none; border-top: 1px solid var(--border); }
+    .scenario-card.open .scenario-body { display: block; }
+    .dialogue { padding: 20px; display: grid; gap: 12px; }
+    .line { display: flex; gap: 10px; align-items: flex-start; }
+    .line.b { flex-direction: row-reverse; }
+    .speaker-label {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 4px; white-space: nowrap; margin-top: 3px;
+      flex-shrink: 0;
+    }
+    .line.a .speaker-label { background: rgba(108,99,255,.2); color: var(--accent); }
+    .line.b .speaker-label { background: rgba(255,101,132,.15); color: var(--accent2); }
+    .bubble {
+      background: var(--surface2); border-radius: 12px; padding: 10px 14px;
+      font-size: .9rem; line-height: 1.6; max-width: 400px;
+    }
+    .bubble .cn { color: var(--text3); font-size: .82rem; margin-top: 4px; }
+    .key-phrase { background: rgba(108,99,255,.15); color: var(--accent); padding: 1px 4px; border-radius: 4px; font-weight: 600; }
+
+    /* TIPS */
+    .tips-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 16px; }
+    .tip-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px;
+    }
+    .tip-icon { font-size: 1.8rem; margin-bottom: 12px; }
+    .tip-title { font-weight: 700; margin-bottom: 8px; }
+    .tip-body { color: var(--text2); font-size: .9rem; line-height: 1.7; }
+    .tip-examples { margin-top: 12px; display: grid; gap: 6px; }
+    .tip-ex {
+      background: var(--surface2); border-radius: 8px; padding: 8px 12px;
+      font-size: .85rem;
+    }
+    .tip-ex .en { color: var(--text); }
+    .tip-ex .cn { color: var(--text3); font-size: .8rem; }
+
+    /* ADD PHRASE FORM */
+    .form-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px; max-width: 600px;
+    }
+    .form-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+    .form-row { margin-bottom: 16px; }
+    .form-row label { display: block; font-size: .85rem; color: var(--text2); margin-bottom: 6px; }
+    .form-row input, .form-row textarea, .form-row select {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 10px 14px;
+      font-size: .9rem; outline: none; transition: border-color .2s;
+      font-family: inherit;
+    }
+    .form-row input:focus, .form-row textarea:focus { border-color: var(--accent); }
+    .form-row textarea { min-height: 72px; resize: vertical; }
+    .form-success {
+      display: none; background: rgba(67,233,123,.1); border: 1px solid rgba(67,233,123,.3);
+      color: var(--green); border-radius: 8px; padding: 12px 16px;
+      font-size: .9rem; margin-top: 12px;
+    }
+
+    /* PHRASE DEFINITION (EN) */
+    .phrase-def { font-size: .82rem; color: var(--accent); margin-bottom: 6px; font-style: italic; }
+
+    /* EDIT MODAL */
+    .edit-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      padding: 20px; animation: fadeIn .2s;
+    }
+    .edit-modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; width: 100%; max-width: 520px;
+      padding: 28px; position: relative; max-height: 90vh; overflow-y: auto;
+    }
+    .edit-modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+    .edit-close {
+      position: absolute; top: 14px; right: 14px;
+      background: var(--surface2); border: none; color: var(--text2);
+      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+      font-size: 1rem; display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    .edit-close:hover { background: var(--border); }
+    .edit-btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .btn-danger { background: rgba(255,101,132,.15); color: var(--accent2); border: 1px solid rgba(255,101,132,.3); }
+    .btn-danger:hover { background: rgba(255,101,132,.25); }
+
+    /* EDIT ICON BUTTON on card */
+    .card-edit-btn {
+      position: absolute; bottom: 14px; right: 14px;
+      background: none; border: none; cursor: pointer;
+      font-size: .8rem; color: var(--text3); padding: 3px 6px;
+      border-radius: 6px; transition: all .2s; line-height: 1;
+    }
+    .card-edit-btn:hover { background: var(--surface2); color: var(--text); }
+
+    /* SEARCH */
+    .search-bar {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 11px 16px; color: var(--text);
+      font-size: .95rem; outline: none; margin-bottom: 24px; transition: border-color .2s;
+    }
+    .search-bar:focus { border-color: var(--accent); }
+
+    /* DROP ZONE */
+    #drop-zone, #srt-drop-zone { border: 2px dashed var(--border); border-radius: 12px; transition: border-color .2s, background .2s; }
+    #drop-zone.dragover, #srt-drop-zone.dragover { border-color: var(--accent); background: rgba(108,99,255,.06); }
+    #drop-label {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 32px 20px; cursor: pointer; gap: 6px;
+    }
+    .drop-icon { font-size: 2rem; }
+    .drop-text { font-size: .95rem; color: var(--text2); }
+    .drop-sub { font-size: .8rem; color: var(--text3); }
+    #drop-zone:hover { border-color: var(--accent); }
+
+    /* ARTIST CARDS */
+    .artist-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; cursor: pointer;
+      transition: all .25s; position: relative; overflow: hidden;
+    }
+    .artist-card::before {
+      content: ""; position: absolute; inset: 0;
+      background: var(--artist-color, var(--accent));
+      opacity: 0; transition: opacity .25s;
+    }
+    .artist-card:hover { border-color: var(--artist-color, var(--accent)); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .artist-card:hover::before { opacity: .04; }
+    .artist-avatar { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 14px; background: var(--surface2); }
+    .artist-name { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
+    .artist-sub { font-size: .82rem; color: var(--text3); margin-bottom: 10px; }
+    .artist-desc { font-size: .85rem; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
+    .artist-stats { display: flex; gap: 16px; }
+    .artist-stat { font-size: .78rem; color: var(--text3); }
+    .artist-stat span { color: var(--text); font-weight: 700; }
+
+    /* ARTIST DETAIL */
+    .artist-hero {
+      display: flex; gap: 20px; align-items: flex-start;
+      padding: 24px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .artist-hero-avatar { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; background: var(--surface2); flex-shrink: 0; }
+    .artist-hero-info { flex: 1; }
+    .artist-hero-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+    .artist-hero-sub { color: var(--text3); font-size: .85rem; margin-bottom: 8px; }
+    .artist-hero-desc { color: var(--text2); font-size: .9rem; line-height: 1.7; }
+    .artist-tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .artist-tag { padding: 3px 10px; border-radius: 20px; font-size: .75rem; background: var(--surface2); color: var(--text2); }
+
+    /* LYRIC PHRASE CARD */
+    .lyric-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px; transition: all .2s;
+    }
+    .lyric-card:hover { border-color: var(--accent); }
+    .lyric-phrase { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .lyric-cn { color: var(--text2); font-size: .88rem; margin-bottom: 8px; }
+    .lyric-line { color: var(--text3); font-size: .83rem; font-style: italic; border-left: 2px solid var(--accent); padding-left: 10px; line-height: 1.6; margin-bottom: 10px; }
+    .lyric-source { font-size: .75rem; color: var(--text3); }
+    .lyric-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+
+    /* YOUGLISH BUTTON */
+    .yg-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .75rem; color: var(--text3); text-decoration: none;
+      padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+      transition: all .2s; white-space: nowrap;
+    }
+    .yg-btn:hover { color: #ff0000; border-color: #ff0000; background: rgba(255,0,0,.06); }
+
+    /* YOUTUBE MODAL */
+    .yt-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      padding: 20px; animation: fadeIn .2s;
+    }
+    @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+    .yt-modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; width: 100%; max-width: 640px;
+      padding: 20px; position: relative;
+    }
+    .yt-modal-title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+    .yt-modal-sub { color: var(--text3); font-size: .82rem; margin-bottom: 16px; }
+    .yt-player { width: 100%; aspect-ratio: 16/9; border-radius: 10px; border: none; background: #000; }
+    .yt-close {
+      position: absolute; top: 14px; right: 14px;
+      background: var(--surface2); border: none; color: var(--text2);
+      width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+      font-size: 1rem; display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    .yt-close:hover { background: var(--border); }
+    .yt-bind-row { display: flex; gap: 8px; margin-top: 14px; }
+    .yt-bind-row input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 8px 12px;
+      font-size: .85rem; outline: none;
+    }
+    .yt-bind-row input:focus { border-color: var(--accent); }
+    .yt-search-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--accent); text-decoration: none; font-size: .85rem;
+      margin-top: 10px;
+    }
+    .yt-search-link:hover { text-decoration: underline; }
+
+    /* SPEAK BUTTON */
+    .speak-btn {
+      background: none; border: none; cursor: pointer; font-size: 1rem;
+      padding: 2px 4px; border-radius: 6px; opacity: .5; transition: opacity .2s, transform .15s;
+      flex-shrink: 0; line-height: 1;
+    }
+    .speak-btn:hover { opacity: 1; transform: scale(1.2); }
+    .speak-btn.speaking { opacity: 1; animation: pulse .6s infinite alternate; }
+    .speak-sm { font-size: .8rem; }
+    @keyframes pulse { from { opacity:.6 } to { opacity:1; transform:scale(1.15) } }
+
+    /* SPINNER */
+    .spinner {
+      width: 32px; height: 32px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .7s linear infinite; margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* EXTRACT ITEM */
+    .extract-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start;
+    }
+    .extract-item input[type=checkbox] { margin-top: 3px; accent-color: var(--accent); flex-shrink:0; width:16px; height:16px; }
+    .extract-item .ei-phrase { font-weight: 700; font-size: .92rem; }
+    .extract-item .ei-cn { color: var(--text2); font-size: .85rem; margin-top: 2px; }
+    .extract-item .ei-ex { color: var(--text3); font-size: .82rem; font-style: italic; margin-top: 4px; }
+
+    /* RESPONSIVE */
+    @media(max-width:640px) {
+      nav { padding: 0 16px; }
+      .nav-tab { padding: 5px 10px; font-size: .82rem; }
+      .page { padding: 20px 16px; }
+      .hero h1 { font-size: 1.8rem; }
+      .flashcard-box { height: 240px; }
+    }
+    /* ── LYRICS STUDY ── */
+    .lyrics-line { padding: 4px 14px; font-size: .9rem; color: var(--text1); cursor: text; line-height: 1.85; }
+    .lyrics-line:hover { background: rgba(88,101,242,.04); border-radius: 4px; }
+    .lyrics-blank { height: 6px; }
+    mark.pm { background: rgba(255,180,0,.30); border-radius: 3px; padding: 0 1px; color: inherit; font-style: normal; }
+    .marked-chip { display:inline-flex;align-items:center;gap:5px;padding:4px 11px;background:rgba(255,180,0,.15);color:#966600;border-radius:16px;font-size:.8rem;font-weight:600; }
+    .marked-chip button { background:none;border:none;color:#966600;cursor:pointer;font-size:14px;line-height:1;padding:0;opacity:.7; }
+    .marked-chip button:hover { opacity:1; }
+    .explain-item { padding:12px 0;border-bottom:1px solid var(--border); }
+    .explain-item:last-child { border-bottom:none; }
+    .explain-phrase { font-weight:700;font-size:.95rem;margin-bottom:3px; }
+    .explain-meaning { font-size:.85rem;color:var(--text2);margin-bottom:2px; }
+    .explain-def { font-size:.82rem;color:var(--text3);font-style:italic;margin-bottom:3px; }
+    .explain-ex { font-size:.82rem;color:var(--text2); }
+    /* ── SAVED SONGS ── */
+    .saved-song-card { padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:12px; }
+    .saved-song-card:last-child { border-bottom:none; }
+    .saved-song-card:hover { background:rgba(88,101,242,.04); }
+    .saved-song-icon { width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0; }
+    .saved-song-info { flex:1;min-width:0; }
+    .saved-song-title { font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .saved-song-meta { font-size:.78rem;color:var(--text3);margin-top:2px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Speak<span>Up</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPage('home')">首页</button>
+    <button class="nav-tab" onclick="switchPage('phrases')">短语库</button>
+    <button class="nav-tab" onclick="switchPage('flashcard')">闪卡练习</button>
+    <button class="nav-tab" onclick="switchPage('scenarios')">情景对话</button>
+    <button class="nav-tab" onclick="switchPage('tips')">表达技巧</button>
+    <button class="nav-tab" onclick="switchPage('artists')">艺人库</button>
+    <button class="nav-tab" onclick="switchPage('add')">添加</button>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h1>说出流利的<span>英语口语</span></h1>
+    <p>系统学习地道表达、惯用语和情景对话，让你的英语口语更自然、更地道。</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary" onclick="switchPage('flashcard')">开始闪卡练习</button>
+      <button class="btn btn-outline" onclick="switchPage('phrases')">浏览短语库</button>
+    </div>
+  </div>
+  <div class="stats-row" id="stats-row"></div>
+  <div class="sec-header"><div class="sec-title">今日推荐 <span>·</span> Daily Pick</div></div>
+  <div class="cards-grid" id="daily-picks"></div>
+</div>
+
+<!-- PHRASES -->
+<div class="page" id="page-phrases">
+  <input class="search-bar" id="search-input" placeholder="搜索短语、释义…" oninput="renderPhrases()" />
+  <div class="sec-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="sec-title">短语库</div>
+      <button id="sort-btn" class="tag" onclick="cycleSort()" title="切换排序方式" style="white-space:nowrap">↕ 默认</button>
+    </div>
+    <div class="tag-filter" id="tag-filter"></div>
+  </div>
+  <div class="cards-grid" id="phrases-grid"></div>
+</div>
+
+<!-- FLASHCARD -->
+<div class="page" id="page-flashcard">
+  <div class="flashcard-wrap">
+    <div class="fc-progress">第 <span id="fc-index">1</span> / <span id="fc-total">1</span> 张 · 今日待复习</div>
+    <div class="flashcard-box" id="flashcard-box" onclick="flipCard()">
+      <div class="flashcard-inner" id="flashcard-inner">
+        <div class="flashcard-face front">
+          <div class="fc-label">英语短语</div>
+          <div class="fc-phrase" id="fc-phrase">—</div>
+          <button class="speak-btn" onclick="event.stopPropagation();speakText(document.getElementById('fc-phrase').textContent)" title="朗读">🔊</button>
+          <div class="fc-hint" style="margin-top:8px">点击翻转查看释义</div>
+        </div>
+        <div class="flashcard-face back">
+          <div class="fc-label">释义</div>
+          <div class="fc-phrase" id="fc-cn" style="font-size:1.2rem">—</div>
+          <div class="fc-example" id="fc-example" style="cursor:pointer" onclick="event.stopPropagation();speakText(document.getElementById('fc-example').textContent)" title="朗读例句">—</div>
+          <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+            <button class="speak-btn" onclick="event.stopPropagation();speakText(document.getElementById('fc-phrase').textContent)" title="朗读短语">🔊 朗读</button>
+            <a id="fc-yg-link" class="yg-btn" href="#" target="_blank" onclick="event.stopPropagation()" title="在 YouGlish 查看影视真实用法">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6z"/><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg>
+              YouGlish
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flashcard-controls">
+      <button class="btn btn-wrong" onclick="answer(false)">✗ 还不熟</button>
+      <button class="btn btn-outline" onclick="flipCard()">翻转</button>
+      <button class="btn btn-right" onclick="answer(true)">✓ 已掌握</button>
+    </div>
+    <div style="margin-top:16px;text-align:center;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="restartFlash()" style="font-size:.85rem;padding:7px 16px">重新开始</button>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--text2);cursor:pointer">
+        <input type="checkbox" id="fc-auto-speak" style="accent-color:var(--accent)" onchange="localStorage.setItem('fc_autospeak',this.checked)" />
+        翻牌自动朗读
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- ARTISTS -->
+<div class="page" id="page-artists">
+  <div id="artist-list-view">
+    <div class="sec-header"><div class="sec-title">艺人语料库</div></div>
+    <div class="cards-grid" id="artist-cards"></div>
+  </div>
+  <div id="artist-detail-view" style="display:none">
+    <button onclick="closeArtist()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:.9rem;margin-bottom:20px;padding:0;display:flex;align-items:center;gap:6px">← 返回艺人库</button>
+    <div id="artist-detail"></div>
+  </div>
+</div>
+
+<!-- SCENARIOS -->
+<div class="page" id="page-scenarios">
+  <div class="sec-header"><div class="sec-title">情景对话 <span>·</span> Scenarios</div></div>
+  <div class="scenario-list" id="scenario-list"></div>
+</div>
+
+<!-- TIPS -->
+<div class="page" id="page-tips">
+  <div class="sec-header"><div class="sec-title">口语表达技巧</div></div>
+  <div class="tips-grid" id="tips-grid"></div>
+</div>
+
+<!-- ADD -->
+<div class="page" id="page-add">
+  <div class="form-card">
+    <div class="form-title">添加新短语</div>
+    <div class="form-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:.85rem;color:var(--text2);margin:0">英语短语 / 表达</label>
+        <button type="button" class="btn btn-outline" id="ai-fill-btn" onclick="aiAutofill()" style="font-size:.78rem;padding:4px 12px;border-radius:6px">🤖 AI 补全</button>
+      </div>
+      <input type="text" id="f-phrase" placeholder="e.g. break the ice" onkeydown="if(event.key==='Enter'){event.preventDefault();aiAutofill();}" />
+      <div id="ai-fill-msg" style="font-size:.8rem;margin-top:6px;display:none"></div>
+    </div>
+    <div class="form-row">
+      <label>中文释义 <span style="color:var(--text3);font-weight:400">（与英文释义至少填一个）</span></label>
+      <input type="text" id="f-meaning" placeholder="打破僵局，活跃气氛" />
+    </div>
+    <div class="form-row">
+      <label>英文释义 <span style="color:var(--text3);font-weight:400">（与中文释义至少填一个）</span></label>
+      <input type="text" id="f-definition" placeholder="to do something to relieve tension in a social situation" />
+    </div>
+    <div class="form-row">
+      <label>例句 <span style="color:var(--text3);font-weight:400">（可选）</span></label>
+      <textarea id="f-example" placeholder="He told a joke to break the ice at the meeting."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <select id="f-example-type" onchange="toggleExampleSource('f-example-src', this.value)" style="flex:0 0 auto;padding:6px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text1);font-size:.82rem">
+          <option value="">📝 普通例句</option>
+          <option value="lyrics">🎵 歌词引用</option>
+          <option value="show">🎬 剧集台词</option>
+        </select>
+        <input type="text" id="f-example-src" placeholder="来源：歌名 / 剧名 · 季集" style="flex:1;display:none;padding:6px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text1);font-size:.82rem" />
+      </div>
+    </div>
+    <div class="form-row">
+      <label>标签</label>
+      <select id="f-tag">
+        <option value="idiom">idiom（惯用语）</option>
+        <option value="daily">daily（日常）</option>
+        <option value="formal">formal（正式）</option>
+        <option value="slang">slang（俚语）</option>
+        <option value="business">business（商务）</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="addPhrase()">添加到短语库</button>
+    <div class="form-success" id="form-success">✓ 添加成功！短语已加入库中。</div>
+  </div>
+
+  <div class="form-card" style="margin-top:24px">
+    <div class="form-title">批量导入 JSON</div>
+    <p style="color:var(--text2);font-size:.9rem;margin-bottom:16px;line-height:1.7">
+      JSON 文件格式为数组，每条包含 <code style="background:var(--surface2);padding:1px 6px;border-radius:4px">phrase</code>、<code style="background:var(--surface2);padding:1px 6px;border-radius:4px">meaning</code>、<code style="background:var(--surface2);padding:1px 6px;border-radius:4px">example</code>、<code style="background:var(--surface2);padding:1px 6px;border-radius:4px">tags</code> 四个字段。
+    </p>
+    <div id="drop-zone">
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(this)" />
+      <label for="import-file" id="drop-label">
+        <div class="drop-icon">📂</div>
+        <div class="drop-text">点击选择 JSON 文件</div>
+        <div class="drop-sub">或将文件拖拽到此处</div>
+      </label>
+    </div>
+    <div class="form-success" id="import-success"></div>
+    <div id="import-error" style="display:none;background:rgba(255,101,132,.1);border:1px solid rgba(255,101,132,.3);color:var(--accent2);border-radius:8px;padding:12px 16px;font-size:.9rem;margin-top:12px"></div>
+  </div>
+
+  <div class="form-card" style="margin-top:24px">
+    <div class="form-title">AI 提取短语 · 从字幕文件</div>
+
+    <!-- API KEY -->
+    <div id="apikey-section" style="margin-bottom:20px;padding:14px 16px;background:var(--surface2);border-radius:10px">
+      <div style="font-size:.82rem;color:var(--text3);margin-bottom:8px;font-weight:600">Claude API Key <span style="font-weight:400;color:var(--text3)">（仅保存在本地，不会上传）</span></div>
+      <div style="display:flex;gap:8px">
+        <input type="password" id="api-key-input" placeholder="sk-ant-..." style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.88rem;outline:none" />
+        <button class="btn btn-outline" onclick="saveApiKey()" style="font-size:.82rem;padding:7px 14px;white-space:nowrap">保存</button>
+      </div>
+      <div id="apikey-status" style="font-size:.78rem;margin-top:6px;color:var(--text3)"></div>
+    </div>
+
+    <!-- LYRICS SEARCH -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:.82rem;color:var(--text3);margin-bottom:8px;font-weight:600">🎵 从歌词搜索</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="lyrics-artist" placeholder="歌手名（如 Taylor Swift）"
+               style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.88rem;outline:none" />
+        <input type="text" id="lyrics-title" placeholder="歌曲名（如 Love Story）"
+               style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.88rem;outline:none"
+               onkeydown="if(event.key==='Enter')searchLyrics()" />
+        <button class="btn btn-outline" onclick="searchLyrics()" id="lyrics-search-btn"
+                style="font-size:.82rem;padding:7px 14px;white-space:nowrap">搜索歌词</button>
+      </div>
+      <div id="lyrics-status" style="font-size:.82rem;margin-top:6px;display:none"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;color:var(--text3);font-size:.8rem">
+      <div style="flex:1;height:1px;background:var(--border)"></div>或上传字幕文件<div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+
+    <!-- SRT UPLOAD -->
+    <div id="srt-drop-zone">
+      <input type="file" id="srt-file" accept=".srt,.txt" style="display:none" onchange="handleSRT(this)" />
+      <label for="srt-file">
+        <div class="drop-icon">🎬</div>
+        <div class="drop-text">点击选择 .srt 字幕文件</div>
+        <div class="drop-sub">或将文件拖拽到此处</div>
+      </label>
+    </div>
+
+    <!-- CONTROLS after upload -->
+    <div id="srt-result" style="display:none;margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:.85rem;color:var(--text2)" id="srt-info"></span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="toggleRawText()" id="raw-toggle-btn" style="font-size:.82rem;padding:7px 14px">查看全部字幕</button>
+          <select id="srt-count" style="background:var(--bg);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 10px;font-size:.83rem">
+            <option value="10">提取 10 条</option>
+            <option value="15" selected>提取 15 条</option>
+            <option value="20">提取 20 条</option>
+            <option value="30">提取 30 条</option>
+          </select>
+          <button class="btn btn-primary" id="extract-btn" onclick="extractWithAI()" style="font-size:.85rem;padding:7px 18px">AI 提取短语</button>
+          <button class="btn btn-outline" onclick="clearSRT()" style="font-size:.82rem;padding:7px 12px">清除</button>
+        </div>
+      </div>
+
+      <!-- RAW TEXT -->
+      <div id="raw-text-section" style="display:none;margin-bottom:16px">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+          <button class="btn btn-outline" onclick="copyRawText()" style="font-size:.78rem;padding:5px 12px">复制全部</button>
+        </div>
+        <textarea id="srt-text" readonly style="width:100%;min-height:200px;max-height:320px;background:var(--bg);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:12px;font-size:.83rem;line-height:1.7;resize:vertical;font-family:inherit"></textarea>
+        <div class="form-success" id="raw-copy-success" style="margin-top:8px"></div>
+      </div>
+
+      <!-- AI STATUS -->
+      <div id="ai-status" style="display:none;text-align:center;padding:24px;color:var(--text2);font-size:.9rem">
+        <div class="spinner"></div>
+        <div style="margin-top:10px" id="ai-status-text">正在分析字幕，请稍候…</div>
+      </div>
+
+      <!-- RESULTS PREVIEW -->
+      <div id="extract-results" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:.9rem;font-weight:600" id="extract-count"></span>
+          <button class="btn btn-primary" onclick="confirmImportExtracted()" style="font-size:.85rem;padding:7px 18px">全部加入短语库</button>
+        </div>
+        <div id="extract-list" style="display:grid;gap:10px"></div>
+        <div class="form-success" id="extract-success" style="margin-top:12px"></div>
+      </div>
+
+      <div id="extract-error" style="display:none;background:rgba(255,101,132,.1);border:1px solid rgba(255,101,132,.3);color:var(--accent2);border-radius:8px;padding:12px 16px;font-size:.88rem;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- LYRICS STUDY CARD -->
+  <div class="form-card" id="lyrics-study-card" style="margin-top:24px;display:none">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px">
+      <div style="flex:1">
+        <div class="form-title" id="lyrics-song-title" style="margin-bottom:3px"></div>
+        <div style="font-size:.8rem;color:var(--text3)">选中歌词中的词语或短语，出现标记按钮后点击即可添加</div>
+      </div>
+      <button class="btn btn-outline" id="save-song-btn" onclick="saveSong()" style="font-size:.8rem;padding:6px 13px;white-space:nowrap;flex-shrink:0">💾 保存歌曲</button>
+    </div>
+
+    <div id="lyrics-view"
+         style="max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:6px 0;background:var(--bg);margin:14px 0 16px;user-select:text;-webkit-user-select:text"
+         onmouseup="onLyricsSelect(event)" ontouchend="onLyricsSelect(event)"></div>
+
+    <!-- floating tooltip -->
+    <div id="mark-tooltip"
+         style="display:none;position:fixed;background:var(--accent);color:#fff;border-radius:20px;padding:7px 18px;font-size:.82rem;font-weight:600;cursor:pointer;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);white-space:nowrap;transform:translateX(-50%)"
+         onmousedown="event.preventDefault()" onclick="markSelectedPhrase()">＋ 标记此短语</div>
+
+    <!-- marked list -->
+    <div id="marked-section" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:.85rem;font-weight:600" id="marked-count-label"></span>
+        <button onclick="clearMarked()" style="background:none;border:none;color:var(--text3);font-size:.78rem;cursor:pointer">清除全部</button>
+      </div>
+      <div id="marked-chips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
+      <button class="btn btn-primary" id="explain-btn" onclick="explainMarked()" style="font-size:.85rem;padding:7px 18px">🤖 AI 解释已标记</button>
+    </div>
+
+    <!-- explain loading -->
+    <div id="explain-status" style="display:none;text-align:center;padding:20px;color:var(--text2);font-size:.9rem">
+      <div class="spinner"></div>
+      <div style="margin-top:10px">正在解释标记的短语，请稍候…</div>
+    </div>
+
+    <!-- explain results -->
+    <div id="explain-results" style="display:none;margin-top:16px"></div>
+  </div>
+
+  <div class="form-card" style="margin-top:24px">
+    <div class="form-title">导出短语库</div>
+    <p style="color:var(--text2);font-size:.9rem;margin-bottom:16px">将当前所有短语导出为 JSON 文件，可用于备份或导入其他设备。</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="exportJSON()">下载 JSON 文件</button>
+      <span id="export-info" style="color:var(--text3);font-size:.85rem;align-self:center"></span>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="edit-overlay" id="edit-overlay" style="display:none" onclick="closeEditModal(event)">
+  <div class="edit-modal" onclick="event.stopPropagation()">
+    <button class="edit-close" onclick="closeEditModal()">✕</button>
+    <div class="edit-modal-title">编辑短语</div>
+    <input type="hidden" id="edit-id" />
+    <div class="form-row">
+      <label>英语短语 / 表达</label>
+      <input type="text" id="edit-phrase" placeholder="e.g. break the ice" />
+    </div>
+    <div class="form-row">
+      <label>中文释义 <span style="color:var(--text3);font-weight:400">（与英文释义至少填一个）</span></label>
+      <input type="text" id="edit-meaning" placeholder="打破僵局，活跃气氛" />
+    </div>
+    <div class="form-row">
+      <label>英文释义 <span style="color:var(--text3);font-weight:400">（与中文释义至少填一个）</span></label>
+      <input type="text" id="edit-definition" placeholder="to do something to relieve tension in a social situation" />
+    </div>
+    <div class="form-row">
+      <label>例句 <span style="color:var(--text3);font-weight:400">（可选）</span></label>
+      <textarea id="edit-example" placeholder="He told a joke to break the ice at the meeting."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <select id="edit-example-type" onchange="toggleExampleSource('edit-example-src', this.value)" style="flex:0 0 auto;padding:6px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text1);font-size:.82rem">
+          <option value="">📝 普通例句</option>
+          <option value="lyrics">🎵 歌词引用</option>
+          <option value="show">🎬 剧集台词</option>
+        </select>
+        <input type="text" id="edit-example-src" placeholder="来源：歌名 / 剧名 · 季集" style="flex:1;display:none;padding:6px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text1);font-size:.82rem" />
+      </div>
+    </div>
+    <div class="form-row">
+      <label>标签</label>
+      <select id="edit-tag">
+        <option value="idiom">idiom（惯用语）</option>
+        <option value="daily">daily（日常）</option>
+        <option value="formal">formal（正式）</option>
+        <option value="slang">slang（俚语）</option>
+        <option value="business">business（商务）</option>
+      </select>
+    </div>
+    <div class="edit-btn-row">
+      <button class="btn btn-primary" onclick="saveEdit()">保存修改</button>
+      <button class="btn btn-outline" onclick="closeEditModal()">取消</button>
+      <button class="btn btn-danger" onclick="deletePhrase()" style="margin-left:auto">删除</button>
+    </div>
+    <div class="form-success" id="edit-success">✓ 修改已保存</div>
+  </div>
+</div>
+
+<!-- YOUTUBE MODAL -->
+<div class="yt-overlay" id="yt-overlay" style="display:none" onclick="closeYT(event)">
+  <div class="yt-modal" onclick="event.stopPropagation()">
+    <button class="yt-close" onclick="closeYTModal()">✕</button>
+    <div class="yt-modal-title" id="yt-modal-title"></div>
+    <div class="yt-modal-sub" id="yt-modal-sub"></div>
+    <div id="yt-player-wrap"></div>
+    <div id="yt-no-video" style="display:none">
+      <a id="yt-search-link" class="yt-search-link" href="#" target="_blank">
+        🔍 在 YouTube 上搜索这首歌
+      </a>
+      <div style="font-size:.8rem;color:var(--text3);margin:10px 0 6px">找到视频后，复制 YouTube 链接粘贴到下方：</div>
+    </div>
+    <div class="yt-bind-row">
+      <input type="text" id="yt-url-input" placeholder="粘贴 YouTube 链接，例：https://youtu.be/xpV..." />
+      <button class="btn btn-primary" onclick="bindYTVideo()" style="font-size:.83rem;padding:7px 14px;white-space:nowrap">绑定</button>
+    </div>
+    <div id="yt-bind-msg" style="font-size:.8rem;margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const DEFAULT_DATA = {
+  phrases: [
+    { id: 1, phrase: "bite the bullet", meaning: "忍痛接受困难的事情，硬撑过去", example: "I hate going to the dentist, but I'll just have to bite the bullet.", tags: ["idiom","daily"], review: { stage: 0, correct: 0, wrong: 0 } },
+    { id: 2, phrase: "break the ice", meaning: "打破僵局，活跃气氛", example: "He told a joke to break the ice at the meeting.", tags: ["idiom","daily"], review: { stage: 1, correct: 2, wrong: 0 } },
+    { id: 3, phrase: "hit the nail on the head", meaning: "说得完全正确，一针见血", example: "You hit the nail on the head — that's exactly the problem.", tags: ["idiom"], review: { stage: 2, correct: 4, wrong: 1 } },
+    { id: 4, phrase: "under the weather", meaning: "身体不舒服，感觉不适", example: "I'm feeling a bit under the weather today, so I'll skip the gym.", tags: ["idiom","daily"], review: { stage: 0, correct: 0, wrong: 0 } },
+    { id: 5, phrase: "cut to the chase", meaning: "直奔主题，不绕弯子", example: "Let's cut to the chase — what's your final offer?", tags: ["idiom","formal"], review: { stage: 1, correct: 1, wrong: 0 } },
+    { id: 6, phrase: "burn the midnight oil", meaning: "熬夜工作或学习", example: "She burned the midnight oil to finish the report.", tags: ["idiom","daily"], review: { stage: 3, correct: 6, wrong: 1 } },
+    { id: 7, phrase: "I couldn't agree more", meaning: "我完全同意", example: "A: This movie is fantastic. B: I couldn't agree more!", tags: ["daily","formal"], review: { stage: 2, correct: 3, wrong: 0 } },
+    { id: 8, phrase: "That makes sense", meaning: "这说得通 / 我明白了", example: "Oh, that makes sense now that you explain it.", tags: ["daily"], review: { stage: 1, correct: 2, wrong: 1 } },
+    { id: 9, phrase: "To be honest", meaning: "老实说 / 说实话", example: "To be honest, I didn't really enjoy the party.", tags: ["daily","slang"], review: { stage: 0, correct: 0, wrong: 0 } },
+    { id: 10, phrase: "on the same page", meaning: "达成共识，意见一致", example: "Let's make sure we're all on the same page before we proceed.", tags: ["business","formal"], review: { stage: 2, correct: 3, wrong: 0 } },
+    { id: 11, phrase: "give it a shot", meaning: "试一试", example: "I've never surfed before, but I'll give it a shot.", tags: ["daily","slang"], review: { stage: 0, correct: 0, wrong: 0 } },
+    { id: 12, phrase: "touch base", meaning: "简短联系，沟通一下", example: "I'll touch base with you next week about the project.", tags: ["business","formal"], review: { stage: 1, correct: 1, wrong: 0 } },
+  ]
+};
+
+function loadData() {
+  try {
+    const s = localStorage.getItem("speakup_data");
+    return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_DATA));
+  } catch { return JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+}
+function saveData(d) { localStorage.setItem("speakup_data", JSON.stringify(d)); }
+
+let data = loadData();
+let activeTag = "all";
+let activeSort = "default";
+let fcIndex = 0;
+let fcFlipped = false;
+let fcQueue = [];
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function switchPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+  const tabs = document.querySelectorAll(".nav-tab");
+  const order = ["home","phrases","flashcard","scenarios","tips","artists","add"];
+  const idx = order.indexOf(name);
+  if (idx !== -1) tabs[idx].classList.add("active");
+  if (name === "phrases") renderPhrases();
+  if (name === "flashcard") initFlash();
+  if (name === "home") renderHome();
+  if (name === "artists") renderArtistList();
+}
+
+// ─── HOME ────────────────────────────────────────────────────────────────────
+function renderHome() {
+  const phrases = data.phrases;
+  const mastered = phrases.filter(p => p.review.stage >= 5).length;
+  const learning = phrases.filter(p => p.review.stage > 0 && p.review.stage < 5).length;
+  document.getElementById("stats-row").innerHTML = `
+    <div class="stat-card"><div class="num">${phrases.length}</div><div class="label">总短语数</div></div>
+    <div class="stat-card"><div class="num">${learning}</div><div class="label">学习中</div></div>
+    <div class="stat-card"><div class="num">${mastered}</div><div class="label">已掌握</div></div>
+    <div class="stat-card"><div class="num">${phrases.filter(p=>p.review.stage===0).length}</div><div class="label">待学习</div></div>
+  `;
+  const picks = [...phrases].sort(() => Math.random() - .5).slice(0, 3);
+  document.getElementById("daily-picks").innerHTML = picks.map(phraseCardHTML).join("");
+}
+
+// ─── PHRASES PAGE ────────────────────────────────────────────────────────────
+function getAllTags() {
+  const s = new Set(["all"]);
+  data.phrases.forEach(p => p.tags.forEach(t => s.add(t)));
+  return [...s];
+}
+function renderTagFilter() {
+  const el = document.getElementById("tag-filter");
+  el.innerHTML = getAllTags().map(t => `<button class="tag ${t===activeTag?'active':''}" onclick="setTag('${t}')">${t==="all"?"全部":t}</button>`).join("");
+}
+function setTag(t) { activeTag = t; renderPhrases(); }
+
+const SORT_STATES = [
+  { key: "default", label: "⇕ 默认" },
+  { key: "az",      label: "↑ A→Z" },
+  { key: "za",      label: "↓ Z→A" },
+  { key: "newest", label: "🕒 最新" },
+  { key: "oldest", label: "🕓 最早" },
+];
+function cycleSort() {
+  const idx = SORT_STATES.findIndex(s => s.key === activeSort);
+  activeSort = SORT_STATES[(idx + 1) % SORT_STATES.length].key;
+  const state = SORT_STATES.find(s => s.key === activeSort);
+  const btn = document.getElementById("sort-btn");
+  if (btn) {
+    btn.textContent = state.label;
+    btn.classList.toggle("active", activeSort !== "default");
+  }
+  renderPhrases();
+}
+
+function renderPhrases() {
+  renderTagFilter();
+  const q = (document.getElementById("search-input")?.value || "").toLowerCase();
+  let filtered = data.phrases.filter(p => {
+    const matchTag = activeTag === "all" || p.tags.includes(activeTag);
+    const matchQ = !q || p.phrase.toLowerCase().includes(q) || (p.meaning || "").toLowerCase().includes(q) || (p.definition || "").toLowerCase().includes(q) || (p.example || "").toLowerCase().includes(q);
+    return matchTag && matchQ;
+  });
+  if (activeSort === "az") filtered = [...filtered].sort((a, b) => a.phrase.localeCompare(b.phrase));
+  else if (activeSort === "za") filtered = [...filtered].sort((a, b) => b.phrase.localeCompare(a.phrase));
+  else if (activeSort === "newest") filtered = [...filtered].sort((a, b) => b.id - a.id);
+  else if (activeSort === "oldest") filtered = [...filtered].sort((a, b) => a.id - b.id);
+  document.getElementById("phrases-grid").innerHTML = filtered.length
+    ? filtered.map(phraseCardHTML).join("")
+    : `<div style="color:var(--text3);padding:20px">没有找到匹配的短语。</div>`;
+}
+
+function phraseCardHTML(p) {
+  const stageClass = p.review.stage === 0 ? "stage-new" : p.review.stage >= 5 ? "stage-mastered" : "stage-learning";
+  const badges = p.tags.map(t => `<span class="badge ${t}">${t}</span>`).join("");
+  const esc = s => s.replace(/'/g, "\\'");
+  const yg = encodeURIComponent(p.phrase);
+  const defLine = p.definition ? `<div class="phrase-def">${p.definition}</div>` : "";
+  const srcIcon = p.exampleType === "lyrics" ? "🎵" : p.exampleType === "show" ? "🎬" : "";
+  const srcLabel = p.exampleSource ? `<span class="ex-source-tag">${srcIcon} ${p.exampleSource}</span>` : "";
+  const exLine = p.example ? `<div class="phrase-ex" style="cursor:pointer" onclick="speakText('${esc(p.example)}')" title="点击朗读例句">${p.example}${srcLabel ? `<br>${srcLabel}` : ""}</div>` : "";
+  const cnLine = p.meaning ? `<div class="phrase-cn">${p.meaning}</div>` : "";
+  return `<div class="phrase-card" style="padding-bottom:38px">
+    <div class="card-stage ${stageClass}"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      <div class="phrase-en">${p.phrase}</div>
+      <button class="speak-btn" onclick="event.stopPropagation();speakText('${esc(p.phrase)}')" title="朗读">🔊</button>
+    </div>
+    ${cnLine}${defLine}${exLine}
+    <div class="badge-row" style="justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${badges}</div>
+      <a class="yg-btn" href="https://youglish.com/pronounce/${yg}/english" target="_blank" onclick="event.stopPropagation()" title="在 YouGlish 上查看真实影视用法">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6z"/><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg>
+        YouGlish
+      </a>
+    </div>
+    <button class="card-edit-btn" onclick="event.stopPropagation();openEditModal(${p.id})" title="编辑">✏️ 编辑</button>
+  </div>`;
+}
+
+// ─── FLASHCARD ───────────────────────────────────────────────────────────────
+function initFlash() {
+  fcQueue = [...data.phrases].sort((a,b) => a.review.stage - b.review.stage);
+  fcIndex = 0; fcFlipped = false;
+  showCard();
+}
+function restartFlash() { initFlash(); }
+function showCard() {
+  if (!fcQueue.length) return;
+  const p = fcQueue[fcIndex % fcQueue.length];
+  document.getElementById("fc-phrase").textContent = p.phrase;
+  document.getElementById("fc-cn").textContent = p.meaning;
+  document.getElementById("fc-example").textContent = p.example;
+  document.getElementById("fc-index").textContent = (fcIndex % fcQueue.length) + 1;
+  document.getElementById("fc-total").textContent = fcQueue.length;
+  document.getElementById("flashcard-box").classList.remove("flipped");
+  const ygLink = document.getElementById("fc-yg-link");
+  if (ygLink) ygLink.href = `https://youglish.com/pronounce/${encodeURIComponent(p.phrase)}/english`;
+  fcFlipped = false;
+  if (document.getElementById("fc-auto-speak")?.checked) speakText(p.phrase);
+}
+
+// 初始化自动朗读开关状态
+document.addEventListener("DOMContentLoaded", () => {
+  const cb = document.getElementById("fc-auto-speak");
+  if (cb) cb.checked = localStorage.getItem("fc_autospeak") === "true";
+});
+function flipCard() {
+  fcFlipped = !fcFlipped;
+  document.getElementById("flashcard-box").classList.toggle("flipped", fcFlipped);
+}
+function answer(correct) {
+  const p = fcQueue[fcIndex % fcQueue.length];
+  const real = data.phrases.find(x => x.id === p.id);
+  if (real) {
+    if (correct) { real.review.stage = Math.min(5, real.review.stage + 1); real.review.correct++; }
+    else { real.review.stage = Math.max(0, real.review.stage - 1); real.review.wrong++; }
+    saveData(data);
+  }
+  fcIndex++;
+  if (fcIndex >= fcQueue.length) {
+    document.getElementById("fc-phrase").textContent = "🎉 本轮完成！";
+    document.getElementById("fc-cn").textContent = "所有短语已复习一遍";
+    document.getElementById("fc-example").textContent = "点击「重新开始」继续练习";
+    document.getElementById("flashcard-box").classList.remove("flipped");
+    return;
+  }
+  showCard();
+}
+
+// ─── SCENARIOS ───────────────────────────────────────────────────────────────
+const SCENARIOS = [
+  {
+    icon: "☕", title: "咖啡厅点单", meta: "日常 · 初级",
+    lines: [
+      { side:"a", speaker:"店员", en:"Hi there! What can I get for you today?", cn:"你好！今天想喝点什么？" },
+      { side:"b", speaker:"顾客", en:"Hi! I'd like a <kp>medium latte</kp>, please. Can I get that <kp>to go</kp>?", cn:"你好！我想要一杯中杯拿铁，外带可以吗？" },
+      { side:"a", speaker:"店员", en:"Of course! Would you like any <kp>add-ons</kp> — an extra shot, oat milk?", cn:"当然！需要加任何配料吗——多一份浓缩、燕麦奶？" },
+      { side:"b", speaker:"顾客", en:"Yes, <kp>oat milk instead of</kp> regular milk, please. And could you <kp>go easy on</kp> the sugar?", cn:"是的，请用燕麦奶代替普通牛奶。糖少放一点可以吗？" },
+      { side:"a", speaker:"店员", en:"No problem! That'll be $5.50. <kp>Cash or card</kp>?", cn:"没问题！一共5.50美元，现金还是刷卡？" },
+      { side:"b", speaker:"顾客", en:"Card, please. <kp>Here you go</kp>.", cn:"刷卡，给你。" },
+    ]
+  },
+  {
+    icon: "💼", title: "工作面试", meta: "职场 · 中级",
+    lines: [
+      { side:"a", speaker:"面试官", en:"Thanks for coming in today. <kp>Tell me a bit about yourself</kp>.", cn:"感谢今天来参加面试。请简单介绍一下你自己。" },
+      { side:"b", speaker:"求职者", en:"Sure! I'm a software engineer with three years of experience. I've been <kp>focused on</kp> backend development and I'm passionate about building scalable systems.", cn:"好的！我是一名有三年经验的软件工程师，专注于后端开发，热衷于构建可扩展的系统。" },
+      { side:"a", speaker:"面试官", en:"Great. What would you say is your <kp>biggest strength</kp>?", cn:"很好。你认为你最大的优势是什么？" },
+      { side:"b", speaker:"求职者", en:"I'd say my ability to <kp>pick things up quickly</kp>. When I joined my last company, I <kp>got up to speed</kp> on the entire codebase within two weeks.", cn:"我想说是我快速学习的能力。加入上家公司时，我在两周内就熟悉了整个代码库。" },
+      { side:"a", speaker:"面试官", en:"Impressive. Do you have any questions <kp>for us</kp>?", cn:"很厉害。你有什么想问我们的吗？" },
+      { side:"b", speaker:"求职者", en:"Yes — I'd love to know more about <kp>the team culture</kp> and how success is measured in this role.", cn:"有的——我想多了解一些团队文化，以及这个职位的成功指标是什么。" },
+    ]
+  },
+  {
+    icon: "🏨", title: "酒店入住", meta: "旅行 · 初级",
+    lines: [
+      { side:"b", speaker:"客人", en:"Hi, I have a reservation under the name Zhang Wei.", cn:"你好，我预订了房间，名字是张伟。" },
+      { side:"a", speaker:"前台", en:"Welcome! Let me <kp>pull up</kp> your reservation… yes, I see it. <kp>Could I see</kp> your ID and a credit card?", cn:"欢迎！让我调出您的预订……好的，我看到了。能看一下您的证件和信用卡吗？" },
+      { side:"b", speaker:"客人", en:"Here you are. Also, is it possible to <kp>get an early check-in</kp>? My flight landed at 8 AM.", cn:"给您。另外，能提前入住吗？我的航班早上8点就落地了。" },
+      { side:"a", speaker:"前台", en:"Let me check… <kp>as luck would have it</kp>, your room is ready. I can check you in right now!", cn:"让我查一下……真巧，您的房间已经准备好了，现在就可以为您办理入住！" },
+      { side:"b", speaker:"客人", en:"That's great! Oh, one more thing — <kp>what's the Wi-Fi password</kp>?", cn:"太好了！对了，还有一件事——Wi-Fi密码是什么？" },
+    ]
+  },
+  {
+    icon: "🤝", title: "初次见面 / 社交闲聊", meta: "日常 · 初级",
+    lines: [
+      { side:"a", speaker:"A", en:"Hey, I don't think we've met. I'm Sarah.", cn:"嗨，我们好像还没见过。我叫Sarah。" },
+      { side:"b", speaker:"B", en:"Oh, hi Sarah! I'm Mike. Are you a friend of Tom's?", cn:"嗨，Sarah！我是Mike。你是Tom的朋友吗？" },
+      { side:"a", speaker:"A", en:"Yeah, we <kp>go way back</kp> — we were in college together. What about you?", cn:"是的，我们认识很久了——大学同学。你呢？" },
+      { side:"b", speaker:"B", en:"We're <kp>colleagues</kp> actually. So what do you <kp>do for a living</kp>?", cn:"其实我们是同事。那你是做什么的？" },
+      { side:"a", speaker:"A", en:"I'm a graphic designer. <kp>Freelance</kp>, mostly. How about you?", cn:"我是平面设计师，主要做自由职业。你呢？" },
+      { side:"b", speaker:"B", en:"I work in marketing. <kp>Small world</kp>, right — creative fields! We should <kp>keep in touch</kp>.", cn:"我在市场营销行业工作。世界真小，都是创意领域！我们应该保持联系。" },
+    ]
+  },
+];
+
+function renderScenarios() {
+  document.getElementById("scenario-list").innerHTML = SCENARIOS.map((s, i) => `
+    <div class="scenario-card" id="sc-${i}">
+      <div class="scenario-header" onclick="toggleScenario(${i})">
+        <span class="scenario-icon">${s.icon}</span>
+        <span class="scenario-title">${s.title}</span>
+        <span class="scenario-meta">${s.meta}</span>
+        <span class="scenario-arrow">▶</span>
+      </div>
+      <div class="scenario-body">
+        <div class="dialogue">
+          ${s.lines.map(l => {
+            const plainEn = l.en.replace(/<kp>(.*?)<\/kp>/g, '$1').replace(/'/g,"&#39;");
+            const htmlEn = l.en.replace(/<kp>(.*?)<\/kp>/g, '<span class="key-phrase">$1</span>');
+            return `
+            <div class="line ${l.side}">
+              <span class="speaker-label">${l.speaker}</span>
+              <div class="bubble">
+                <div style="display:flex;align-items:flex-start;gap:6px;justify-content:space-between">
+                  <div>${htmlEn}</div>
+                  <button class="speak-btn speak-sm" onclick="speakText('${plainEn}')" title="朗读">🔊</button>
+                </div>
+                <div class="cn">${l.cn}</div>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+function toggleScenario(i) {
+  document.getElementById("sc-" + i).classList.toggle("open");
+}
+
+// ─── TIPS ────────────────────────────────────────────────────────────────────
+const TIPS = [
+  {
+    icon: "🔗", title: "连接词让表达更流畅",
+    body: "使用连接词和过渡短语，让你的句子之间衔接自然，而不是一句一顿。",
+    examples: [
+      { en: "Actually, / To be honest, / In fact,", cn: "表示转折或补充" },
+      { en: "That said, / Having said that,", cn: "但话又说回来……" },
+      { en: "Not only that, but also…", cn: "不仅如此……" },
+    ]
+  },
+  {
+    icon: "⏸️", title: "用填充词争取时间",
+    body: "思考时可以用填充词，避免尴尬停顿，同时让对话更自然。",
+    examples: [
+      { en: "Well… / Let me think… / You know…", cn: "思考缓冲" },
+      { en: "That's a good question.", cn: "给自己争取时间" },
+      { en: "How should I put it…", cn: "怎么说呢……" },
+    ]
+  },
+  {
+    icon: "💬", title: "表达同意与不同意",
+    body: "比 yes/no 更丰富的同意和反对表达，让对话更有层次。",
+    examples: [
+      { en: "Absolutely! / Totally! / Exactly!", cn: "强烈同意" },
+      { en: "I see where you're coming from, but…", cn: "委婉反对" },
+      { en: "I'm not so sure about that.", cn: "表示怀疑/不太同意" },
+    ]
+  },
+  {
+    icon: "🎯", title: "强调重点",
+    body: "让对话对方清楚知道你的核心意思在哪里。",
+    examples: [
+      { en: "The thing is… / Here's the deal…", cn: "重点是……" },
+      { en: "What I really mean is…", cn: "我真正的意思是……" },
+      { en: "Above all, / Most importantly,", cn: "最重要的是……" },
+    ]
+  },
+  {
+    icon: "🔄", title: "改变话题",
+    body: "自然地切换或转移话题，而不显得突兀。",
+    examples: [
+      { en: "Anyway, / Speaking of which,", cn: "话说回来 / 说到这个……" },
+      { en: "On a different note,", cn: "换个话题……" },
+      { en: "That reminds me…", cn: "这让我想到……" },
+    ]
+  },
+  {
+    icon: "🎤", title: "回应和确认理解",
+    body: "让对方知道你在认真听，并确认自己正确理解了内容。",
+    examples: [
+      { en: "Got it. / I see. / Right.", cn: "明白了" },
+      { en: "So you mean…?", cn: "所以你的意思是……？" },
+      { en: "If I understand correctly,", cn: "如果我没理解错的话……" },
+    ]
+  },
+];
+
+function renderTips() {
+  document.getElementById("tips-grid").innerHTML = TIPS.map(t => `
+    <div class="tip-card">
+      <div class="tip-icon">${t.icon}</div>
+      <div class="tip-title">${t.title}</div>
+      <div class="tip-body">${t.body}</div>
+      <div class="tip-examples">
+        ${t.examples.map(e => `<div class="tip-ex"><div class="en">${e.en}</div><div class="cn">${e.cn}</div></div>`).join("")}
+      </div>
+    </div>
+  `).join("");
+}
+
+// ─── AI AUTOFILL ─────────────────────────────────────────────────────────────
+async function aiAutofill() {
+  const phrase = document.getElementById("f-phrase").value.trim();
+  if (!phrase) { showFillMsg("请先输入英语短语", false); return; }
+  const key = getApiKey();
+  if (!key) { showFillMsg("请先在下方保存 Claude API Key", false); return; }
+
+  const btn = document.getElementById("ai-fill-btn");
+  btn.disabled = true;
+  btn.textContent = "补全中…";
+  showFillMsg("", false);
+
+  const prompt = `请为以下英语短语或表达提供详细释义，严格以 JSON 格式返回，不要任何多余文字：
+{"meaning":"简洁的中文释义（10-20字）","definition":"concise English definition (1 sentence)","example":"a natural example sentence using the phrase","tag":"one of: idiom / daily / formal / slang / business"}
+
+短语：${phrase}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 512,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    const text = json.content?.[0]?.text || "";
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("返回格式异常，请重试");
+    const result = JSON.parse(match[0]);
+
+    if (result.meaning)    document.getElementById("f-meaning").value    = result.meaning;
+    if (result.definition) document.getElementById("f-definition").value = result.definition;
+    if (result.example)    document.getElementById("f-example").value    = result.example;
+    if (result.tag) {
+      const sel = document.getElementById("f-tag");
+      if ([...sel.options].some(o => o.value === result.tag)) sel.value = result.tag;
+    }
+    showFillMsg("✓ 补全完成，请核对后再保存", true);
+  } catch (err) {
+    showFillMsg("✗ " + err.message, false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🤖 AI 补全";
+  }
+}
+
+function showFillMsg(msg, ok) {
+  const el = document.getElementById("ai-fill-msg");
+  if (!msg) { el.style.display = "none"; return; }
+  el.textContent = msg;
+  el.style.color = ok ? "var(--green)" : "var(--accent2)";
+  el.style.display = "block";
+}
+
+// ─── ADD PHRASE ───────────────────────────────────────────────────────────────
+function toggleExampleSource(inputId, type) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.style.display = type ? "block" : "none";
+  if (!type) el.value = "";
+}
+
+function addPhrase() {
+  const phrase = document.getElementById("f-phrase").value.trim();
+  const meaning = document.getElementById("f-meaning").value.trim();
+  const definition = document.getElementById("f-definition").value.trim();
+  const example = document.getElementById("f-example").value.trim();
+  const tag = document.getElementById("f-tag").value;
+  const exampleType = document.getElementById("f-example-type").value;
+  const exampleSource = document.getElementById("f-example-src").value.trim();
+  if (!phrase || (!meaning && !definition)) { alert("请填写短语，并至少填写中文释义或英文释义之一！"); return; }
+  const id = Date.now();
+  data.phrases.push({ id, phrase, meaning, definition, example, exampleType, exampleSource, tags: [tag], review: { stage: 0, correct: 0, wrong: 0 } });
+  saveData(data);
+  document.getElementById("f-phrase").value = "";
+  document.getElementById("f-meaning").value = "";
+  document.getElementById("f-definition").value = "";
+  document.getElementById("f-example").value = "";
+  document.getElementById("f-example-type").value = "";
+  document.getElementById("f-example-src").value = "";
+  document.getElementById("f-example-src").style.display = "none";
+  const s = document.getElementById("form-success");
+  s.style.display = "block";
+  setTimeout(() => s.style.display = "none", 2500);
+}
+
+// ─── EDIT PHRASE ──────────────────────────────────────────────────────────────
+function openEditModal(id) {
+  const p = data.phrases.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById("edit-id").value = id;
+  document.getElementById("edit-phrase").value = p.phrase;
+  document.getElementById("edit-meaning").value = p.meaning;
+  document.getElementById("edit-definition").value = p.definition || "";
+  document.getElementById("edit-example").value = p.example || "";
+  const etSel = document.getElementById("edit-example-type");
+  etSel.value = p.exampleType || "";
+  const eSrc = document.getElementById("edit-example-src");
+  eSrc.value = p.exampleSource || "";
+  eSrc.style.display = p.exampleType ? "block" : "none";
+  const tagSel = document.getElementById("edit-tag");
+  const firstTag = (p.tags && p.tags[0]) || "daily";
+  tagSel.value = [...tagSel.options].some(o => o.value === firstTag) ? firstTag : "daily";
+  document.getElementById("edit-success").style.display = "none";
+  document.getElementById("edit-overlay").style.display = "flex";
+}
+
+function closeEditModal(e) {
+  if (e && e.target !== document.getElementById("edit-overlay")) return;
+  document.getElementById("edit-overlay").style.display = "none";
+}
+
+function saveEdit() {
+  const id = +document.getElementById("edit-id").value;
+  const p = data.phrases.find(x => x.id === id);
+  if (!p) return;
+  const phrase = document.getElementById("edit-phrase").value.trim();
+  const meaning = document.getElementById("edit-meaning").value.trim();
+  const definition = document.getElementById("edit-definition").value.trim();
+  if (!phrase || (!meaning && !definition)) { alert("请填写短语，并至少填写中文释义或英文释义之一！"); return; }
+  p.phrase = phrase;
+  p.meaning = meaning;
+  p.definition = definition;
+  p.example = document.getElementById("edit-example").value.trim();
+  p.exampleType = document.getElementById("edit-example-type").value;
+  p.exampleSource = document.getElementById("edit-example-src").value.trim();
+  p.tags = [document.getElementById("edit-tag").value];
+  saveData(data);
+  const s = document.getElementById("edit-success");
+  s.style.display = "block";
+  setTimeout(() => {
+    document.getElementById("edit-overlay").style.display = "none";
+    renderPhrases();
+    renderHome();
+  }, 900);
+}
+
+function deletePhrase() {
+  const id = +document.getElementById("edit-id").value;
+  const p = data.phrases.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`确认删除「${p.phrase}」？此操作不可撤销。`)) return;
+  data.phrases = data.phrases.filter(x => x.id !== id);
+  saveData(data);
+  document.getElementById("edit-overlay").style.display = "none";
+  renderPhrases();
+  renderHome();
+}
+
+// ─── SPEECH ──────────────────────────────────────────────────────────────────
+let currentBtn = null;
+function speakText(text, btn) {
+  if (!text || text === "—") return;
+  window.speechSynthesis.cancel();
+  if (currentBtn) { currentBtn.classList.remove("speaking"); currentBtn = null; }
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = "en-US";
+  utt.rate = 0.9;
+  // 优先找英语女声
+  const voices = speechSynthesis.getVoices();
+  const enVoice = voices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("female"))
+    || voices.find(v => v.lang === "en-US")
+    || voices.find(v => v.lang.startsWith("en"));
+  if (enVoice) utt.voice = enVoice;
+  if (btn) { btn.classList.add("speaking"); currentBtn = btn; }
+  utt.onend = () => { if (currentBtn) { currentBtn.classList.remove("speaking"); currentBtn = null; } };
+  speechSynthesis.speak(utt);
+}
+// 等 voices 加载完
+if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+
+// ─── API KEY ──────────────────────────────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById("api-key-input").value.trim();
+  if (!key.startsWith("sk-ant-")) { document.getElementById("apikey-status").textContent = "格式不对，Key 应以 sk-ant- 开头"; return; }
+  localStorage.setItem("speakup_apikey", key);
+  document.getElementById("api-key-input").value = "•".repeat(20);
+  document.getElementById("apikey-status").textContent = "✓ 已保存";
+}
+function getApiKey() { return localStorage.getItem("speakup_apikey") || ""; }
+(function initApiKey() {
+  const k = getApiKey();
+  if (k) { document.addEventListener("DOMContentLoaded", () => { const el = document.getElementById("api-key-input"); if(el) { el.value = "•".repeat(20); document.getElementById("apikey-status").textContent = "✓ 已保存"; } }); }
+})();
+
+// ─── SRT PARSER ──────────────────────────────────────────────────────────────
+let srtCleanText = "";
+
+function parseSRT(raw) {
+  const lines = raw.split(/\r?\n/);
+  const out = [];
+  const tsRe = new RegExp("^\\d{2}:\\d{2}:\\d{2}[,.]\\d{3}\\s*-->");
+  const seqRe = /^\d+$/;
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || seqRe.test(t) || tsRe.test(t)) continue;
+    out.push(t.replace(/<[^>]+>/g, ""));
+  }
+  return out;
+}
+
+function handleSRT(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = parseSRT(e.target.result);
+    srtCleanText = lines.join("\n");
+    document.getElementById("srt-info").textContent = `共 ${lines.length} 行对话 · ${file.name}`;
+    document.getElementById("srt-result").style.display = "block";
+    document.getElementById("extract-results").style.display = "none";
+    document.getElementById("extract-error").style.display = "none";
+    document.getElementById("ai-status").style.display = "none";
+  };
+  reader.readAsText(file, "UTF-8");
+  input.value = "";
+}
+
+function clearSRT() {
+  srtCleanText = "";
+  document.getElementById("srt-result").style.display = "none";
+  document.getElementById("extract-results").style.display = "none";
+  document.getElementById("ai-status").style.display = "none";
+  document.getElementById("raw-text-section").style.display = "none";
+  document.getElementById("raw-toggle-btn").textContent = "查看全部字幕";
+}
+
+function toggleRawText() {
+  const sec = document.getElementById("raw-text-section");
+  const btn = document.getElementById("raw-toggle-btn");
+  const visible = sec.style.display !== "none";
+  if (!visible) {
+    document.getElementById("srt-text").value = srtCleanText;
+    sec.style.display = "block";
+    btn.textContent = "收起字幕";
+  } else {
+    sec.style.display = "none";
+    btn.textContent = "查看全部字幕";
+  }
+}
+
+function copyRawText() {
+  navigator.clipboard.writeText(srtCleanText).then(() => {
+    const el = document.getElementById("raw-copy-success");
+    el.textContent = "✓ 已复制，可粘贴到 Claude.ai 提取短语";
+    el.style.display = "block";
+    setTimeout(() => el.style.display = "none", 3000);
+  });
+}
+
+// ─── LYRICS SEARCH ────────────────────────────────────────────────────────────
+async function searchLyrics() {
+  const artist = document.getElementById("lyrics-artist").value.trim();
+  const title  = document.getElementById("lyrics-title").value.trim();
+  if (!title) { showLyricsStatus("请填写歌曲名", false); return; }
+
+  const btn = document.getElementById("lyrics-search-btn");
+  btn.disabled = true;
+  btn.textContent = "搜索中…";
+  showLyricsStatus("", false);
+
+  try {
+    const params = new URLSearchParams({ track_name: title });
+    if (artist) params.append("artist_name", artist);
+    const res = await fetch("https://lrclib.net/api/search?" + params);
+    if (!res.ok) throw new Error("网络错误 " + res.status);
+    const results = await res.json();
+    if (!results.length) throw new Error("未找到歌词，试试英文歌手名和歌曲名");
+
+    const track = results.find(r => r.plainLyrics) || results[0];
+    if (!track.plainLyrics) throw new Error("该曲目暂无歌词数据");
+
+    const lines = track.plainLyrics.split("\n");
+    srtCleanText = lines.filter(l => l.trim()).join("\n");
+
+    currentLyricsTrack = { title: track.trackName, artist: track.artistName };
+    lyricsLines = lines;
+    markedPhrases = [];
+    explainedResults = [];
+
+    document.getElementById("srt-info").textContent =
+      `${lines.filter(l=>l.trim()).length} 行歌词 · ${track.trackName} — ${track.artistName}`;
+    document.getElementById("raw-toggle-btn").textContent = "查看全部歌词";
+    document.getElementById("srt-result").style.display = "block";
+    document.getElementById("extract-results").style.display = "none";
+    document.getElementById("extract-error").style.display = "none";
+    document.getElementById("ai-status").style.display = "none";
+    document.getElementById("raw-text-section").style.display = "none";
+    showLyricsStatus("✓ " + track.trackName + " — " + track.artistName, true);
+    renderLyricsView();
+  } catch (err) {
+    showLyricsStatus("✗ " + err.message, false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "搜索歌词";
+  }
+}
+
+function showLyricsStatus(msg, ok) {
+  const el = document.getElementById("lyrics-status");
+  if (!msg) { el.style.display = "none"; return; }
+  el.textContent = msg;
+  el.style.color = ok ? "var(--green)" : "var(--accent2)";
+  el.style.display = "block";
+}
+
+// ─── AI EXTRACT ───────────────────────────────────────────────────────────────
+let extractedPhrases = [];
+
+async function extractWithAI() {
+  const key = getApiKey();
+  if (!key) { showExtractError("请先填写并保存 Claude API Key"); return; }
+  if (!srtCleanText) { showExtractError("请先搜索歌词或上传字幕文件"); return; }
+
+  const count = document.getElementById("srt-count").value;
+  const btn = document.getElementById("extract-btn");
+  btn.disabled = true;
+  document.getElementById("ai-status").style.display = "block";
+  document.getElementById("ai-status-text").textContent = "正在分析字幕，请稍候…";
+  document.getElementById("extract-results").style.display = "none";
+  document.getElementById("extract-error").style.display = "none";
+
+  // 截取前 4000 字符避免超出
+  const snippet = srtCleanText.slice(0, 4000);
+
+  const prompt = `从下面的英语字幕中提取 ${count} 个最实用的口语短语或表达。
+要求：
+1. 优先选惯用语、固定搭配、情绪表达、日常对话中的地道说法
+2. 每条必须来自字幕原文
+3. 严格输出 JSON 数组，不要任何多余文字：
+[{"phrase":"...","meaning":"简短中文释义","example":"字幕中的原句","tags":["daily"]}]
+tags 从 daily / idiom / slang / formal / business 中选一个最合适的。
+
+字幕文本：
+${snippet}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+
+    const json = await res.json();
+    const text = json.content?.[0]?.text || "";
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error("AI 返回格式不正确，请重试");
+
+    extractedPhrases = JSON.parse(match[0]);
+    renderExtractResults();
+  } catch (err) {
+    showExtractError("提取失败：" + err.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById("ai-status").style.display = "none";
+  }
+}
+
+function renderExtractResults() {
+  const list = document.getElementById("extract-list");
+  list.innerHTML = extractedPhrases.map((p, i) => `
+    <div class="extract-item">
+      <input type="checkbox" id="ec-${i}" checked />
+      <div style="flex:1">
+        <div class="ei-phrase">${p.phrase}</div>
+        <div class="ei-cn">${p.meaning}</div>
+        <div class="ei-ex">${p.example || ""}</div>
+        <div style="margin-top:6px">${(p.tags||[]).map(t=>`<span class="badge ${t}">${t}</span>`).join(" ")}</div>
+      </div>
+    </div>
+  `).join("");
+  document.getElementById("extract-count").textContent = `提取到 ${extractedPhrases.length} 条短语，勾选后加入库：`;
+  document.getElementById("extract-results").style.display = "block";
+  document.getElementById("extract-success").style.display = "none";
+}
+
+function confirmImportExtracted() {
+  let added = 0, skipped = 0;
+  extractedPhrases.forEach((p, i) => {
+    const cb = document.getElementById("ec-" + i);
+    if (!cb?.checked) return;
+    if (!p.phrase || !p.meaning) { skipped++; return; }
+    const exists = data.phrases.some(x => x.phrase.toLowerCase() === p.phrase.toLowerCase());
+    if (exists) { skipped++; return; }
+    data.phrases.push({ id: Date.now() + Math.random(), phrase: p.phrase, meaning: p.meaning, example: p.example || "", tags: p.tags || ["daily"], review: { stage: 0, correct: 0, wrong: 0 } });
+    added++;
+  });
+  saveData(data);
+  const s = document.getElementById("extract-success");
+  s.textContent = `✓ 已加入 ${added} 条${skipped ? `，跳过 ${skipped} 条（重复）` : ""}`;
+  s.style.display = "block";
+}
+
+function showExtractError(msg) {
+  document.getElementById("ai-status").style.display = "none";
+  const el = document.getElementById("extract-error");
+  el.textContent = "✗ " + msg; el.style.display = "block";
+}
+
+// ─── IMPORT / EXPORT ─────────────────────────────────────────────────────────
+function handleImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      let imported = JSON.parse(e.target.result);
+      // 支持顶层数组或 { phrases: [...] } 两种格式
+      if (!Array.isArray(imported)) {
+        if (Array.isArray(imported.phrases)) imported = imported.phrases;
+        else throw new Error("格式错误：需要数组或含 phrases 字段的对象");
+      }
+      let added = 0, skipped = 0;
+      imported.forEach(item => {
+        if (!item.phrase || !item.meaning) { skipped++; return; }
+        const exists = data.phrases.some(p => p.phrase.toLowerCase() === item.phrase.toLowerCase());
+        if (exists) { skipped++; return; }
+        data.phrases.push({
+          id: Date.now() + Math.random(),
+          phrase: item.phrase,
+          meaning: item.meaning,
+          example: item.example || "",
+          tags: Array.isArray(item.tags) ? item.tags : ["daily"],
+          review: { stage: 0, correct: 0, wrong: 0 }
+        });
+        added++;
+      });
+      saveData(data);
+      showImportResult(true, `成功导入 ${added} 条短语${skipped ? `，跳过 ${skipped} 条（已存在或格式不完整）` : ""}。`);
+    } catch(err) {
+      showImportResult(false, "解析失败：" + err.message);
+    }
+    input.value = "";
+  };
+  reader.readAsText(file);
+}
+
+function showImportResult(ok, msg) {
+  const s = document.getElementById("import-success");
+  const e = document.getElementById("import-error");
+  if (ok) { s.textContent = "✓ " + msg; s.style.display = "block"; e.style.display = "none"; setTimeout(() => s.style.display = "none", 4000); }
+  else { e.textContent = "✗ " + msg; e.style.display = "block"; s.style.display = "none"; }
+}
+
+function exportJSON() {
+  const exportData = data.phrases.map(({ phrase, meaning, example, tags }) => ({ phrase, meaning, example, tags }));
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "speakup_phrases.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  document.getElementById("export-info").textContent = `已导出 ${exportData.length} 条短语`;
+}
+
+// 拖拽支持
+document.addEventListener("DOMContentLoaded", () => {
+  function bindDrop(zoneId, inputId, handler) {
+    const zone = document.getElementById(zoneId);
+    if (!zone) return;
+    zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+    zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+    zone.addEventListener("drop", e => {
+      e.preventDefault(); zone.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      if (file) { const inp = document.getElementById(inputId); const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files; handler(inp); }
+    });
+  }
+  bindDrop("drop-zone", "import-file", handleImport);
+  bindDrop("srt-drop-zone", "srt-file", handleSRT);
+
+  document.addEventListener("mousedown", e => {
+    const tt = document.getElementById("mark-tooltip");
+    if (tt && tt.style.display !== "none" && !tt.contains(e.target)) {
+      hideMarkTooltip();
+    }
+  });
+});
+
+// ─── LYRICS MARKING ──────────────────────────────────────────────────────────
+let currentLyricsTrack = null;
+let lyricsLines = [];
+let markedPhrases = [];
+let currentSelection = "";
+let explainedResults = [];
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function renderLyricsView() {
+  const view = document.getElementById("lyrics-view");
+  if (!view) return;
+  view.innerHTML = lyricsLines.map((line, i) => {
+    if (!line.trim()) return `<div class="lyrics-line" style="height:10px"></div>`;
+    let html = escHtml(line);
+    markedPhrases.forEach(phrase => {
+      const escaped = escHtml(phrase);
+      const re = new RegExp(escaped.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+      html = html.replace(re, m => `<mark class="pm">${m}</mark>`);
+    });
+    return `<div class="lyrics-line">${html}</div>`;
+  }).join("");
+
+  const songTitle = document.getElementById("lyrics-song-title");
+  if (currentLyricsTrack) {
+    songTitle.textContent = currentLyricsTrack.title + (currentLyricsTrack.artist ? " — " + currentLyricsTrack.artist : "");
+  }
+  document.getElementById("lyrics-study-card").style.display = "block";
+  updateMarkedSection();
+}
+
+function onLyricsSelect(e) {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) { hideMarkTooltip(); return; }
+  const text = sel.toString().trim();
+  if (!text || text.length < 2 || text.length > 80) { hideMarkTooltip(); return; }
+  currentSelection = text;
+  const range = sel.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  const tt = document.getElementById("mark-tooltip");
+  tt.style.left = (rect.left + rect.right) / 2 + "px";
+  tt.style.top  = (rect.top + window.scrollY - 42) + "px";
+  tt.style.display = "block";
+}
+
+function hideMarkTooltip() {
+  document.getElementById("mark-tooltip").style.display = "none";
+  currentSelection = "";
+}
+
+function markSelectedPhrase() {
+  if (!currentSelection) return;
+  const phrase = currentSelection.trim();
+  if (!markedPhrases.includes(phrase)) {
+    markedPhrases.push(phrase);
+    renderLyricsView();
+  }
+  window.getSelection()?.removeAllRanges();
+  hideMarkTooltip();
+}
+
+function updateMarkedSection() {
+  const section = document.getElementById("marked-section");
+  const chips   = document.getElementById("marked-chips");
+  const label   = document.getElementById("marked-count-label");
+  if (!markedPhrases.length) { section.style.display = "none"; return; }
+  section.style.display = "block";
+  label.textContent = `已标记 ${markedPhrases.length} 个短语`;
+  chips.innerHTML = markedPhrases.map((p, i) =>
+    `<span class="marked-chip">${escHtml(p)}<button onclick="removeMarked(${i})" title="删除">×</button></span>`
+  ).join("");
+  document.getElementById("explain-results").style.display = "none";
+}
+
+function removeMarked(idx) {
+  markedPhrases.splice(idx, 1);
+  renderLyricsView();
+}
+
+function clearMarked() {
+  markedPhrases = [];
+  explainedResults = [];
+  renderLyricsView();
+  document.getElementById("explain-results").style.display = "none";
+}
+
+async function explainMarked() {
+  const key = getApiKey();
+  if (!key) { alert("请先填写并保存 Claude API Key"); return; }
+  if (!markedPhrases.length) return;
+
+  const btn = document.getElementById("explain-btn");
+  btn.disabled = true;
+  document.getElementById("explain-status").style.display = "block";
+  document.getElementById("explain-results").style.display = "none";
+
+  const songCtx = currentLyricsTrack
+    ? `歌曲：${currentLyricsTrack.title}${currentLyricsTrack.artist ? " by " + currentLyricsTrack.artist : ""}\n`
+    : "";
+  const prompt = `${songCtx}请解释以下英语歌词短语，输出严格 JSON 数组，不要任何多余文字：
+[{"phrase":"...","meaning":"简短中文释义","definition":"简短英文释义","example":"用这个短语造一个例句"}]
+
+短语列表：
+${markedPhrases.map((p, i) => `${i+1}. ${p}`).join("\n")}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    const text = json.content?.[0]?.text || "";
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error("AI 返回格式不正确，请重试");
+    explainedResults = JSON.parse(match[0]);
+    renderExplainResults();
+  } catch (err) {
+    alert("解释失败：" + err.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById("explain-status").style.display = "none";
+  }
+}
+
+function renderExplainResults() {
+  const container = document.getElementById("explain-results");
+  container.style.display = "block";
+  container.innerHTML = `
+    <div style="font-size:.88rem;font-weight:600;color:var(--text2);margin-bottom:10px">AI 解释结果</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px">
+      ${explainedResults.map(r => `
+        <div class="explain-item" style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="font-weight:700;font-size:.95rem;color:var(--accent)">${escHtml(r.phrase)}</div>
+          <div style="color:var(--text);font-size:.88rem;margin-top:4px">${escHtml(r.meaning || "")}</div>
+          ${r.definition ? `<div style="color:var(--text2);font-size:.82rem;margin-top:2px;font-style:italic">${escHtml(r.definition)}</div>` : ""}
+          ${r.example ? `<div style="color:var(--text3);font-size:.82rem;margin-top:6px;border-left:2px solid var(--accent);padding-left:8px">${escHtml(r.example)}</div>` : ""}
+        </div>
+      `).join("")}
+    </div>
+    <button class="btn btn-primary" onclick="importExplainedPhrases()" style="font-size:.85rem;padding:7px 18px;margin-right:10px">全部加入短语库</button>
+  `;
+}
+
+function importExplainedPhrases() {
+  let added = 0, skipped = 0;
+  explainedResults.forEach(p => {
+    if (!p.phrase || !p.meaning) { skipped++; return; }
+    const exists = data.phrases.some(x => x.phrase.toLowerCase() === p.phrase.toLowerCase());
+    if (exists) { skipped++; return; }
+    const exampleSource = currentLyricsTrack
+      ? `${currentLyricsTrack.title}${currentLyricsTrack.artist ? " — " + currentLyricsTrack.artist : ""}`
+      : "";
+    data.phrases.push({
+      id: Date.now() + Math.random(),
+      phrase: p.phrase,
+      meaning: p.meaning,
+      example: p.example || "",
+      exampleSource,
+      tags: ["lyrics", "daily"],
+      review: { stage: 0, correct: 0, wrong: 0 }
+    });
+    added++;
+  });
+  saveData(data);
+  const btn = document.querySelector("#explain-results .btn-primary");
+  if (btn) { btn.textContent = `✓ 已加入 ${added} 条${skipped ? `，跳过 ${skipped} 条` : ""}`; btn.disabled = true; }
+}
+
+// ─── SAVE SONGS ───────────────────────────────────────────────────────────────
+const SONGS_KEY = "speakup_songs";
+
+function getSavedSongs() {
+  try { return JSON.parse(localStorage.getItem(SONGS_KEY) || "[]"); } catch { return []; }
+}
+function setSavedSongs(arr) { localStorage.setItem(SONGS_KEY, JSON.stringify(arr)); }
+
+function saveSong() {
+  if (!currentLyricsTrack || !lyricsLines.length) { alert("请先搜索歌词"); return; }
+  const songs = getSavedSongs();
+  const key = (currentLyricsTrack.artist + "|" + currentLyricsTrack.title).toLowerCase();
+  if (songs.some(s => (s.artist + "|" + s.title).toLowerCase() === key)) {
+    alert("该歌曲已保存"); return;
+  }
+  songs.push({
+    id: Date.now(),
+    title: currentLyricsTrack.title,
+    artist: currentLyricsTrack.artist,
+    lines: lyricsLines
+  });
+  setSavedSongs(songs);
+  const btn = document.getElementById("save-song-btn");
+  btn.textContent = "✓ 已保存";
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = "💾 保存歌曲"; btn.disabled = false; }, 2000);
+}
+
+function openSavedSong(id) {
+  const song = getSavedSongs().find(s => s.id === id);
+  if (!song) return;
+  currentLyricsTrack = { title: song.title, artist: song.artist };
+  lyricsLines = song.lines;
+  markedPhrases = [];
+  explainedResults = [];
+  renderLyricsView();
+  switchPage("add");
+  setTimeout(() => document.getElementById("lyrics-study-card").scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+}
+
+// ─── ARTISTS DATA ────────────────────────────────────────────────────────────
+const ARTISTS = [
+  {
+    id: "drake",
+    name: "Drake",
+    avatar: "🦉",
+    color: "#b8860b",
+    origin: "Toronto, Canada · 多伦多",
+    style: "Hip-Hop · R&B · Rap",
+    desc: "Aubrey Drake Graham，出道于 2006 年，以情感细腻的歌词和双重身份（说唱+演唱）著称。他普及了大量加拿大俚语和新词，是当代流行英语的重要塑造者之一。",
+    tags: ["Toronto slang","Emotional rap","R&B","YOLO era"],
+    phrases: [
+      { phrase: "YOLO", meaning: "You Only Live Once，活在当下，及时行乐", example: "We're going skydiving tomorrow — YOLO!", source: "The Motto (2011)" },
+      { phrase: "Started from the bottom", meaning: "从底层白手起家", example: "I started from the bottom, now I'm running this company.", source: "Started From the Bottom (2013)" },
+      { phrase: "No new friends", meaning: "不需要新朋友，只信原来的兄弟", example: "I don't trust easily — no new friends.", source: "No New Friends (2013)" },
+      { phrase: "Know yourself, know your worth", meaning: "了解自己，认清自身价值", example: "Don't let anyone underestimate you. Know yourself, know your worth.", source: "0 to 100 (2014)" },
+      { phrase: "0 to 100", meaning: "瞬间从零状态爆发到满状态", example: "He went from 0 to 100 real quick when they disrespected him.", source: "0 to 100 / The Catch Up (2014)" },
+      { phrase: "God's plan", meaning: "一切都是命中注定，自有安排", example: "I didn't plan any of this — it's God's plan.", source: "God's Plan (2018)" },
+      { phrase: "In my feelings", meaning: "陷入情绪中，多愁善感", example: "Sorry for texting you at 2am, I was in my feelings.", source: "In My Feelings (2018)" },
+      { phrase: "Woes", meaning: "死党，最亲近的兄弟", example: "I only ride with my woes — people who've been there from day one.", source: "Know Yourself (2015)" },
+      { phrase: "The 6 / The 6ix", meaning: "多伦多的别称（来自416区号）", example: "Reppin' the 6 wherever I go.", source: "Know Yourself (2015)" },
+      { phrase: "More life", meaning: "祝你活得更好，长命百岁（多伦多祝福语）", example: "More life to you and everyone you love.", source: "More Life (2017)" },
+      { phrase: "Real one", meaning: "真朋友，靠得住的人", example: "She's been there through everything — she's a real one.", source: "Crew Love (2011)" },
+      { phrase: "Charged up", meaning: "充满能量，准备好了，斗志昂扬", example: "I've been in the gym every day — I'm charged up for this season.", source: "Charged Up (2015)" },
+      { phrase: "Hotline bling", meaning: "不停地打电话/发消息联系某人", example: "He's always on my hotline bling — can't get a moment to myself.", source: "Hotline Bling (2015)" },
+      { phrase: "I'm on one", meaning: "我状态来了，我在飘，情绪高涨", example: "Don't talk to me right now, I'm on one.", source: "I'm On One (2011)" },
+      { phrase: "Running through the 6 with my woes", meaning: "和兄弟们在城里混，在本地闯荡", example: "Every weekend we're running through the city with the crew.", source: "Know Yourself (2015)" },
+    ]
+  }
+];
+
+// ─── ARTISTS PAGE ─────────────────────────────────────────────────────────────
+function renderArtistList() {
+  document.getElementById("artist-list-view").style.display = "block";
+  document.getElementById("artist-detail-view").style.display = "none";
+  const cards = ARTISTS.map(a => `
+    <div class="artist-card" style="--artist-color:${a.color}" onclick="openArtist('${a.id}')">
+      <div class="artist-avatar">${a.avatar}</div>
+      <div class="artist-name">${a.name}</div>
+      <div class="artist-sub">${a.origin} · ${a.style}</div>
+      <div class="artist-desc">${a.desc.slice(0,60)}…</div>
+      <div class="artist-stats">
+        <div class="artist-stat"><span>${a.phrases.length}</span> 条语料</div>
+        <div class="artist-stat"><span>${a.tags.length}</span> 标签</div>
+      </div>
+    </div>
+  `).join("");
+
+  const savedSongs = getSavedSongs();
+  let songsSection = "";
+  if (savedSongs.length) {
+    songsSection = `
+      <div style="margin-top:32px">
+        <div class="sec-title" style="margin-bottom:14px">我的歌曲 <span style="font-size:.85rem;font-weight:400;color:var(--text2)">(${savedSongs.length})</span></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          ${savedSongs.map(s => `
+            <div class="saved-song-card" onclick="openSavedSong(${s.id})">
+              <div style="font-size:1.5rem">🎵</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:.95rem">${escHtml(s.title)}</div>
+                <div style="color:var(--text2);font-size:.82rem;margin-top:2px">${escHtml(s.artist || "")} · ${s.lines.filter(l=>l.trim()).length} 行歌词</div>
+              </div>
+              <button onclick="event.stopPropagation();deleteSavedSong(${s.id})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px 8px" title="删除">×</button>
+            </div>
+          `).join("")}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById("artist-cards").innerHTML = cards + songsSection;
+}
+
+function deleteSavedSong(id) {
+  if (!confirm("删除此歌曲？")) return;
+  setSavedSongs(getSavedSongs().filter(s => s.id !== id));
+  renderArtistList();
+}
+
+function openArtist(id) {
+  const a = ARTISTS.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById("artist-list-view").style.display = "none";
+  document.getElementById("artist-detail-view").style.display = "block";
+  const tags = a.tags.map(t => `<span class="artist-tag">${t}</span>`).join("");
+  const cards = a.phrases.map((p, i) => {
+    const yg = encodeURIComponent(p.phrase);
+    const pid = a.id + "_" + i;
+    const hasVideo = !!getYTData(pid).id;
+    const escAttr = s => s.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+    return `<div class="lyric-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div class="lyric-phrase">${p.phrase}</div>
+        <button class="speak-btn" onclick="speakText('${escAttr(p.phrase)}')" title="朗读">🔊</button>
+      </div>
+      <div class="lyric-cn">${p.meaning}</div>
+      <div class="lyric-line">${p.example}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px">
+        <div class="lyric-source">来自：${p.source}</div>
+        <div class="lyric-actions">
+          <button class="btn ${hasVideo ? 'btn-primary' : 'btn-outline'}" id="ytbtn-${pid}" onclick="openYT('${pid}','${escAttr(p.phrase)}','${escAttr(p.source)}')" style="font-size:.75rem;padding:4px 12px">
+            ${hasVideo ? '▶ 听原声' : '🎵 绑定原声'}
+          </button>
+          <a class="yg-btn" href="https://youglish.com/pronounce/${yg}/english" target="_blank">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6z"/><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg>
+            YouGlish
+          </a>
+          <button class="btn btn-outline" onclick="addToLibrary('${escAttr(p.phrase)}','${escAttr(p.meaning)}','${escAttr(p.example)}',['slang','daily'])" style="font-size:.75rem;padding:4px 10px">+ 加入短语库</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("artist-detail").innerHTML = `
+    <div class="artist-hero">
+      <div class="artist-hero-avatar" style="font-size:2.2rem">${a.avatar}</div>
+      <div class="artist-hero-info">
+        <div class="artist-hero-name">${a.name}</div>
+        <div class="artist-hero-sub">${a.origin} · ${a.style}</div>
+        <div class="artist-hero-desc">${a.desc}</div>
+        <div class="artist-tag-row">${tags}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div class="sec-title">${a.phrases.length} 条语料</div>
+      <button class="btn btn-outline" onclick="addAllToLibrary('${id}')" style="font-size:.85rem;padding:7px 16px">全部加入短语库</button>
+    </div>
+    <div class="cards-grid">${cards}</div>
+  `;
+}
+
+function closeArtist() {
+  document.getElementById("artist-list-view").style.display = "block";
+  document.getElementById("artist-detail-view").style.display = "none";
+}
+
+function addToLibrary(phrase, meaning, example, tags) {
+  const exists = data.phrases.some(p => p.phrase.toLowerCase() === phrase.toLowerCase());
+  if (exists) { alert(`"${phrase}" 已在短语库中`); return; }
+  data.phrases.push({ id: Date.now(), phrase, meaning, example, tags, review: { stage: 0, correct: 0, wrong: 0 } });
+  saveData(data);
+  alert(`✓ "${phrase}" 已加入短语库`);
+}
+
+function addAllToLibrary(artistId) {
+  const a = ARTISTS.find(x => x.id === artistId);
+  if (!a) return;
+  let added = 0, skipped = 0;
+  a.phrases.forEach(p => {
+    const exists = data.phrases.some(x => x.phrase.toLowerCase() === p.phrase.toLowerCase());
+    if (exists) { skipped++; return; }
+    data.phrases.push({ id: Date.now() + Math.random(), phrase: p.phrase, meaning: p.meaning, example: p.example, tags: ["slang","daily"], review: { stage: 0, correct: 0, wrong: 0 } });
+    added++;
+  });
+  saveData(data);
+  alert(`✓ 已加入 ${added} 条${skipped ? `，跳过 ${skipped} 条（已存在）` : ""}`);
+}
+
+// ─── YOUTUBE EMBED ────────────────────────────────────────────────────────────
+let currentYTPid = null;
+
+function getYTData(pid) {
+  try { return JSON.parse(localStorage.getItem("yt_" + pid) || "{}"); } catch { return {}; }
+}
+function saveYTData(pid, id, start) {
+  localStorage.setItem("yt_" + pid, JSON.stringify({ id, start: start || 0 }));
+}
+
+function extractYTId(url) {
+  const patterns = [
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function extractYTStart(url) {
+  const m = url.match(/[?&]t=(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+function openYT(pid, phrase, source) {
+  currentYTPid = pid;
+  document.getElementById("yt-modal-title").textContent = phrase;
+  document.getElementById("yt-modal-sub").textContent = source;
+  document.getElementById("yt-url-input").value = "";
+  document.getElementById("yt-bind-msg").textContent = "";
+
+  const d = getYTData(pid);
+  const playerWrap = document.getElementById("yt-player-wrap");
+  const noVideo = document.getElementById("yt-no-video");
+  const searchQ = encodeURIComponent("Drake " + phrase + " official");
+  document.getElementById("yt-search-link").href = `https://www.youtube.com/results?search_query=${searchQ}`;
+
+  if (d.id) {
+    playerWrap.innerHTML = `<iframe class="yt-player" src="https://www.youtube.com/embed/${d.id}?start=${d.start}&autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    noVideo.style.display = "none";
+  } else {
+    playerWrap.innerHTML = "";
+    noVideo.style.display = "block";
+  }
+
+  document.getElementById("yt-overlay").style.display = "flex";
+}
+
+function closeYTModal() {
+  document.getElementById("yt-overlay").style.display = "none";
+  document.getElementById("yt-player-wrap").innerHTML = "";
+}
+function closeYT(e) { if (e.target === document.getElementById("yt-overlay")) closeYTModal(); }
+
+function bindYTVideo() {
+  const url = document.getElementById("yt-url-input").value.trim();
+  const msg = document.getElementById("yt-bind-msg");
+  if (!url) { msg.style.color = "var(--accent2)"; msg.textContent = "请粘贴 YouTube 链接"; return; }
+
+  const id = extractYTId(url);
+  if (!id) { msg.style.color = "var(--accent2)"; msg.textContent = "无法识别视频 ID，请检查链接"; return; }
+
+  const start = extractYTStart(url);
+  saveYTData(currentYTPid, id, start);
+
+  // 更新播放器
+  document.getElementById("yt-player-wrap").innerHTML = `<iframe class="yt-player" src="https://www.youtube.com/embed/${id}?start=${start}&autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  document.getElementById("yt-no-video").style.display = "none";
+  msg.style.color = "var(--green)";
+  msg.textContent = `✓ 已绑定，时间戳 ${start}s`;
+
+  // 刷新按钮状态
+  const btn = document.getElementById("ytbtn-" + currentYTPid);
+  if (btn) { btn.textContent = "▶ 听原声"; btn.className = "btn btn-primary"; btn.style.cssText = "font-size:.75rem;padding:4px 12px"; }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderHome();
+renderScenarios();
+renderTips();
+</script>
+</body>
+</html>
