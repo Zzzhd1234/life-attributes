@@ -1457,6 +1457,9 @@ async function searchLyrics() {
     lyricsLines = lines;
     markedPhrases = [];
     explainedResults = [];
+    lyricsChatHistory = [];
+    document.getElementById("lyrics-chat-messages").innerHTML = "";
+    document.getElementById("lyrics-chat-section").style.display = "none";
 
     document.getElementById("srt-info").textContent =
       `${lines.filter(l=>l.trim()).length} 行歌词 · ${track.trackName} — ${track.artistName}`;
@@ -1468,6 +1471,7 @@ async function searchLyrics() {
     document.getElementById("raw-text-section").style.display = "none";
     showLyricsStatus("✓ " + track.trackName + " — " + track.artistName, true);
     renderLyricsView();
+    saveLyricsSession();
   } catch (err) {
     showLyricsStatus("✗ " + err.message, false);
   } finally {
@@ -1663,6 +1667,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindDrop("drop-zone", "import-file", handleImport);
   bindDrop("srt-drop-zone", "srt-file", handleSRT);
 
+  loadLyricsSession();
+
   document.addEventListener("mousedown", e => {
     const tt = document.getElementById("mark-tooltip");
     if (tt && tt.style.display !== "none" && !tt.contains(e.target)) {
@@ -1722,9 +1728,6 @@ function renderLyricsView() {
   }
   document.getElementById("lyrics-study-card").style.display = "block";
   updateMarkedSection();
-  lyricsChatHistory = [];
-  document.getElementById("lyrics-chat-messages").innerHTML = "";
-  document.getElementById("lyrics-chat-section").style.display = "none";
 }
 
 function onLyricsSelect(e) {
@@ -1752,6 +1755,7 @@ function markSelectedPhrase() {
   if (!markedPhrases.includes(phrase)) {
     markedPhrases.push(phrase);
     renderLyricsView();
+    saveLyricsSession();
   }
   window.getSelection()?.removeAllRanges();
   hideMarkTooltip();
@@ -1773,6 +1777,7 @@ function updateMarkedSection() {
 function removeMarked(idx) {
   markedPhrases.splice(idx, 1);
   renderLyricsView();
+  saveLyricsSession();
 }
 
 function clearMarked() {
@@ -1780,6 +1785,7 @@ function clearMarked() {
   explainedResults = [];
   renderLyricsView();
   document.getElementById("explain-results").style.display = "none";
+  saveLyricsSession();
 }
 
 async function explainMarked() {
@@ -1875,6 +1881,45 @@ function importExplainedPhrases() {
   if (btn) { btn.textContent = `✓ 已加入 ${added} 条${skipped ? `，跳过 ${skipped} 条` : ""}`; btn.disabled = true; }
 }
 
+// ─── LYRICS SESSION PERSISTENCE ──────────────────────────────────────────────
+const LYRICS_SESSION_KEY = "speakup_lyrics_session";
+
+function saveLyricsSession() {
+  try {
+    localStorage.setItem(LYRICS_SESSION_KEY, JSON.stringify({
+      track: currentLyricsTrack,
+      lines: lyricsLines,
+      marked: markedPhrases,
+      chat: lyricsChatHistory,
+      chatOpen: document.getElementById("lyrics-chat-section").style.display !== "none"
+    }));
+  } catch {}
+}
+
+function loadLyricsSession() {
+  try {
+    const s = localStorage.getItem(LYRICS_SESSION_KEY);
+    if (!s) return;
+    const session = JSON.parse(s);
+    if (!session.track || !session.lines) return;
+    currentLyricsTrack = session.track;
+    lyricsLines = session.lines;
+    markedPhrases = session.marked || [];
+    lyricsChatHistory = session.chat || [];
+    renderLyricsView();
+    const container = document.getElementById("lyrics-chat-messages");
+    lyricsChatHistory.forEach(msg => {
+      const el = document.createElement("div");
+      el.className = msg.role === "user" ? "chat-msg-user" : "chat-msg-ai";
+      el.textContent = msg.content;
+      container.appendChild(el);
+    });
+    if (session.chatOpen) {
+      document.getElementById("lyrics-chat-section").style.display = "block";
+    }
+  } catch {}
+}
+
 // ─── LYRICS CHAT ─────────────────────────────────────────────────────────────
 let lyricsChatHistory = [];
 
@@ -1888,6 +1933,7 @@ function toggleLyricsChat() {
 function clearLyricsChat() {
   lyricsChatHistory = [];
   document.getElementById("lyrics-chat-messages").innerHTML = "";
+  saveLyricsSession();
 }
 
 function appendChatMsg(role, text) {
@@ -1942,6 +1988,7 @@ async function sendLyricsChat() {
     const reply = json.content?.[0]?.text || "";
     appendChatMsg("assistant", reply);
     lyricsChatHistory.push({ role: "assistant", content: reply });
+    saveLyricsSession();
   } catch (err) {
     appendChatMsg("assistant", "⚠ 出错了：" + err.message);
     lyricsChatHistory.pop();
@@ -1986,6 +2033,9 @@ function openSavedSong(id) {
   lyricsLines = song.lines;
   markedPhrases = [];
   explainedResults = [];
+  lyricsChatHistory = [];
+  document.getElementById("lyrics-chat-messages").innerHTML = "";
+  document.getElementById("lyrics-chat-section").style.display = "none";
   renderLyricsView();
   switchPage("add");
   setTimeout(() => document.getElementById("lyrics-study-card").scrollIntoView({ behavior: "smooth", block: "start" }), 100);
