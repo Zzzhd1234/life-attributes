@@ -173,16 +173,6 @@ body {
 
 /* ===== SLEEP CARD ===== */
 .sleep-empty-state { padding: 28px 16px 16px; display:flex; flex-direction:column; align-items:center; gap:10px; }
-.sleep-icon-wrap { position:relative; display:inline-block; }
-.sleep-bed { width:56px; height:36px; background:#6B5CE7; border-radius:6px 6px 4px 4px; position:relative; }
-.sleep-bed::before { content:''; position:absolute; top:-12px; left:0; right:0; height:14px; background:#6B5CE7; border-radius:6px 6px 0 0; }
-.sleep-bed::after { content:''; position:absolute; top:-6px; left:8px; right:8px; height:8px; background:#8B7CF7; border-radius:4px 4px 0 0; }
-.sleep-zzz { position:absolute; top:-18px; right:-10px; display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; }
-.sleep-zzz span { font-weight:800; color:#8B7CF7; }
-.sleep-zzz span:nth-child(1) { font-size:16px; }
-.sleep-zzz span:nth-child(2) { font-size:12px; margin-right:4px; }
-.sleep-zzz span:nth-child(3) { font-size:9px; margin-right:8px; }
-.sleep-check-badge { position:absolute; bottom:-8px; right:-10px; width:22px; height:22px; border-radius:50%; background:#4A7AFF; border:2px solid white; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:700; }
 .sleep-empty-hint { font-size:13px; color:var(--muted); }
 .sleep-record { padding: 14px 16px; cursor: pointer; }
 .sleep-record-time { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; letter-spacing: -0.3px; }
@@ -1580,11 +1570,24 @@ function updateSleepDisplay() {
   if (!el) return;
   if (!state.sleepLoggedToday) {
     el.innerHTML = `<div class="sleep-empty-state">
-      <div class="sleep-icon-wrap">
-        <div class="sleep-zzz"><span>Z</span><span>z</span><span>z</span></div>
-        <div class="sleep-bed"></div>
-        <div class="sleep-check-badge">✓</div>
-      </div>
+      <svg width="86" height="72" viewBox="0 0 86 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Zzz (cascading, upper-right) -->
+        <text x="68" y="18" font-size="14" font-weight="800" fill="#9B8BF7" font-family="system-ui,sans-serif">Z</text>
+        <text x="58" y="30" font-size="11" font-weight="800" fill="#A898F8" font-family="system-ui,sans-serif">z</text>
+        <text x="51" y="40" font-size="8"  font-weight="800" fill="#B8AEFA" font-family="system-ui,sans-serif">z</text>
+        <!-- Headboard -->
+        <rect x="6" y="24" width="60" height="16" rx="5" fill="#6B5CE7"/>
+        <!-- Mattress / base -->
+        <rect x="4" y="38" width="64" height="20" rx="4" fill="#6B5CE7"/>
+        <!-- Pillow -->
+        <rect x="12" y="30" width="20" height="10" rx="4" fill="#8B7CF7"/>
+        <!-- Bedsheet highlight -->
+        <rect x="4" y="38" width="64" height="6" rx="3" fill="#7B6CF0" opacity="0.5"/>
+        <!-- Blue check badge -->
+        <circle cx="68" cy="57" r="11" fill="#4A7AFF"/>
+        <circle cx="68" cy="57" r="9" fill="#4A7AFF" stroke="white" stroke-width="2"/>
+        <polyline points="63,57 67,61 74,53" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
       <div class="sleep-empty-hint">还没有今日睡眠记录</div>
     </div>
     <div class="habit-add-row" onclick="openSleepSheet()">＋ 添加今日睡眠</div>`;
