@@ -532,6 +532,9 @@ body {
   letter-spacing: 1px;
 }
 .cal-today-empty { font-size: 14px; color: var(--muted); text-align: center; padding: 24px 0; }
+.cal-day-dots { display:flex; gap:5px; justify-content:center; margin:-4px 0 14px; }
+.cal-day-dot { width:6px; height:6px; border-radius:50%; background:#D1D1D6; transition:all .2s; flex-shrink:0; }
+.cal-day-dot.active { background:var(--accent); width:18px; border-radius:3px; }
 .subtask-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 11px; color: var(--muted); background: #f2f2f7;
@@ -1177,9 +1180,14 @@ body {
       <div class="cal-today-header">
         <div>
           <div class="cal-today-greeting" id="calTodayGreeting">今天</div>
-          <div class="cal-today-title">今日事项</div>
+          <div class="cal-today-title" id="calTodayTitle">今日事项</div>
         </div>
-        <button class="cal-today-add-btn" onclick="openTimeLogSheet()" title="记录时间段事项">＋</button>
+        <button class="cal-today-add-btn" id="calTodayAddBtn" onclick="openTimeLogSheet()" title="记录时间段事项">＋</button>
+      </div>
+      <div class="cal-day-dots">
+        <span class="cal-day-dot" id="cdot-1"></span>
+        <span class="cal-day-dot active" id="cdot0"></span>
+        <span class="cal-day-dot" id="cdot1"></span>
       </div>
       <div id="calTodayTodos"></div>
     </div>
@@ -2470,20 +2478,24 @@ function changeCalMonth(delta) {
   renderCalendarPage();
 }
 
+let calTodayOffset = 0;
+
 function switchCalMode(mode) {
-  const today = document.getElementById('calModeToday');
-  const calendar = document.getElementById('calModeCalendar');
+  const todayEl = document.getElementById('calModeToday');
+  const calendarEl = document.getElementById('calModeCalendar');
   const tabToday = document.getElementById('calTabToday');
   const tabCalendar = document.getElementById('calTabCalendar');
-  if (!today || !calendar) return;
+  if (!todayEl || !calendarEl) return;
   if (mode === 'today') {
-    today.style.display = '';
-    calendar.style.display = 'none';
+    todayEl.style.display = '';
+    calendarEl.style.display = 'none';
     tabToday.classList.add('active');
     tabCalendar.classList.remove('active');
+    calTodayOffset = 0;
+    renderCalTodayTodos();
   } else {
-    today.style.display = 'none';
-    calendar.style.display = '';
+    todayEl.style.display = 'none';
+    calendarEl.style.display = '';
     tabToday.classList.remove('active');
     tabCalendar.classList.add('active');
   }
@@ -2542,25 +2554,58 @@ function renderCalendarPage() {
   renderCalTodayTodos();
 }
 
+function offsetToDateStr(offset) {
+  const d = new Date(TODAY + 'T00:00:00');
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
 function renderCalTodayTodos() {
   const el = document.getElementById('calTodayTodos');
   if (!el) return;
-  const todayTodos = state.todos.filter(t => t.deadline === TODAY);
-  const todayLogs  = (state.timeLogs || []).filter(l => l.date === TODAY);
+  const dateStr = offsetToDateStr(calTodayOffset);
+
+  // Update header
   const greet = document.getElementById('calTodayGreeting');
+  const titleEl = document.getElementById('calTodayTitle');
   if (greet) {
-    const h = new Date().getHours();
-    greet.textContent = h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好';
+    if (calTodayOffset === 0) {
+      const h = new Date().getHours();
+      greet.textContent = h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好';
+    } else {
+      const [, m, d] = dateStr.split('-');
+      greet.textContent = `${parseInt(m)}月${parseInt(d)}日`;
+    }
   }
-  if (!todayTodos.length && !todayLogs.length) {
-    el.innerHTML = '<div class="cal-today-empty">🎉 今天还没有事项</div>';
+  if (titleEl) titleEl.textContent = calTodayOffset === -1 ? '昨日事项' : calTodayOffset === 1 ? '明日事项' : '今日事项';
+
+  // Update dots
+  [-1, 0, 1].forEach(o => {
+    const dot = document.getElementById(`cdot${o}`);
+    if (dot) dot.classList.toggle('active', o === calTodayOffset);
+  });
+
+  // Update + button to add log for the displayed date
+  const addBtn = document.getElementById('calTodayAddBtn');
+  if (addBtn) addBtn.onclick = () => openTimeLogSheet(dateStr);
+
+  // Gather items for dateStr
+  const dateTodos     = state.todos.filter(t => t.deadline === dateStr);
+  const dateLogs      = (state.timeLogs || []).filter(l => l.date === dateStr);
+  const dateReminders = (state.reminders || []).filter(r => r.datetime?.startsWith(dateStr));
+
+  const dayLabel = calTodayOffset === -1 ? '昨天' : calTodayOffset === 1 ? '明天' : '今天';
+  if (!dateTodos.length && !dateLogs.length && !dateReminders.length) {
+    el.innerHTML = `<div class="cal-today-empty">${dayLabel}还没有事项</div>`;
     return;
   }
-  // Build unified items list: time logs + todos, sorted by time then undone-first
-  const logItems = todayLogs.map(l => ({ _type:'log', _sort: l.startTime || '99:', ...l }));
-  const todoItems = todayTodos.map(t => ({ _type:'todo', _sort: t.deadlineTime || (t.done ? '999:' : '99:'), ...t }));
-  const all = [...logItems, ...todoItems].sort((a, b) => a._sort.localeCompare(b._sort));
+
+  const logItems      = dateLogs.map(l => ({ _type:'log',      _sort: l.startTime || '99:', ...l }));
+  const reminderItems = dateReminders.map(r => ({ _type:'reminder', _sort: r.datetime.slice(11,16) || '99:', ...r }));
+  const todoItems     = dateTodos.map(t => ({ _type:'todo',     _sort: t.deadlineTime || (t.done ? '999:' : '99:'), ...t }));
+  const all = [...logItems, ...reminderItems, ...todoItems].sort((a, b) => a._sort.localeCompare(b._sort));
   const firstActiveTodo = all.findIndex(x => x._type === 'todo' && !x.done);
+
   const html = `<div class="cal-timeline">${all.map((item, i) => {
     if (item._type === 'log') {
       const timeRange = `${item.startTime}–${item.endTime}`;
@@ -2570,6 +2615,20 @@ function renderCalTodayTodos() {
           <div class="cal-tl-content">
             <div class="cal-tl-name">${item.title}</div>
             <div class="cal-tl-meta"><span>🕐 ${timeRange}</span>${item.note ? `<span style="margin-left:8px;color:var(--muted)">${item.note}</span>` : ''}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+    if (item._type === 'reminder') {
+      const startT = item.datetime.slice(11, 16);
+      const timeRange = item.endTime ? `${startT}–${item.endTime}` : startT;
+      const locStr = item.location ? `<span>📍 ${item.location}</span>` : '';
+      return `<div class="cal-tl-item">
+        <div class="cal-tl-dot" style="background:#FF9500;border-color:#FF9500;color:white;font-size:10px">🔔</div>
+        <div class="cal-tl-card" onclick="openReminderAddSheet(${item.id})" style="cursor:pointer">
+          <div class="cal-tl-content">
+            <div class="cal-tl-name">${item.title}</div>
+            <div class="cal-tl-meta"><span>🕐 ${timeRange}</span>${locStr}${item.note ? `<span>${item.note}</span>` : ''}</div>
           </div>
         </div>
       </div>`;
@@ -2593,6 +2652,24 @@ function renderCalTodayTodos() {
     </div>`;
   }).join('')}</div>`;
   el.innerHTML = html;
+}
+
+function initTodaySwipe() {
+  const el = document.getElementById('calModeToday');
+  if (!el) return;
+  let startX = 0, startY = 0;
+  el.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    // 左滑→昨天, 右滑→明天
+    if (dx < 0 && calTodayOffset > -1) { calTodayOffset--; renderCalTodayTodos(); }
+    if (dx > 0 && calTodayOffset < 1)  { calTodayOffset++; renderCalTodayTodos(); }
+  }, { passive: true });
 }
 
 function openDayDetail(dateStr) {
@@ -2854,6 +2931,7 @@ if ('serviceWorker' in navigator) {
 }
 
 requestNotifPermission().then(checkAndNotify);
+initTodaySwipe();
 </script>
 </body>
 </html>
