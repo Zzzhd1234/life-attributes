@@ -862,7 +862,7 @@ body {
 <div class="settings-sheet" id="reminderAddSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
-    <div class="sheet-title">新增提醒</div>
+    <div class="sheet-title" id="reminderSheetTitle">新增提醒</div>
     <button class="sheet-close" onclick="closeReminderAddSheet()">✕</button>
   </div>
   <div class="section-label">事件名称</div>
@@ -892,6 +892,13 @@ body {
              placeholder="可选">
     </div>
   </div>
+  <div class="section-label">地点（可选）</div>
+  <div class="card">
+    <div class="settings-row" style="border-bottom:none">
+      <input id="reminderLocation" type="text" placeholder="如：3号会议室、虹桥机场"
+             style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+    </div>
+  </div>
   <div class="section-label">提前提醒</div>
   <div class="card">
     <div class="settings-row" style="border-bottom:none">
@@ -911,7 +918,7 @@ body {
              style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
     </div>
   </div>
-  <button class="btn-primary" style="margin-top:4px" onclick="addReminder()">添加提醒</button>
+  <button class="btn-primary" style="margin-top:4px" onclick="saveReminder()">保存</button>
 </div>
 
 <!-- ===== DAY DETAIL SHEET ===== -->
@@ -2670,13 +2677,15 @@ function renderReminders() {
     } else {
       timeStr = dateLabel;
     }
-    return `<div class="reminder-item${r.done?' reminder-done':''}">
+    const locationStr = r.location ? `<div class="reminder-time" style="margin-top:1px">📍 ${r.location}</div>` : '';
+    return `<div class="reminder-item${r.done?' reminder-done':''}" onclick="openReminderAddSheet(${r.id})">
       <div class="reminder-icon">🔔</div>
       <div class="reminder-info">
         <div class="reminder-title">${r.title}</div>
         <div class="reminder-time ${timeClass}">${timeStr}${r.note ? ' · ' + r.note : ''}</div>
+        ${locationStr}
       </div>
-      <button class="reminder-del" onclick="deleteReminder(${r.id})">×</button>
+      <button class="reminder-del" onclick="event.stopPropagation();deleteReminder(${r.id})">×</button>
     </div>`;
   }).join('') + '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
   const html = sorted.length ? listHtml : emptyHtml;
@@ -2686,34 +2695,48 @@ function renderReminders() {
   });
 }
 
-function openReminderAddSheet() {
-  document.getElementById('reminderTitle').value = '';
-  document.getElementById('reminderDate').value = TODAY;
-  document.getElementById('reminderTime').value = '';
-  document.getElementById('reminderEndTime').value = '';
-  document.getElementById('reminderNote').value = '';
-  document.getElementById('reminderAdvance').value = '15min';
+let editingReminderId = null;
+function openReminderAddSheet(id) {
+  editingReminderId = id || null;
+  const r = id ? state.reminders.find(x => x.id === id) : null;
+  document.getElementById('reminderSheetTitle').textContent = r ? '编辑提醒' : '新增提醒';
+  document.getElementById('reminderTitle').value    = r ? r.title : '';
+  document.getElementById('reminderDate').value     = r ? r.datetime.slice(0, 10) : TODAY;
+  document.getElementById('reminderTime').value     = r ? r.datetime.slice(11, 16) : '';
+  document.getElementById('reminderEndTime').value  = r?.endTime || '';
+  document.getElementById('reminderLocation').value = r?.location || '';
+  document.getElementById('reminderNote').value     = r ? (r.note || '') : '';
+  document.getElementById('reminderAdvance').value  = r ? (r.remind || 'none') : '15min';
   toggleSheet('reminderAddSheet', 'reminderAddOverlay', true);
   setTimeout(() => document.getElementById('reminderTitle').focus(), 320);
 }
 function closeReminderAddSheet() { toggleSheet('reminderAddSheet', 'reminderAddOverlay', false); }
 
-function addReminder() {
-  const title   = document.getElementById('reminderTitle').value.trim();
-  const date    = document.getElementById('reminderDate').value;
-  const time    = document.getElementById('reminderTime').value;
-  const endTime = document.getElementById('reminderEndTime').value;
-  const note    = document.getElementById('reminderNote').value.trim();
-  const advance = document.getElementById('reminderAdvance').value;
+function saveReminder() {
+  const title    = document.getElementById('reminderTitle').value.trim();
+  const date     = document.getElementById('reminderDate').value;
+  const time     = document.getElementById('reminderTime').value;
+  const endTime  = document.getElementById('reminderEndTime').value;
+  const location = document.getElementById('reminderLocation').value.trim();
+  const note     = document.getElementById('reminderNote').value.trim();
+  const advance  = document.getElementById('reminderAdvance').value;
   if (!title || !date || !time) { showToast('请填写名称、日期和开始时间'); return; }
   if (endTime && endTime <= time) { showToast('结束时间必须晚于开始时间'); return; }
-  const r = { id: Date.now(), title, datetime: `${date} ${time}`, endTime: endTime || null, remind: advance, note, done: false };
-  state.reminders.push(r);
-  save();
-  closeReminderAddSheet();
-  renderReminders();
-  scheduleOneReminder(r);
-  showToast('提醒已添加');
+  if (editingReminderId) {
+    const r = state.reminders.find(x => x.id === editingReminderId);
+    if (r) {
+      r.title = title; r.datetime = `${date} ${time}`; r.endTime = endTime || null;
+      r.location = location || null; r.note = note; r.remind = advance;
+    }
+    save(); closeReminderAddSheet(); renderReminders();
+    showToast('提醒已更新');
+  } else {
+    const r = { id: Date.now(), title, datetime: `${date} ${time}`, endTime: endTime || null, location: location || null, remind: advance, note, done: false };
+    state.reminders.push(r);
+    save(); closeReminderAddSheet(); renderReminders();
+    scheduleOneReminder(r);
+    showToast('提醒已添加');
+  }
 }
 
 function deleteReminder(id) {
