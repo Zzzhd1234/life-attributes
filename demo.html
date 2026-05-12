@@ -486,6 +486,51 @@ body {
 }
 .todo-empty { padding: 12px 16px; font-size: 13px; color: #C7C7CC; }
 .todo-chevron { font-size: 13px; color: #C7C7CC; flex-shrink: 0; padding-left: 4px; align-self: center; }
+
+/* ===== CALENDAR MODE TOGGLE ===== */
+.cal-mode-tabs { display:flex; background:#F2F2F7; border-radius:9px; padding:2px; margin:0 16px 12px; }
+.cal-mode-tab { flex:1; text-align:center; padding:7px 0; border-radius:7px; font-size:14px; cursor:pointer; color:var(--muted); transition:all .15s; }
+.cal-mode-tab.active { background:white; color:#1C1C1E; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+
+/* ===== CALENDAR TODAY TODOS ===== */
+.cal-today-section { padding: 0 16px 32px; }
+.cal-today-header { margin-bottom: 16px; margin-top: 4px; }
+.cal-today-greeting { font-size: 14px; color: var(--muted); margin-bottom: 2px; }
+.cal-today-title { font-size: 22px; font-weight: 700; color: #1C1C1E; }
+.cal-timeline { position: relative; padding-left: 36px; }
+.cal-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px; top: 20px; bottom: 20px;
+  border-left: 2px dashed #D1D1D6;
+}
+.cal-tl-item { position: relative; margin-bottom: 12px; }
+.cal-tl-dot {
+  position: absolute;
+  left: -30px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border-radius: 50%;
+  background: white; border: 2px solid #D1D1D6;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; z-index: 1;
+}
+.cal-tl-dot.done { background: #34C759; border-color: #34C759; color: white; }
+.cal-tl-dot.current { background: #FF9500; border-color: #FF9500; }
+.cal-tl-card {
+  background: #F5F1EB; border-radius: 16px;
+  padding: 16px; display: flex; gap: 12px; align-items: flex-start;
+}
+.cal-tl-content { flex: 1; min-width: 0; cursor: pointer; }
+.cal-tl-name { font-size: 17px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; color: #1C1C1E; }
+.cal-tl-name.done { text-decoration: line-through; color: var(--muted); }
+.cal-tl-meta { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.cal-tl-time { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.cal-tl-more {
+  background: white; border: none; border-radius: 20px;
+  padding: 5px 10px; font-size: 15px; color: #8E8E93;
+  cursor: pointer; flex-shrink: 0; align-self: flex-end; margin-top: 4px;
+  letter-spacing: 1px;
+}
+.cal-today-empty { font-size: 14px; color: var(--muted); text-align: center; padding: 24px 0; }
 .subtask-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 11px; color: var(--muted); background: #f2f2f7;
@@ -669,6 +714,9 @@ body {
     <div class="habit-add-row" style="border-top:none" onclick="openTodoAddSheet()">＋ 添加待办</div>
     <div id="todoList"></div>
   </div>
+
+  <div class="section-label">近期提醒</div>
+  <div class="card" id="profileReminderList"></div>
 </div>
 
 <!-- ===== SETTINGS SHEET ===== -->
@@ -1102,34 +1150,54 @@ body {
 <!-- ===== PAGE: 日历 ===== -->
 <div id="page-calendar" class="page">
   <div class="page-header"><h1>日历</h1></div>
-  <div class="card">
-    <div class="cal-nav">
-      <button onclick="changeCalMonth(-1)">‹</button>
-      <span id="calMonthLabel"></span>
-      <button onclick="changeCalMonth(1)">›</button>
-    </div>
-    <div class="cal-grid-wrap">
-      <div class="cal-grid" id="calDowRow"></div>
-      <div class="cal-grid" id="calDayGrid"></div>
-    </div>
-    <div style="display:flex;gap:12px;padding:8px 16px 14px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
-        <div class="cal-dot" style="background:var(--accent)"></div>习惯
+
+  <!-- 模式切换 -->
+  <div class="cal-mode-tabs">
+    <div class="cal-mode-tab active" id="calTabToday" onclick="switchCalMode('today')">今日</div>
+    <div class="cal-mode-tab" id="calTabCalendar" onclick="switchCalMode('calendar')">日历</div>
+  </div>
+
+  <!-- 今日模式 -->
+  <div id="calModeToday">
+    <div class="cal-today-section">
+      <div class="cal-today-header">
+        <div class="cal-today-greeting" id="calTodayGreeting">今天</div>
+        <div class="cal-today-title">今日待办</div>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
-        <div class="cal-dot" style="background:var(--success)"></div>待办
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
-        <div class="cal-dot" style="background:var(--warning)"></div>提醒
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
-        <div class="cal-dot" style="background:#5AC8FA"></div>记录
-      </div>
+      <div id="calTodayTodos"></div>
     </div>
   </div>
 
-  <div class="section-label">近期提醒</div>
-  <div class="card" id="reminderList"></div>
+  <!-- 日历模式 -->
+  <div id="calModeCalendar" style="display:none">
+    <div class="card">
+      <div class="cal-nav">
+        <button onclick="changeCalMonth(-1)">‹</button>
+        <span id="calMonthLabel"></span>
+        <button onclick="changeCalMonth(1)">›</button>
+      </div>
+      <div class="cal-grid-wrap">
+        <div class="cal-grid" id="calDowRow"></div>
+        <div class="cal-grid" id="calDayGrid"></div>
+      </div>
+      <div style="display:flex;gap:12px;padding:8px 16px 14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <div class="cal-dot" style="background:var(--accent)"></div>习惯
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <div class="cal-dot" style="background:var(--success)"></div>待办
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <div class="cal-dot" style="background:var(--warning)"></div>提醒
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <div class="cal-dot" style="background:#5AC8FA"></div>记录
+        </div>
+      </div>
+    </div>
+    <div class="section-label">近期提醒</div>
+    <div class="card" id="reminderList"></div>
+  </div>
 </div>
 
 <!-- ===== TAB BAR ===== -->
@@ -2384,6 +2452,25 @@ function changeCalMonth(delta) {
   renderCalendarPage();
 }
 
+function switchCalMode(mode) {
+  const today = document.getElementById('calModeToday');
+  const calendar = document.getElementById('calModeCalendar');
+  const tabToday = document.getElementById('calTabToday');
+  const tabCalendar = document.getElementById('calTabCalendar');
+  if (!today || !calendar) return;
+  if (mode === 'today') {
+    today.style.display = '';
+    calendar.style.display = 'none';
+    tabToday.classList.add('active');
+    tabCalendar.classList.remove('active');
+  } else {
+    today.style.display = 'none';
+    calendar.style.display = '';
+    tabToday.classList.remove('active');
+    tabCalendar.classList.add('active');
+  }
+}
+
 function renderCalendarPage() {
   const year = calPageYear, month = calPageMonth;
   document.getElementById('calMonthLabel').textContent = `${year}年${month + 1}月`;
@@ -2434,6 +2521,43 @@ function renderCalendarPage() {
   }
   document.getElementById('calDayGrid').innerHTML = cells;
   renderReminders();
+  renderCalTodayTodos();
+}
+
+function renderCalTodayTodos() {
+  const el = document.getElementById('calTodayTodos');
+  if (!el) return;
+  const todayItems = state.todos.filter(t => t.deadline === TODAY);
+  const greet = document.getElementById('calTodayGreeting');
+  if (greet) {
+    const h = new Date().getHours();
+    greet.textContent = h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好';
+  }
+  if (!todayItems.length) {
+    el.innerHTML = '<div class="cal-today-empty">🎉 今天没有待办事项</div>';
+    return;
+  }
+  todayItems.sort((a, b) => a.done - b.done);
+  const firstActive = todayItems.findIndex(t => !t.done);
+  const html = `<div class="cal-timeline">${todayItems.map((t, i) => {
+    const dotCls = t.done ? 'done' : (i === firstActive ? 'current' : '');
+    const dotTxt = t.done ? '✓' : '';
+    const timeStr = t.deadlineTime ? `🕐 ${t.deadlineTime}` : '';
+    const labelTag = t.label ? (() => { const c = labelColor(t.label); return `<span class="todo-label-tag" style="background:${c.bg};color:${c.text}">${t.label}</span>`; })() : '';
+    const metaContent = labelTag || `<span>📌 待办</span>`;
+    return `<div class="cal-tl-item">
+      <div class="cal-tl-dot ${dotCls}">${dotTxt}</div>
+      <div class="cal-tl-card">
+        <div class="cal-tl-content" onclick="openTodoDetail(${t.id})">
+          <div class="cal-tl-name ${t.done ? 'done' : ''}">${t.text}</div>
+          <div class="cal-tl-meta">${metaContent}</div>
+          ${timeStr ? `<div class="cal-tl-time">${timeStr}</div>` : ''}
+        </div>
+        <button class="cal-tl-more" onclick="openTodoDetail(${t.id})">···</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+  el.innerHTML = html;
 }
 
 function openDayDetail(dateStr) {
@@ -2492,16 +2616,11 @@ function closeDayDetail() { toggleSheet('dayDetailSheet', 'dayDetailOverlay', fa
 
 // ===== REMINDERS =====
 function renderReminders() {
-  const el = document.getElementById('reminderList');
-  if (!el) return;
   const now = Date.now();
   const sorted = [...state.reminders].sort((a, b) => a.datetime.localeCompare(b.datetime));
-  if (!sorted.length) {
-    el.innerHTML = '<div class="reminder-empty">暂无提醒事项</div>' +
-      '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
-    return;
-  }
-  el.innerHTML = sorted.map(r => {
+  const emptyHtml = '<div class="reminder-empty">暂无提醒事项</div>' +
+    '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
+  const listHtml = sorted.map(r => {
     const dtMs = new Date(r.datetime.replace(' ', 'T')).getTime();
     const diffMs = dtMs - now;
     const diffMin = Math.round(diffMs / 60000);
@@ -2530,6 +2649,11 @@ function renderReminders() {
       <button class="reminder-del" onclick="deleteReminder(${r.id})">×</button>
     </div>`;
   }).join('') + '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
+  const html = sorted.length ? listHtml : emptyHtml;
+  ['reminderList', 'profileReminderList'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
 }
 
 function openReminderAddSheet() {
@@ -2662,6 +2786,7 @@ renderAbilities();
 renderHabits();
 renderTransactions();
 renderTodos();
+renderReminders();
 calcSleep();
 updateSleepBtn();
 updateExerciseDisplay();

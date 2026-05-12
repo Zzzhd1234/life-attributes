@@ -1,4 +1,4 @@
-const CACHE = 'lifeapp-v3';
+const CACHE = 'lifeapp-v4';
 const ASSETS = ['./demo.html', './manifest.json'];
 
 self.addEventListener('install', e => {
