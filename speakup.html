@@ -353,6 +353,11 @@
     }
     .yt-close:hover { background: var(--border); }
     .yt-bind-row { display: flex; gap: 8px; margin-top: 14px; }
+    .clip-speed-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); cursor:pointer; font-size:.8rem; transition:all .15s; }
+    .clip-speed-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .clip-speed-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .clip-time-input { width:72px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:6px 8px; font-size:.88rem; text-align:center; outline:none; font-family:inherit; }
+    .clip-time-input:focus { border-color:var(--accent); }
     .yt-bind-row input {
       flex: 1; background: var(--bg); border: 1px solid var(--border);
       color: var(--text); border-radius: 8px; padding: 8px 12px;
@@ -739,6 +744,59 @@
                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendLyricsChat()}" />
         <button class="btn btn-primary" onclick="sendLyricsChat()" id="lyrics-chat-send"
                 style="font-size:.85rem;padding:8px 16px;white-space:nowrap">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOUTUBE CLIP STUDY CARD -->
+  <div class="form-card" id="clip-study-card" style="margin-top:24px">
+    <div class="form-title">🎬 YouTube 片段精听</div>
+    <p style="color:var(--text2);font-size:.88rem;margin-bottom:16px">粘贴 YouTube 链接，设置片段时间，循环播放精听</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <input id="clip-url-input" type="text" placeholder="粘贴 YouTube 链接…"
+             style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 13px;font-size:.88rem;outline:none"
+             onkeydown="if(event.key==='Enter')loadClipVideo()" />
+      <button class="btn btn-primary" onclick="loadClipVideo()" style="white-space:nowrap;font-size:.88rem;padding:8px 16px">加载</button>
+    </div>
+    <div id="clip-load-msg" style="font-size:.8rem;color:var(--accent2);min-height:18px;margin-bottom:4px"></div>
+
+    <div id="clip-player-wrap" style="display:none">
+      <div id="clip-yt-player-container" style="border-radius:10px;overflow:hidden;background:#000;aspect-ratio:16/9;margin-bottom:14px">
+        <div id="clip-yt-player"></div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:.82rem;color:var(--text2)">开始</span>
+          <input id="clip-start" type="text" value="0:00" class="clip-time-input" placeholder="0:00" />
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:.82rem;color:var(--text2)">结束</span>
+          <input id="clip-end" type="text" value="0:30" class="clip-time-input" placeholder="0:30" />
+        </div>
+        <button class="btn btn-outline" onclick="applyClipRange()" style="font-size:.82rem;padding:6px 14px">设置片段</button>
+        <span id="clip-position" style="font-size:.8rem;color:var(--text3);margin-left:auto;font-variant-numeric:tabular-nums"></span>
+      </div>
+      <div id="clip-range-msg" style="font-size:.8rem;color:var(--accent2);min-height:16px;margin-bottom:8px"></div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <span style="font-size:.82rem;color:var(--text2)">速度</span>
+        <button class="clip-speed-btn" id="clip-speed-0_5"  onclick="setClipSpeed(0.5)">0.5×</button>
+        <button class="clip-speed-btn" id="clip-speed-0_75" onclick="setClipSpeed(0.75)">0.75×</button>
+        <button class="clip-speed-btn active" id="clip-speed-1" onclick="setClipSpeed(1)">1×</button>
+        <button class="clip-speed-btn" id="clip-speed-1_25" onclick="setClipSpeed(1.25)">1.25×</button>
+        <button id="clip-loop-btn" onclick="toggleClipLoop()"
+                style="margin-left:8px;padding:5px 12px;border-radius:6px;border:1px solid var(--accent);background:rgba(108,99,255,.15);color:var(--accent);cursor:pointer;font-size:.8rem;white-space:nowrap">🔁 循环中</button>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:8px">
+          片段文本 <span style="font-weight:400;color:var(--text3)">（粘贴字幕或台词，用于 AI 提取短语）</span>
+        </div>
+        <textarea id="clip-transcript" placeholder="粘贴这段视频的字幕或台词…"
+                  style="width:100%;min-height:80px;max-height:200px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:.86rem;outline:none;resize:vertical;font-family:inherit;line-height:1.6"></textarea>
+        <button class="btn btn-outline" onclick="useClipTranscript()" style="margin-top:8px;font-size:.82rem;padding:7px 14px">用此文本提取短语 →</button>
       </div>
     </div>
   </div>
@@ -2277,6 +2335,143 @@ function bindYTVideo() {
   // 刷新按钮状态
   const btn = document.getElementById("ytbtn-" + currentYTPid);
   if (btn) { btn.textContent = "▶ 听原声"; btn.className = "btn btn-primary"; btn.style.cssText = "font-size:.75rem;padding:4px 12px"; }
+}
+
+// ─── YOUTUBE CLIP STUDY ──────────────────────────────────────────────────────
+let clipPlayer   = null;
+let clipLoopTimer = null;
+let clipLooping  = true;
+let clipStartSec = 0;
+let clipEndSec   = 30;
+
+function loadYTAPI(cb) {
+  if (window.YT && window.YT.Player) { cb(); return; }
+  window._ytClipCb = cb;
+  window.onYouTubeIframeAPIReady = () => { if (window._ytClipCb) { window._ytClipCb(); window._ytClipCb = null; } };
+  if (!document.getElementById('yt-api-script')) {
+    const s = document.createElement('script');
+    s.id = 'yt-api-script';
+    s.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+  }
+}
+
+function clipTimeToSec(str) {
+  const parts = str.trim().split(':').map(Number);
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + (parts[2] || 0);
+  if (parts.length === 2) return parts[0] * 60 + (parts[1] || 0);
+  return parseInt(str) || 0;
+}
+function secToClipTime(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function loadClipVideo() {
+  const url = document.getElementById('clip-url-input').value.trim();
+  const msg = document.getElementById('clip-load-msg');
+  if (!url) { msg.textContent = '请粘贴 YouTube 链接'; return; }
+  const id = extractYTId(url);
+  if (!id) { msg.textContent = '无法识别视频 ID，请检查链接'; return; }
+  msg.textContent = '加载中…';
+
+  const startFromUrl = extractYTStart(url);
+  document.getElementById('clip-start').value = secToClipTime(startFromUrl);
+  document.getElementById('clip-end').value   = secToClipTime(startFromUrl + 60);
+  clipStartSec = startFromUrl;
+  clipEndSec   = startFromUrl + 60;
+
+  document.getElementById('clip-player-wrap').style.display = 'block';
+  document.getElementById('clip-range-msg').textContent = '';
+
+  loadYTAPI(() => {
+    msg.textContent = '';
+    stopClipLoop();
+    if (clipPlayer) { try { clipPlayer.destroy(); } catch {} clipPlayer = null; }
+    document.getElementById('clip-yt-player-container').innerHTML = '<div id="clip-yt-player"></div>';
+
+    clipPlayer = new YT.Player('clip-yt-player', {
+      width: '100%', height: '100%',
+      videoId: id,
+      playerVars: { start: clipStartSec, autoplay: 1, rel: 0, modestbranding: 1 },
+      events: {
+        onReady: () => { clipPlayer.setPlaybackRate(1); startClipLoop(); },
+        onStateChange: e => {
+          if (e.data === YT.PlayerState.PLAYING) startClipLoop();
+          if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) stopClipLoop();
+        }
+      }
+    });
+  });
+}
+
+function applyClipRange() {
+  const s = clipTimeToSec(document.getElementById('clip-start').value);
+  const e = clipTimeToSec(document.getElementById('clip-end').value);
+  const rangeMsg = document.getElementById('clip-range-msg');
+  if (e <= s) { rangeMsg.textContent = '结束时间必须晚于开始时间'; return; }
+  rangeMsg.textContent = '';
+  clipStartSec = s;
+  clipEndSec   = e;
+  if (clipPlayer && clipPlayer.seekTo) {
+    clipPlayer.seekTo(s, true);
+    clipPlayer.playVideo();
+    startClipLoop();
+  }
+}
+
+function startClipLoop() {
+  stopClipLoop();
+  clipLoopTimer = setInterval(() => {
+    if (!clipPlayer || !clipPlayer.getCurrentTime) return;
+    const cur = clipPlayer.getCurrentTime();
+    const posEl = document.getElementById('clip-position');
+    if (posEl) posEl.textContent = secToClipTime(cur) + ' / ' + secToClipTime(clipEndSec);
+    if (cur >= clipEndSec) {
+      if (clipLooping) clipPlayer.seekTo(clipStartSec, true);
+      else stopClipLoop();
+    }
+  }, 250);
+}
+
+function stopClipLoop() {
+  if (clipLoopTimer) { clearInterval(clipLoopTimer); clipLoopTimer = null; }
+}
+
+function setClipSpeed(rate) {
+  if (clipPlayer && clipPlayer.setPlaybackRate) clipPlayer.setPlaybackRate(rate);
+  document.querySelectorAll('.clip-speed-btn').forEach(b => b.classList.remove('active'));
+  const key = 'clip-speed-' + String(rate).replace('.', '_');
+  document.getElementById(key)?.classList.add('active');
+}
+
+function toggleClipLoop() {
+  clipLooping = !clipLooping;
+  const btn = document.getElementById('clip-loop-btn');
+  if (clipLooping) {
+    btn.textContent = '🔁 循环中';
+    btn.style.cssText = 'margin-left:8px;padding:5px 12px;border-radius:6px;border:1px solid var(--accent);background:rgba(108,99,255,.15);color:var(--accent);cursor:pointer;font-size:.8rem;white-space:nowrap';
+    startClipLoop();
+  } else {
+    btn.textContent = '▶ 单次播放';
+    btn.style.cssText = 'margin-left:8px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:.8rem;white-space:nowrap';
+  }
+}
+
+function useClipTranscript() {
+  const text = document.getElementById('clip-transcript').value.trim();
+  if (!text) return;
+  srtCleanText = text;
+  const lines = text.split('\n').filter(l => l.trim()).length;
+  document.getElementById('srt-info').textContent = lines + ' 行文本 · 来自 YouTube 片段';
+  document.getElementById('raw-toggle-btn').textContent = '查看全部文本';
+  document.getElementById('srt-result').style.display = 'block';
+  document.getElementById('extract-results').style.display = 'none';
+  document.getElementById('extract-error').style.display = 'none';
+  document.getElementById('ai-status').style.display = 'none';
+  document.getElementById('raw-text-section').style.display = 'none';
+  document.getElementById('srt-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
