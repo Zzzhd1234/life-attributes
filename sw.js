@@ -1,5 +1,5 @@
-const CACHE = 'lifeapp-v5';
-const ASSETS = ['./demo.html', './manifest.json'];
+const CACHE = 'lifeapp-v6';
+const ASSETS = ['./demo.html', './manifest.json', './index.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
