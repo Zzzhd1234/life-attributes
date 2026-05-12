@@ -1276,8 +1276,16 @@ function load() {
       });
     }
 
+    const todos = (saved.todos || []).map(t => {
+      if (!t.recurrence || !t.done) return t;
+      const base = t.completedAt || t.deadline;
+      const next = nextRecurDate(base, t.recurrence);
+      if (next <= TODAY) return { ...t, done: false, completedAt: null, deadline: next };
+      return t;
+    });
+
     return {
-      ...DEFAULTS, ...saved, habits,
+      ...DEFAULTS, ...saved, habits, todos,
       lastDate: TODAY,
       streakCheckedToday: isNewDay ? false : saved.streakCheckedToday,
       streakPendingUndo:  isNewDay ? false : saved.streakPendingUndo,
@@ -2151,27 +2159,21 @@ function getRecurrence() {
   return val;
 }
 
-function nextDeadline(todo) {
-  const d = new Date(todo.deadline + 'T00:00:00');
-  const today = new Date(TODAY + 'T00:00:00');
-  const r = todo.recurrence;
+function nextRecurDate(fromDate, recurrence) {
+  const d = new Date(fromDate + 'T00:00:00');
+  const r = recurrence;
   if (r === 'daily') {
     d.setDate(d.getDate() + 1);
-    while (d <= today) d.setDate(d.getDate() + 1);
   } else if (r === 'weekly') {
     d.setDate(d.getDate() + 7);
-    while (d <= today) d.setDate(d.getDate() + 7);
   } else if (r === 'monthly') {
     d.setMonth(d.getMonth() + 1);
-    while (d <= today) d.setMonth(d.getMonth() + 1);
   } else if (r?.type === 'custom') {
     const days = r.days;
-    const base = d > today ? d : today;
-    const cur = base.getDay();
+    const cur = d.getDay();
     for (let i = 1; i <= 7; i++) {
-      if (days.includes((cur + i) % 7)) { base.setDate(base.getDate() + i); break; }
+      if (days.includes((cur + i) % 7)) { d.setDate(d.getDate() + i); break; }
     }
-    return base.toISOString().slice(0, 10);
   }
   return d.toISOString().slice(0, 10);
 }
@@ -2232,9 +2234,8 @@ function toggleTodo(id) {
   if (!t.done && t.recurrence) {
     t.done = true;
     t.completedAt = TODAY;
-    const next = nextDeadline(t);
-    state.todos.push({ id: Date.now(), text: t.text, deadline: next, done: false, recurrence: t.recurrence });
-    showToast(`已完成，下次：${next.slice(5).replace('-','/')}`);
+    const next = nextRecurDate(TODAY, t.recurrence);
+    showToast(`已完成，明天将重置（下次：${next.slice(5).replace('-','/')}）`);
   } else {
     t.done = !t.done;
     t.completedAt = t.done ? TODAY : null;
