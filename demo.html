@@ -172,51 +172,17 @@ body {
 }
 
 /* ===== SLEEP CARD ===== */
-.sleep-card-header {
-  padding: 16px 16px 12px;
-  display: flex; justify-content: space-between; align-items: baseline;
-}
-.sleep-card-label { font-size: 13px; color: var(--muted); }
-.sleep-hours-display { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.sleep-hours-unit { font-size: 14px; color: var(--muted); font-weight: 400; }
-.sleep-progress-wrap { padding: 0 16px 12px; }
-.sleep-progress-track {
-  height: 8px; background: #E5E5EA; border-radius: 4px;
-  position: relative; overflow: visible;
-}
-.sleep-ideal-zone {
-  position: absolute; top: 0; bottom: 0; border-radius: 4px;
-  background: rgba(52,199,89,0.25);
-  left: calc(7 / 12 * 100%); width: calc(2 / 12 * 100%);
-}
-.sleep-progress-fill {
-  position: absolute; left: 0; top: 0; bottom: 0;
-  border-radius: 4px; background: var(--accent); transition: width 0.3s;
-}
-.sleep-progress-marker {
-  position: absolute; top: -2px; width: 3px; height: 12px;
-  background: var(--accent); border-radius: 2px;
-  transform: translateX(-50%); transition: left 0.3s;
-}
-.sleep-progress-labels {
-  display: flex; justify-content: space-between;
-  font-size: 10px; color: var(--muted); margin-top: 6px;
-}
-.sleep-inputs-row { display: flex; border-top: 0.5px solid var(--border); }
-.sleep-input-col { flex: 1; padding: 12px 16px; }
-.sleep-input-col:first-child { border-right: 0.5px solid var(--border); }
-.sleep-input-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+.sleep-record { padding: 14px 16px; cursor: pointer; }
+.sleep-record-time { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; letter-spacing: -0.3px; }
+.sleep-record-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.sleep-rating-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.sleep-rating-pill.excellent, .sleep-rating-pill.good { background: rgba(52,199,89,0.12); color: #34C759; }
+.sleep-rating-pill.ok  { background: rgba(255,149,0,0.12); color: var(--warning); }
+.sleep-rating-pill.bad { background: rgba(255,59,48,0.12);  color: var(--danger); }
 .sleep-time-input {
   border: none; background: transparent; font-size: 17px; font-weight: 600;
   color: var(--text); padding: 0; outline: none; width: 100%;
 }
-.sleep-status-footer {
-  padding: 10px 16px; border-top: 0.5px solid var(--border);
-  font-size: 12px; min-height: 36px; display: flex; align-items: center;
-}
-.sleep-status-good { color: var(--success); background: rgba(52,199,89,0.06); }
-.sleep-status-warn { color: var(--warning); background: rgba(255,149,0,0.06); }
-.sleep-status-bad { color: var(--danger); background: rgba(255,59,48,0.06); }
 
 /* ===== EXERCISE CARD ===== */
 .exercise-cols { display: flex; }
@@ -925,6 +891,31 @@ body {
   <button class="btn-primary" style="margin-top:4px" onclick="saveReminder()">保存</button>
 </div>
 
+<!-- ===== SLEEP SHEET ===== -->
+<div class="sheet-overlay" id="sleepSheetOverlay" onclick="closeSleepSheet()"></div>
+<div class="settings-sheet" id="sleepSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">记录睡眠</div>
+    <button class="sheet-close" onclick="closeSleepSheet()">✕</button>
+  </div>
+  <div class="section-label">时间段</div>
+  <div class="card">
+    <div class="settings-row">
+      <span class="settings-label">入睡</span>
+      <input class="sleep-time-input" type="time" id="sleepTime" value="23:00"
+             style="flex:1;text-align:right;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">起床</span>
+      <input class="sleep-time-input" type="time" id="wakeTime" value="07:00"
+             style="flex:1;text-align:right;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-top:4px" onclick="saveSleep()">保存</button>
+  <button class="btn-destructive" id="sleepDeleteBtn" style="display:none;margin-top:8px" onclick="deleteSleep()">删除记录</button>
+</div>
+
 <!-- ===== DAY DETAIL SHEET ===== -->
 <div class="sheet-overlay" id="dayDetailOverlay" onclick="closeDayDetail()"></div>
 <div class="settings-sheet" id="dayDetailSheet">
@@ -1034,38 +1025,8 @@ body {
 <div id="page-records" class="page">
   <div class="page-header"><h1>生活记录</h1></div>
 
-  <div class="section-label">睡眠 · 今早</div>
-  <div class="card">
-    <div class="sleep-card-header">
-      <div class="sleep-card-label">时长</div>
-      <div>
-        <span class="sleep-hours-display" id="sleepHoursDisplay">8.0</span><span class="sleep-hours-unit"> 小时</span>
-      </div>
-    </div>
-    <div class="sleep-progress-wrap">
-      <div class="sleep-progress-track">
-        <div class="sleep-ideal-zone"></div>
-        <div class="sleep-progress-fill" id="sleepBarFill" style="width:66.7%"></div>
-        <div class="sleep-progress-marker" id="sleepBarMarker" style="left:66.7%"></div>
-      </div>
-      <div class="sleep-progress-labels">
-        <span>0h</span><span>6h</span><span>理想 7-9h</span><span>12h</span>
-      </div>
-    </div>
-    <div class="sleep-inputs-row">
-      <label class="sleep-input-col">
-        <div class="sleep-input-label">入睡</div>
-        <input class="sleep-time-input" type="time" id="sleepTime" value="23:00" oninput="calcSleep()">
-      </label>
-      <label class="sleep-input-col">
-        <div class="sleep-input-label">起床</div>
-        <input class="sleep-time-input" type="time" id="wakeTime" value="07:00" oninput="calcSleep()">
-      </label>
-    </div>
-    <div id="sleepStatusFooter" class="sleep-status-footer sleep-status-good">✓ 良好 · 全属性 +0.05</div>
-    <div id="sleepResult" style="display:none"></div>
-  </div>
-  <button class="btn-primary" id="sleepBtn" onclick="saveSleep()">起床后记录睡眠</button>
+  <div class="section-label">睡眠 · 今天</div>
+  <div class="card" id="sleepCard"></div>
 
   <div class="section-label">本周运动</div>
   <div class="card">
@@ -1575,18 +1536,12 @@ function streakBonus(days) {
 }
 
 // ===== SLEEP =====
-function calcSleep() {
-  const sv = document.getElementById('sleepTime').value;
-  const wv = document.getElementById('wakeTime').value;
-  if (!sv || !wv) return null;
-
-  const [sh, sm] = sv.split(':').map(Number);
-  const [wh, wm] = wv.split(':').map(Number);
-
+function calcSleepData(bedTime, wakeTime) {
+  const [sh, sm] = bedTime.split(':').map(Number);
+  const [wh, wm] = wakeTime.split(':').map(Number);
   let dur = (wh*60+wm) - (sh*60+sm);
   if (dur < 0) dur += 24*60;
   const durH = dur / 60;
-
   const adjHour = sh < 6 ? sh + 24 : sh + sm/60;
   let btScore;
   if (adjHour <= 22) btScore = 5;
@@ -1594,76 +1549,86 @@ function calcSleep() {
   else if (adjHour <= 24) btScore = 2;
   else if (adjHour <= 25) btScore = 0;
   else btScore = -1;
-
   let durScore;
   if (durH < 6) durScore = -1;
   else if (durH < 7) durScore = 2;
   else if (durH < 8) durScore = 3;
   else durScore = 4;
-
   const total = btScore + durScore;
   let rating, cls, effect;
   if (total >= 9)      { rating='优秀'; cls='excellent'; effect=0.1; }
   else if (total >= 7) { rating='良好'; cls='good';      effect=0.05; }
   else if (total >= 5) { rating='合格'; cls='ok';        effect=0; }
   else                 { rating='差';   cls='bad';       effect=-0.1; }
-
-  const effectStr = effect > 0 ? `+${effect}` : effect < 0 ? `${effect}` : '±0';
-
-  // Update new sleep display
-  const hoursEl = document.getElementById('sleepHoursDisplay');
-  if (hoursEl) hoursEl.textContent = durH.toFixed(1);
-
-  const pct = Math.min(100, durH / 12 * 100);
-  const fillEl = document.getElementById('sleepBarFill');
-  if (fillEl) fillEl.style.width = pct + '%';
-  const markerEl = document.getElementById('sleepBarMarker');
-  if (markerEl) markerEl.style.left = pct + '%';
-
-  const footerEl = document.getElementById('sleepStatusFooter');
-  if (footerEl) {
-    const good = cls === 'excellent' || cls === 'good';
-    footerEl.className = 'sleep-status-footer ' + (good ? 'sleep-status-good' : cls === 'ok' ? 'sleep-status-warn' : 'sleep-status-bad');
-    footerEl.textContent = (good ? '✓ ' : '⚠ ') + rating + ' · 全属性 ' + effectStr;
-  }
-
-  return { total, rating, effect, durH };
+  return { total, rating, cls, effect, durH, bedTime, wakeTime };
 }
 
+function updateSleepDisplay() {
+  const el = document.getElementById('sleepCard');
+  if (!el) return;
+  if (!state.sleepLoggedToday) {
+    el.innerHTML = '<div class="habit-add-row" style="border-top:none" onclick="openSleepSheet()">＋ 添加今日睡眠</div>';
+    return;
+  }
+  const last = [...state.sleepHistory].reverse().find(r => r.date?.startsWith(TODAY) || r.bedTime);
+  if (!last) { el.innerHTML = '<div class="habit-add-row" style="border-top:none" onclick="openSleepSheet()">＋ 添加今日睡眠</div>'; return; }
+  const bedT  = last.bedTime  || '—';
+  const wakeT = last.wakeTime || '—';
+  const durStr = last.durH != null ? last.durH.toFixed(1) + ' 小时' : '';
+  const effectStr = last.effect > 0 ? `全属性 +${last.effect}` : last.effect < 0 ? `全属性 ${last.effect}` : '无变化';
+  el.innerHTML = `<div class="sleep-record" onclick="openSleepSheet()">
+    <div class="sleep-record-time">${bedT} — ${wakeT}</div>
+    <div class="sleep-record-meta">
+      <span>${durStr}</span>
+      <span class="sleep-rating-pill ${last.cls||'good'}">${last.rating}</span>
+      <span>${effectStr}</span>
+    </div>
+  </div>`;
+}
+
+function openSleepSheet() {
+  const last = state.sleepLoggedToday
+    ? [...state.sleepHistory].reverse().find(r => r.bedTime)
+    : null;
+  document.getElementById('sleepTime').value  = last?.bedTime  || '23:00';
+  document.getElementById('wakeTime').value   = last?.wakeTime || '07:00';
+  const delBtn = document.getElementById('sleepDeleteBtn');
+  if (delBtn) delBtn.style.display = state.sleepLoggedToday ? '' : 'none';
+  toggleSheet('sleepSheet', 'sleepSheetOverlay', true);
+}
+function closeSleepSheet() { toggleSheet('sleepSheet', 'sleepSheetOverlay', false); }
+
 function saveSleep() {
+  const bedTime  = document.getElementById('sleepTime').value;
+  const wakeTime = document.getElementById('wakeTime').value;
+  if (!bedTime || !wakeTime) { showToast('请填写入睡和起床时间'); return; }
+  const r = calcSleepData(bedTime, wakeTime);
   if (state.sleepLoggedToday) {
     const old = state.sleepTodayEffect;
     Object.keys(state.abilities).forEach(k => nudge(k, -old));
     nudge('颜值', -old * 0.5);
-    state.sleepHistory = state.sleepHistory.filter(r => !r.date.startsWith(TODAY));
-    state.sleepLoggedToday = false;
-    state.sleepTodayEffect = 0;
-    save(); renderAbilities(); updateSleepBtn();
-    showToast('已重置，请重新填写');
-    return;
+    state.sleepHistory = state.sleepHistory.filter(h => !h.date?.startsWith(TODAY));
   }
-  const r = calcSleep();
-  if (!r) return;
   Object.keys(state.abilities).forEach(k => nudge(k, r.effect));
   nudge('颜值', r.effect * 0.5);
-  state.sleepHistory.push({ date: new Date().toISOString(), ...r });
+  state.sleepHistory.push({ date: TODAY, ...r });
   state.sleepLoggedToday = true;
   state.sleepTodayEffect = r.effect;
-  save(); renderAbilities(); updateSleepBtn();
-  const sleepFxStr = r.effect > 0 ? `全属性+${r.effect}` : r.effect < 0 ? `全属性${r.effect}` : '无变化';
-  showToast(`睡眠${r.rating} · ${sleepFxStr}`);
+  save(); renderAbilities(); updateSleepDisplay(); closeSleepSheet();
+  const fx = r.effect > 0 ? `全属性+${r.effect}` : r.effect < 0 ? `全属性${r.effect}` : '无变化';
+  showToast(`睡眠${r.rating} · ${fx}`);
 }
 
-function updateSleepBtn() {
-  const btn = document.getElementById('sleepBtn');
-  if (!btn) return;
-  if (state.sleepLoggedToday) {
-    btn.textContent = '已记录 · 点击修改';
-    btn.classList.add('btn-saved');
-  } else {
-    btn.textContent = '起床后记录睡眠';
-    btn.classList.remove('btn-saved');
-  }
+function deleteSleep() {
+  if (!confirm('删除今日睡眠记录？')) return;
+  const old = state.sleepTodayEffect;
+  Object.keys(state.abilities).forEach(k => nudge(k, -old));
+  nudge('颜值', -old * 0.5);
+  state.sleepHistory = state.sleepHistory.filter(h => !h.date?.startsWith(TODAY));
+  state.sleepLoggedToday = false;
+  state.sleepTodayEffect = 0;
+  save(); renderAbilities(); updateSleepDisplay(); closeSleepSheet();
+  showToast('睡眠记录已删除');
 }
 
 // ===== EXERCISE =====
@@ -2999,8 +2964,7 @@ renderHabits();
 renderTransactions();
 renderTodos();
 renderReminders();
-calcSleep();
-updateSleepBtn();
+updateSleepDisplay();
 updateExerciseDisplay();
 updateExerciseHint();
 selectCardio(0);
