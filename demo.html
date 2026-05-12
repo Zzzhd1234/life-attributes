@@ -172,6 +172,18 @@ body {
 }
 
 /* ===== SLEEP CARD ===== */
+.sleep-empty-state { padding: 28px 16px 16px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.sleep-icon-wrap { position:relative; display:inline-block; }
+.sleep-bed { width:56px; height:36px; background:#6B5CE7; border-radius:6px 6px 4px 4px; position:relative; }
+.sleep-bed::before { content:''; position:absolute; top:-12px; left:0; right:0; height:14px; background:#6B5CE7; border-radius:6px 6px 0 0; }
+.sleep-bed::after { content:''; position:absolute; top:-6px; left:8px; right:8px; height:8px; background:#8B7CF7; border-radius:4px 4px 0 0; }
+.sleep-zzz { position:absolute; top:-18px; right:-10px; display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; }
+.sleep-zzz span { font-weight:800; color:#8B7CF7; }
+.sleep-zzz span:nth-child(1) { font-size:16px; }
+.sleep-zzz span:nth-child(2) { font-size:12px; margin-right:4px; }
+.sleep-zzz span:nth-child(3) { font-size:9px; margin-right:8px; }
+.sleep-check-badge { position:absolute; bottom:-8px; right:-10px; width:22px; height:22px; border-radius:50%; background:#4A7AFF; border:2px solid white; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:700; }
+.sleep-empty-hint { font-size:13px; color:var(--muted); }
 .sleep-record { padding: 14px 16px; cursor: pointer; }
 .sleep-record-time { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; letter-spacing: -0.3px; }
 .sleep-record-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
@@ -1567,7 +1579,15 @@ function updateSleepDisplay() {
   const el = document.getElementById('sleepCard');
   if (!el) return;
   if (!state.sleepLoggedToday) {
-    el.innerHTML = '<div class="habit-add-row" style="border-top:none" onclick="openSleepSheet()">＋ 添加今日睡眠</div>';
+    el.innerHTML = `<div class="sleep-empty-state">
+      <div class="sleep-icon-wrap">
+        <div class="sleep-zzz"><span>Z</span><span>z</span><span>z</span></div>
+        <div class="sleep-bed"></div>
+        <div class="sleep-check-badge">✓</div>
+      </div>
+      <div class="sleep-empty-hint">还没有今日睡眠记录</div>
+    </div>
+    <div class="habit-add-row" onclick="openSleepSheet()">＋ 添加今日睡眠</div>`;
     return;
   }
   const last = [...state.sleepHistory].reverse().find(r => r.date?.startsWith(TODAY) || r.bedTime);
