@@ -494,9 +494,10 @@ body {
 
 /* ===== CALENDAR TODAY TODOS ===== */
 .cal-today-section { padding: 0 16px 32px; }
-.cal-today-header { margin-bottom: 16px; margin-top: 4px; }
+.cal-today-header { margin-bottom: 16px; margin-top: 4px; display:flex; align-items:flex-end; justify-content:space-between; }
 .cal-today-greeting { font-size: 14px; color: var(--muted); margin-bottom: 2px; }
 .cal-today-title { font-size: 22px; font-weight: 700; color: #1C1C1E; }
+.cal-today-add-btn { width:32px; height:32px; border-radius:50%; background:var(--accent); border:none; color:white; font-size:20px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-bottom:2px; flex-shrink:0; }
 .cal-timeline { position: relative; padding-left: 36px; }
 .cal-timeline::before {
   content: '';
@@ -1161,8 +1162,11 @@ body {
   <div id="calModeToday">
     <div class="cal-today-section">
       <div class="cal-today-header">
-        <div class="cal-today-greeting" id="calTodayGreeting">今天</div>
-        <div class="cal-today-title">今日待办</div>
+        <div>
+          <div class="cal-today-greeting" id="calTodayGreeting">今天</div>
+          <div class="cal-today-title">今日事项</div>
+        </div>
+        <button class="cal-today-add-btn" onclick="openTimeLogSheet()" title="记录时间段事项">＋</button>
       </div>
       <div id="calTodayTodos"></div>
     </div>
@@ -2528,20 +2532,37 @@ function renderCalendarPage() {
 function renderCalTodayTodos() {
   const el = document.getElementById('calTodayTodos');
   if (!el) return;
-  const todayItems = state.todos.filter(t => t.deadline === TODAY);
+  const todayTodos = state.todos.filter(t => t.deadline === TODAY);
+  const todayLogs  = (state.timeLogs || []).filter(l => l.date === TODAY);
   const greet = document.getElementById('calTodayGreeting');
   if (greet) {
     const h = new Date().getHours();
     greet.textContent = h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好';
   }
-  if (!todayItems.length) {
-    el.innerHTML = '<div class="cal-today-empty">🎉 今天没有待办事项</div>';
+  if (!todayTodos.length && !todayLogs.length) {
+    el.innerHTML = '<div class="cal-today-empty">🎉 今天还没有事项</div>';
     return;
   }
-  todayItems.sort((a, b) => a.done - b.done);
-  const firstActive = todayItems.findIndex(t => !t.done);
-  const html = `<div class="cal-timeline">${todayItems.map((t, i) => {
-    const dotCls = t.done ? 'done' : (i === firstActive ? 'current' : '');
+  // Build unified items list: time logs + todos, sorted by time then undone-first
+  const logItems = todayLogs.map(l => ({ _type:'log', _sort: l.startTime || '99:', ...l }));
+  const todoItems = todayTodos.map(t => ({ _type:'todo', _sort: t.deadlineTime || (t.done ? '999:' : '99:'), ...t }));
+  const all = [...logItems, ...todoItems].sort((a, b) => a._sort.localeCompare(b._sort));
+  const firstActiveTodo = all.findIndex(x => x._type === 'todo' && !x.done);
+  const html = `<div class="cal-timeline">${all.map((item, i) => {
+    if (item._type === 'log') {
+      const timeRange = `${item.startTime}–${item.endTime}`;
+      return `<div class="cal-tl-item">
+        <div class="cal-tl-dot" style="background:#5AC8FA;border-color:#5AC8FA;color:white;font-size:9px">⏱</div>
+        <div class="cal-tl-card">
+          <div class="cal-tl-content">
+            <div class="cal-tl-name">${item.title}</div>
+            <div class="cal-tl-meta"><span>🕐 ${timeRange}</span>${item.note ? `<span style="margin-left:8px;color:var(--muted)">${item.note}</span>` : ''}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+    const t = item;
+    const dotCls = t.done ? 'done' : (i === firstActiveTodo ? 'current' : '');
     const dotTxt = t.done ? '✓' : '';
     const timeStr = t.deadlineTime ? `🕐 ${t.deadlineTime}` : '';
     const labelTag = t.label ? (() => { const c = labelColor(t.label); return `<span class="todo-label-tag" style="background:${c.bg};color:${c.text}">${t.label}</span>`; })() : '';
