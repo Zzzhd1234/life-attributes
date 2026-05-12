@@ -873,7 +873,7 @@ body {
              onkeydown="if(event.key==='Enter')document.getElementById('reminderDate').focus()">
     </div>
   </div>
-  <div class="section-label">开始时间</div>
+  <div class="section-label">时间段</div>
   <div class="card">
     <div class="settings-row">
       <span class="settings-label">日期</span>
@@ -881,9 +881,15 @@ body {
              style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
     </div>
     <div class="settings-row">
-      <span class="settings-label">时间</span>
+      <span class="settings-label">开始</span>
       <input type="time" id="reminderTime"
              style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">结束</span>
+      <input type="time" id="reminderEndTime"
+             style="border:none;outline:none;font-size:15px;color:var(--muted);background:transparent"
+             placeholder="可选">
     </div>
   </div>
   <div class="section-label">提前提醒</div>
@@ -2607,7 +2613,8 @@ function openDayDetail(dateStr) {
   if (dayReminders.length) {
     html += `<div class="day-detail-section">提醒事项</div><div class="card">`;
     dayReminders.forEach(r => {
-      const timeStr = r.datetime?.slice(11, 16) || '';
+      const startT = r.datetime?.slice(11, 16) || '';
+      const timeStr = startT && r.endTime ? `${startT}–${r.endTime}` : startT;
       html += `<div class="day-detail-item"><div class="cal-dot" style="background:var(--warning)"></div>${timeStr ? timeStr + ' ' : ''}${r.title}</div>`;
     });
     html += '</div>';
@@ -2647,7 +2654,8 @@ function renderReminders() {
     const diffMs = dtMs - now;
     const diffMin = Math.round(diffMs / 60000);
     let timeClass = '', timeStr = '';
-    const dateLabel = r.datetime.slice(5, 10).replace('-', '/') + ' ' + r.datetime.slice(11, 16);
+    const timeRange = r.endTime ? `${r.datetime.slice(11, 16)}–${r.endTime}` : r.datetime.slice(11, 16);
+    const dateLabel = r.datetime.slice(5, 10).replace('-', '/') + ' ' + timeRange;
     if (r.done) {
       timeStr = `${dateLabel} · 已过`;
     } else if (diffMs < 0) {
@@ -2682,6 +2690,7 @@ function openReminderAddSheet() {
   document.getElementById('reminderTitle').value = '';
   document.getElementById('reminderDate').value = TODAY;
   document.getElementById('reminderTime').value = '';
+  document.getElementById('reminderEndTime').value = '';
   document.getElementById('reminderNote').value = '';
   document.getElementById('reminderAdvance').value = '15min';
   toggleSheet('reminderAddSheet', 'reminderAddOverlay', true);
@@ -2690,13 +2699,15 @@ function openReminderAddSheet() {
 function closeReminderAddSheet() { toggleSheet('reminderAddSheet', 'reminderAddOverlay', false); }
 
 function addReminder() {
-  const title = document.getElementById('reminderTitle').value.trim();
-  const date  = document.getElementById('reminderDate').value;
-  const time  = document.getElementById('reminderTime').value;
-  const note  = document.getElementById('reminderNote').value.trim();
+  const title   = document.getElementById('reminderTitle').value.trim();
+  const date    = document.getElementById('reminderDate').value;
+  const time    = document.getElementById('reminderTime').value;
+  const endTime = document.getElementById('reminderEndTime').value;
+  const note    = document.getElementById('reminderNote').value.trim();
   const advance = document.getElementById('reminderAdvance').value;
-  if (!title || !date || !time) { showToast('请填写名称、日期和时间'); return; }
-  const r = { id: Date.now(), title, datetime: `${date} ${time}`, remind: advance, note, done: false };
+  if (!title || !date || !time) { showToast('请填写名称、日期和开始时间'); return; }
+  if (endTime && endTime <= time) { showToast('结束时间必须晚于开始时间'); return; }
+  const r = { id: Date.now(), title, datetime: `${date} ${time}`, endTime: endTime || null, remind: advance, note, done: false };
   state.reminders.push(r);
   save();
   closeReminderAddSheet();
