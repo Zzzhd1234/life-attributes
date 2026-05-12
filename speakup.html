@@ -2395,7 +2395,7 @@ function loadClipVideo() {
     clipPlayer = new YT.Player('clip-yt-player', {
       width: '100%', height: '100%',
       videoId: id,
-      playerVars: { start: clipStartSec, autoplay: 1, rel: 0, modestbranding: 1 },
+      playerVars: { start: clipStartSec, autoplay: 1, rel: 0, enablejsapi: 1 },
       events: {
         onReady: e => {
           const iframe = e.target.getIframe();
