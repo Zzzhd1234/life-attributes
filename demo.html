@@ -1751,7 +1751,7 @@ function recalcWeeklyTotals() {
     nudge('体质', -prevCE.body); nudge('魅力', -prevCE.charm);
   }
   const logs = state.exerciseLogs || [];
-  state.weekStrength = logs.filter(l => l.type === 'strength').length;
+  state.weekStrength = new Set(logs.filter(l => l.type === 'strength').map(l => l.date)).size;
   state.weekCardio   = logs.filter(l => l.type === 'cardio').reduce((s, l) => s + (l.duration || 0), 0);
   const newSLvl = Math.min(3, state.weekStrength);
   const newSE   = STRENGTH_EFFECT[newSLvl];
@@ -1772,83 +1772,110 @@ function deleteExerciseLog(id) {
 }
 
 // ===== STRENGTH SHEET =====
-let _selectedMuscle = '胸', _selectedExercise = '', _strengthSets = 3, _strengthReps = 10;
+let _selectedMuscle = '胸';
+let _selectedExercises = []; // [{name, muscleGroup, sets, reps, weight}]
 
 function openStrengthSheet() {
   _selectedMuscle = Object.keys(EXERCISES)[0];
-  _selectedExercise = ''; _strengthSets = 3; _strengthReps = 10;
+  _selectedExercises = [];
   renderStrengthSheetBody();
   toggleSheet('strengthSheet', 'strengthSheetOverlay', true);
 }
 function closeStrengthSheet() { toggleSheet('strengthSheet', 'strengthSheetOverlay', false); }
 
+function _syncWeightInputs() {
+  _selectedExercises.forEach(ex => {
+    const el = document.getElementById('exw-' + ex.name);
+    if (el) ex.weight = el.value ? parseFloat(el.value) : null;
+  });
+}
+
 function renderStrengthSheetBody() {
   const body = document.getElementById('strengthSheetBody');
   if (!body) return;
-  const groups = Object.keys(EXERCISES);
-  const tabs = `<div class="muscle-tabs">${groups.map(g =>
+  const tabs = `<div class="muscle-tabs">${Object.keys(EXERCISES).map(g =>
     `<div class="muscle-tab${g===_selectedMuscle?' sel':''}" onclick="selectMuscleGroup('${g}')">${g}</div>`
   ).join('')}</div>`;
-  const options = `<div class="exercise-options">${EXERCISES[_selectedMuscle].map(e =>
-    `<div class="exercise-option${e===_selectedExercise?' sel':''}" onclick="selectStrengthExercise('${e}')">${e}</div>`
-  ).join('')}</div>`;
-  const inputs = `<div class="stepper-section">
-    <div class="stepper-row">
-      <span class="stepper-label">组数</span>
-      <div class="stepper-ctrl">
-        <button class="stepper-btn" onclick="adjSets(-1)">−</button>
-        <span class="stepper-val" id="setsVal">${_strengthSets}</span>
-        <button class="stepper-btn" onclick="adjSets(1)">＋</button>
+  const options = EXERCISES[_selectedMuscle].map(name => {
+    const ex = _selectedExercises.find(e => e.name === name);
+    return `<div class="exercise-option${ex?' sel':''}">
+      <div style="display:flex;align-items:center;justify-content:space-between" onclick="toggleExerciseSelect('${name}')">
+        <span>${name}</span>
+        <span style="font-size:16px;color:${ex?'var(--accent)':'#C7C7CC'}">${ex?'✓':'+'}</span>
       </div>
-    </div>
-    <div class="stepper-row">
-      <span class="stepper-label">次数</span>
-      <div class="stepper-ctrl">
-        <button class="stepper-btn" onclick="adjReps(-1)">−</button>
-        <span class="stepper-val" id="repsVal">${_strengthReps}</span>
-        <button class="stepper-btn" onclick="adjReps(1)">＋</button>
-      </div>
-    </div>
-    <div class="weight-row">
-      <span class="stepper-label">重量 (kg)</span>
-      <input class="weight-input" id="weightInput" type="number" min="0" step="2.5" placeholder="—">
-    </div>
-  </div>
-  <button class="btn-primary" onclick="addStrengthLog()">添加记录</button>`;
-  body.innerHTML = tabs + options + inputs;
+      ${ex ? `<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;color:var(--muted)">组</span>
+          <button class="stepper-btn" onclick="event.stopPropagation();adjExSets('${name}',-1)">−</button>
+          <span id="exs-${name}" style="font-weight:700;min-width:18px;text-align:center">${ex.sets}</span>
+          <button class="stepper-btn" onclick="event.stopPropagation();adjExSets('${name}',1)">＋</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;color:var(--muted)">次</span>
+          <button class="stepper-btn" onclick="event.stopPropagation();adjExReps('${name}',-1)">−</button>
+          <span id="exr-${name}" style="font-weight:700;min-width:18px;text-align:center">${ex.reps}</span>
+          <button class="stepper-btn" onclick="event.stopPropagation();adjExReps('${name}',1)">＋</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:12px;color:var(--muted)">kg</span>
+          <input id="exw-${name}" class="weight-input" style="width:56px" type="number" min="0" step="2.5" placeholder="—"
+            value="${ex.weight||''}" onclick="event.stopPropagation()" oninput="event.stopPropagation()">
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+  const summary = _selectedExercises.length > 0
+    ? `<div style="padding:10px 0 4px;font-size:12px;color:var(--muted)">已选：${_selectedExercises.map(e=>e.name).join(' · ')}</div>`
+    : '';
+  const addBtn = _selectedExercises.length > 0
+    ? `<button class="btn-primary" onclick="addStrengthLog()">记录 ${_selectedExercises.length} 个动作</button>`
+    : '';
+  body.innerHTML = tabs + `<div class="exercise-options">${options}</div>` + summary + addBtn;
 }
 
 function selectMuscleGroup(g) {
-  _selectedMuscle = g; _selectedExercise = '';
+  _syncWeightInputs();
+  _selectedMuscle = g;
   renderStrengthSheetBody();
 }
-function selectStrengthExercise(name) {
-  _selectedExercise = name;
-  document.querySelectorAll('.exercise-option').forEach(el =>
-    el.classList.toggle('sel', el.textContent.trim() === name));
+function toggleExerciseSelect(name) {
+  _syncWeightInputs();
+  const idx = _selectedExercises.findIndex(e => e.name === name);
+  if (idx >= 0) {
+    _selectedExercises.splice(idx, 1);
+  } else {
+    _selectedExercises.push({ name, muscleGroup: _selectedMuscle, sets: 3, reps: 10, weight: null });
+  }
+  renderStrengthSheetBody();
 }
-function adjSets(d) {
-  _strengthSets = Math.max(1, Math.min(20, _strengthSets + d));
-  const el = document.getElementById('setsVal'); if (el) el.textContent = _strengthSets;
+function adjExSets(name, d) {
+  const ex = _selectedExercises.find(e => e.name === name);
+  if (!ex) return;
+  ex.sets = Math.max(1, Math.min(20, ex.sets + d));
+  const el = document.getElementById('exs-' + name); if (el) el.textContent = ex.sets;
 }
-function adjReps(d) {
-  _strengthReps = Math.max(1, Math.min(100, _strengthReps + d));
-  const el = document.getElementById('repsVal'); if (el) el.textContent = _strengthReps;
+function adjExReps(name, d) {
+  const ex = _selectedExercises.find(e => e.name === name);
+  if (!ex) return;
+  ex.reps = Math.max(1, Math.min(100, ex.reps + d));
+  const el = document.getElementById('exr-' + name); if (el) el.textContent = ex.reps;
 }
 function addStrengthLog() {
-  if (!_selectedExercise) { showToast('请选择训练动作'); return; }
-  const wInput = document.getElementById('weightInput');
-  const weight = wInput && wInput.value ? parseFloat(wInput.value) : null;
+  _syncWeightInputs();
+  if (_selectedExercises.length === 0) { showToast('请选择训练动作'); return; }
   state.exerciseLogs = state.exerciseLogs || [];
-  state.exerciseLogs.push({
-    id: Date.now(), date: TODAY, type: 'strength',
-    muscleGroup: _selectedMuscle, name: _selectedExercise,
-    sets: _strengthSets, reps: _strengthReps, weight,
+  const now = Date.now();
+  _selectedExercises.forEach((ex, i) => {
+    state.exerciseLogs.push({
+      id: now + i, date: TODAY, type: 'strength',
+      muscleGroup: ex.muscleGroup, name: ex.name,
+      sets: ex.sets, reps: ex.reps, weight: ex.weight,
+    });
   });
   recalcWeeklyTotals();
   save(); renderAbilities(); renderExerciseLogs();
   closeStrengthSheet();
-  showToast(`${_selectedExercise} ${_strengthSets}组×${_strengthReps}次 已记录 💪`);
+  showToast(`已记录 ${_selectedExercises.length} 个动作 💪`);
 }
 
 // ===== CARDIO SHEET =====
