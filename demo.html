@@ -188,27 +188,51 @@ body {
 
 /* ===== EXERCISE CARD ===== */
 .exercise-cols { display: flex; }
-.exercise-col { flex: 1; padding: 16px; }
+.exercise-col { flex: 1; padding: 14px 16px 12px; }
 .exercise-col:first-child { border-right: 0.5px solid var(--border); }
+.exercise-col-header { display:flex; align-items:center; justify-content:space-between; }
 .exercise-col-label { font-size: 11px; color: var(--muted); }
-.exercise-col-val { font-size: 24px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
-.exercise-col-unit { font-size: 13px; color: var(--muted); font-weight: 400; }
-.exercise-mini-bar { margin-top: 8px; height: 4px; background: #E5E5EA; border-radius: 2px; overflow: hidden; }
-.exercise-mini-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
-.exercise-controls { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
-.exercise-hint {
-  padding: 10px 16px; font-size: 12px; color: var(--muted); line-height: 1.7;
-  border-top: 0.5px solid var(--border);
-}
+.exercise-col-val { font-size: 20px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.exercise-col-unit { font-size: 12px; color: var(--muted); font-weight: 400; }
+.exercise-add-btn { padding:4px 10px; border-radius:14px; background:var(--accent); color:white;
+  border:none; font-size:12px; font-weight:600; cursor:pointer; }
+.exlog-list { margin-top:8px; }
+.exlog-row { display:flex; align-items:center; justify-content:space-between;
+  padding:5px 0; font-size:12px; border-bottom:0.5px solid var(--border); }
+.exlog-row:last-child { border-bottom:none; }
+.exlog-name { font-weight:600; }
+.exlog-meta { color:var(--muted); font-size:11px; margin-top:1px; }
+.exlog-del { background:none; border:none; color:#C7C7CC; font-size:15px; padding:2px 4px; cursor:pointer; line-height:1; }
+.exercise-empty { font-size:12px; color:var(--muted); padding:8px 0; }
 
-/* ===== CARDIO PILLS ===== */
-.cardio-pills { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-.cardio-pill {
-  padding: 5px 10px; border-radius: 16px; border: 1.5px solid #C7C7CC;
-  background: white; font-size: 12px; font-weight: 500; cursor: pointer;
-  color: var(--text); transition: all 0.15s;
-}
-.cardio-pill.sel { background: var(--accent); border-color: var(--accent); color: white; }
+/* ===== EXERCISE SHEET INTERNALS ===== */
+.muscle-tabs { display:flex; gap:6px; flex-wrap:wrap; padding:10px 0 14px; }
+.muscle-tab { padding:6px 12px; border-radius:20px; border:1.5px solid var(--border);
+  font-size:13px; background:white; cursor:pointer; color:var(--text); }
+.muscle-tab.sel { background:var(--accent); border-color:var(--accent); color:white; }
+.exercise-options { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.exercise-option { padding:11px 14px; border-radius:10px; border:1.5px solid var(--border);
+  font-size:14px; cursor:pointer; background:white; color:var(--text); }
+.exercise-option.sel { border-color:var(--accent); background:var(--accent-bg,#f4f3ff); font-weight:600; }
+.stepper-section { border-top:0.5px solid var(--border); padding-top:4px; margin-bottom:6px; }
+.stepper-row { display:flex; align-items:center; justify-content:space-between;
+  padding:11px 0; border-bottom:0.5px solid var(--border); }
+.stepper-row:last-of-type { border-bottom:none; }
+.stepper-label { font-size:15px; }
+.stepper-ctrl { display:flex; align-items:center; gap:14px; }
+.stepper-val { font-size:18px; font-weight:700; min-width:28px; text-align:center; }
+.weight-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; }
+.weight-input { width:80px; text-align:center; font-size:16px; font-weight:700;
+  border:1.5px solid var(--border); border-radius:8px; padding:6px 8px; }
+.cardio-type-chips { display:flex; gap:6px; flex-wrap:wrap; padding:10px 0 14px; }
+.cardio-type-chip { padding:6px 14px; border-radius:20px; border:1.5px solid var(--border);
+  font-size:13px; background:white; cursor:pointer; color:var(--text); }
+.cardio-type-chip.sel { background:var(--accent); border-color:var(--accent); color:white; }
+.cardio-input-row { display:flex; align-items:center; justify-content:space-between;
+  padding:11px 0; border-bottom:0.5px solid var(--border); }
+.cardio-input-row:last-of-type { border-bottom:none; }
+.cardio-num-input { width:80px; text-align:center; font-size:16px; font-weight:700;
+  border:1.5px solid var(--border); border-radius:8px; padding:6px 8px; }
 
 /* ===== LEDGER ===== */
 .ledger-summary {
@@ -972,6 +996,28 @@ body {
   <button class="btn-primary" style="margin-top:4px" onclick="addTimeLog()">保存记录</button>
 </div>
 
+<!-- ===== STRENGTH SHEET ===== -->
+<div class="sheet-overlay" id="strengthSheetOverlay" onclick="closeStrengthSheet()"></div>
+<div class="settings-sheet" id="strengthSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">力量训练</div>
+    <button class="sheet-close" onclick="closeStrengthSheet()">✕</button>
+  </div>
+  <div id="strengthSheetBody" style="padding:0 16px 16px"></div>
+</div>
+
+<!-- ===== CARDIO SHEET ===== -->
+<div class="sheet-overlay" id="cardioSheetOverlay" onclick="closeCardioSheet()"></div>
+<div class="settings-sheet" id="cardioSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">有氧训练</div>
+    <button class="sheet-close" onclick="closeCardioSheet()">✕</button>
+  </div>
+  <div id="cardioSheetBody" style="padding:0 16px 16px"></div>
+</div>
+
 <!-- ===== HABIT ADD SHEET ===== -->
 <div class="sheet-overlay" id="habitOverlay" onclick="closeHabitSheet()"></div>
 <div class="settings-sheet" id="habitSheet">
@@ -1034,39 +1080,27 @@ body {
   <div class="card">
     <div class="exercise-cols">
       <div class="exercise-col">
-        <div class="exercise-col-label">力量</div>
+        <div class="exercise-col-header">
+          <div class="exercise-col-label">力量</div>
+          <button class="exercise-add-btn" onclick="openStrengthSheet()">＋</button>
+        </div>
         <div class="exercise-col-val">
-          <span id="strengthVal">0</span><span class="exercise-col-unit"> / 3 次</span>
+          <span id="strengthVal">0</span><span class="exercise-col-unit"> 次/周</span>
         </div>
-        <div class="exercise-mini-bar">
-          <div class="exercise-mini-fill" id="strengthBarFill" style="width:0%"></div>
-        </div>
-        <div class="exercise-controls">
-          <button class="stepper-btn" onclick="changeStrength(-1)">−</button>
-          <button class="stepper-btn" onclick="changeStrength(1)">＋</button>
-        </div>
+        <div class="exlog-list" id="strengthLogList"></div>
       </div>
       <div class="exercise-col">
-        <div class="exercise-col-label">有氧</div>
+        <div class="exercise-col-header">
+          <div class="exercise-col-label">有氧</div>
+          <button class="exercise-add-btn" onclick="openCardioSheet()">＋</button>
+        </div>
         <div class="exercise-col-val">
-          <span id="cardioVal">0</span><span class="exercise-col-unit"> / 90 min</span>
+          <span id="cardioVal">0</span><span class="exercise-col-unit"> min/周</span>
         </div>
-        <div class="exercise-mini-bar">
-          <div class="exercise-mini-fill" id="cardioBarFill" style="width:0%"></div>
-        </div>
-        <div class="cardio-pills" id="cardioPills">
-          <div class="cardio-pill" data-mins="0" onclick="selectCardio(0)">—</div>
-          <div class="cardio-pill" data-mins="15" onclick="selectCardio(15)">15m</div>
-          <div class="cardio-pill" data-mins="30" onclick="selectCardio(30)">30m</div>
-          <div class="cardio-pill" data-mins="45" onclick="selectCardio(45)">45m</div>
-          <div class="cardio-pill" data-mins="60" onclick="selectCardio(60)">60m</div>
-          <div class="cardio-pill" data-mins="90" onclick="selectCardio(90)">90m</div>
-        </div>
+        <div class="exlog-list" id="cardioLogList"></div>
       </div>
     </div>
-    <div class="exercise-hint" id="exerciseHint"></div>
   </div>
-  <button class="btn-primary" onclick="saveExercise()">＋ 添加本次运动</button>
 
   <div class="section-label">记账 · 本月</div>
   <div class="card">
@@ -1231,6 +1265,7 @@ const DEFAULTS = {
   sleepHistory: [], sleepLoggedToday: false, sleepTodayEffect: 0,
   todos: [],
   weekStrength: 0, weekCardio: 0, weekStrengthApplied: null, weekCardioApplied: null,
+  exerciseLogs: [],
   abilityDisplayNames: { 颜值:'颜值', 魅力:'魅力', 智商:'智商', 体质:'体质', 专注力:'专注力', 认知:'认知' },
   habitPointMultipliers: {},
   fontSize: 16,
@@ -1291,6 +1326,7 @@ function load() {
       weekCardio:           (isNewDay && isMonday) ? 0    : (saved.weekCardio || 0),
       weekStrengthApplied:  (isNewDay && isMonday) ? null : (saved.weekStrengthApplied ?? null),
       weekCardioApplied:    (isNewDay && isMonday) ? null : (saved.weekCardioApplied ?? null),
+      exerciseLogs:         (isNewDay && isMonday) ? []   : (saved.exerciseLogs || []),
       abilityDisplayNames:  saved.abilityDisplayNames || {...DEFAULTS.abilityDisplayNames},
       habitPointMultipliers: saved.habitPointMultipliers || {},
       fontSize:    saved.fontSize    ?? 16,
@@ -1656,53 +1692,56 @@ function deleteSleep() {
 
 // ===== EXERCISE =====
 const STRENGTH_EFFECT = [-0.1, 0.1, 0.2, 0.3];
-const STRENGTH_HINT   = ['不合格 (魅力-0.1)','合格 (魅力+0.1)','良好 (魅力+0.2)','优秀 (魅力+0.3)'];
-let currentStrength = 0, currentCardio = 0;
 
-function updateExerciseDisplay() {
-  const totalS = (state.weekStrength || 0) + currentStrength;
-  const totalC = (state.weekCardio   || 0) + currentCardio;
-  const sv = document.getElementById('strengthVal');
-  if (sv) sv.textContent = totalS;
-  const cv = document.getElementById('cardioVal');
-  if (cv) cv.textContent = totalC;
-  const sf = document.getElementById('strengthBarFill');
-  if (sf) sf.style.width = Math.min(100, totalS / 3 * 100) + '%';
-  const cf = document.getElementById('cardioBarFill');
-  if (cf) cf.style.width = Math.min(100, totalC / 90 * 100) + '%';
-}
-
-function changeStrength(d) {
-  currentStrength = Math.max(0, Math.min(20, currentStrength + d));
-  updateExerciseDisplay();
-  updateExerciseHint();
-}
-function selectCardio(mins) {
-  currentCardio = mins;
-  document.querySelectorAll('.cardio-pill').forEach(p =>
-    p.classList.toggle('sel', +p.dataset.mins === mins));
-  updateExerciseDisplay();
-  updateExerciseHint();
-}
 function cardioEffect(c) {
-  if (c < 15)  return { body: -0.1, charm: 0,   hint: '不合格 (体质-0.1)' };
-  if (c < 90)  return { body:  0.1, charm: 0,   hint: '合格 (体质+0.1)' };
-  if (c < 150) return { body:  0.2, charm: 0.1, hint: '良好 (体质+0.2, 魅力+0.1)' };
-  return              { body:  0.3, charm: 0.2, hint: '⭐ 优秀 (体质+0.3, 魅力+0.2)' };
+  if (c < 15)  return { body: -0.1, charm: 0 };
+  if (c < 90)  return { body:  0.1, charm: 0 };
+  if (c < 150) return { body:  0.2, charm: 0.1 };
+  return              { body:  0.3, charm: 0.2 };
 }
-function updateExerciseHint() {
-  const totalS = (state.weekStrength || 0) + currentStrength;
-  const totalC = (state.weekCardio   || 0) + currentCardio;
-  const sLvl   = Math.min(3, totalS);
-  const ce     = cardioEffect(totalC);
-  document.getElementById('exerciseHint').innerHTML =
-    `本周累计：力量 ${totalS} 次 · 有氧 ${totalC} min<br>` +
-    `力量：${STRENGTH_HINT[sLvl]}<br>有氧：${totalC ? ce.hint : '未记录'}<br>` +
-    `<span style="color:#c7c7cc;font-size:11px">周一自动结算清零</span>`;
-}
-function saveExercise() {
-  if (currentStrength === 0 && currentCardio === 0) { showToast('请先填写运动数据'); return; }
 
+const EXERCISES = {
+  胸:   ['卧推','上斜卧推','哑铃飞鸟','双杠臂屈伸','夹胸'],
+  背:   ['引体向上','杠铃划船','高位下拉','硬拉','坐姿划船'],
+  腿:   ['深蹲','腿举','弓步蹲','腿弯举','腿屈伸'],
+  肩:   ['肩上推举','侧平举','前平举','面拉','俯身飞鸟'],
+  手臂: ['二头弯举','锤式弯举','三头下压','颅骨粉碎者','臂屈伸'],
+  核心: ['平板支撑','卷腹','俄罗斯转体','悬挂举腿','山地爬行'],
+};
+const CARDIO_ACTIVITIES = ['跑步','骑车','游泳','跳绳','椭圆机','其他'];
+
+function renderExerciseLogs() {
+  const sv = document.getElementById('strengthVal');
+  const cv = document.getElementById('cardioVal');
+  const sl = document.getElementById('strengthLogList');
+  const cl = document.getElementById('cardioLogList');
+  if (sv) sv.textContent = state.weekStrength || 0;
+  if (cv) cv.textContent = state.weekCardio || 0;
+  if (sl) {
+    const sLogs = (state.exerciseLogs || []).filter(l => l.type === 'strength');
+    sl.innerHTML = sLogs.length ? sLogs.map(l =>
+      `<div class="exlog-row">
+        <div class="exlog-info">
+          <div class="exlog-name">${l.name}</div>
+          <div class="exlog-meta">${l.sets}组×${l.reps}次${l.weight ? ' · ' + l.weight + 'kg' : ''}</div>
+        </div>
+        <button class="exlog-del" onclick="deleteExerciseLog(${l.id})">×</button>
+      </div>`).join('') : '<div class="exercise-empty">暂无记录</div>';
+  }
+  if (cl) {
+    const cLogs = (state.exerciseLogs || []).filter(l => l.type === 'cardio');
+    cl.innerHTML = cLogs.length ? cLogs.map(l =>
+      `<div class="exlog-row">
+        <div class="exlog-info">
+          <div class="exlog-name">${l.activity}</div>
+          <div class="exlog-meta">${l.duration}min${l.distance ? ' · ' + l.distance + 'km' : ''}</div>
+        </div>
+        <button class="exlog-del" onclick="deleteExerciseLog(${l.id})">×</button>
+      </div>`).join('') : '<div class="exercise-empty">暂无记录</div>';
+  }
+}
+
+function recalcWeeklyTotals() {
   if (state.weekStrengthApplied !== null) {
     const prevSE = STRENGTH_EFFECT[Math.min(3, state.weekStrengthApplied)];
     nudge('魅力', -prevSE); nudge('体质', -prevSE * 0.5);
@@ -1711,10 +1750,9 @@ function saveExercise() {
     const prevCE = cardioEffect(state.weekCardioApplied);
     nudge('体质', -prevCE.body); nudge('魅力', -prevCE.charm);
   }
-
-  state.weekStrength = (state.weekStrength || 0) + currentStrength;
-  state.weekCardio   = (state.weekCardio   || 0) + currentCardio;
-
+  const logs = state.exerciseLogs || [];
+  state.weekStrength = logs.filter(l => l.type === 'strength').length;
+  state.weekCardio   = logs.filter(l => l.type === 'cardio').reduce((s, l) => s + (l.duration || 0), 0);
   const newSLvl = Math.min(3, state.weekStrength);
   const newSE   = STRENGTH_EFFECT[newSLvl];
   const newCE   = cardioEffect(state.weekCardio);
@@ -1722,15 +1760,147 @@ function saveExercise() {
   nudge('体质', newCE.body); nudge('魅力', newCE.charm);
   const overall = (newSE + newCE.body) / 2;
   nudge('颜值', overall > 0 ? 0.08 : -0.08);
-
   state.weekStrengthApplied = state.weekStrength;
   state.weekCardioApplied   = state.weekCardio;
+}
 
-  currentStrength = 0; currentCardio = 0;
-  selectCardio(0);
+function deleteExerciseLog(id) {
+  state.exerciseLogs = (state.exerciseLogs || []).filter(l => l.id !== id);
+  recalcWeeklyTotals();
+  save(); renderAbilities(); renderExerciseLogs();
+  showToast('记录已删除');
+}
 
-  save(); renderAbilities(); updateExerciseDisplay(); updateExerciseHint();
-  showToast(`本周：力量${state.weekStrength}次 · 有氧${state.weekCardio}min 💪`);
+// ===== STRENGTH SHEET =====
+let _selectedMuscle = '胸', _selectedExercise = '', _strengthSets = 3, _strengthReps = 10;
+
+function openStrengthSheet() {
+  _selectedMuscle = Object.keys(EXERCISES)[0];
+  _selectedExercise = ''; _strengthSets = 3; _strengthReps = 10;
+  renderStrengthSheetBody();
+  toggleSheet('strengthSheet', 'strengthSheetOverlay', true);
+}
+function closeStrengthSheet() { toggleSheet('strengthSheet', 'strengthSheetOverlay', false); }
+
+function renderStrengthSheetBody() {
+  const body = document.getElementById('strengthSheetBody');
+  if (!body) return;
+  const groups = Object.keys(EXERCISES);
+  const tabs = `<div class="muscle-tabs">${groups.map(g =>
+    `<div class="muscle-tab${g===_selectedMuscle?' sel':''}" onclick="selectMuscleGroup('${g}')">${g}</div>`
+  ).join('')}</div>`;
+  const options = `<div class="exercise-options">${EXERCISES[_selectedMuscle].map(e =>
+    `<div class="exercise-option${e===_selectedExercise?' sel':''}" onclick="selectStrengthExercise('${e}')">${e}</div>`
+  ).join('')}</div>`;
+  const inputs = `<div class="stepper-section">
+    <div class="stepper-row">
+      <span class="stepper-label">组数</span>
+      <div class="stepper-ctrl">
+        <button class="stepper-btn" onclick="adjSets(-1)">−</button>
+        <span class="stepper-val" id="setsVal">${_strengthSets}</span>
+        <button class="stepper-btn" onclick="adjSets(1)">＋</button>
+      </div>
+    </div>
+    <div class="stepper-row">
+      <span class="stepper-label">次数</span>
+      <div class="stepper-ctrl">
+        <button class="stepper-btn" onclick="adjReps(-1)">−</button>
+        <span class="stepper-val" id="repsVal">${_strengthReps}</span>
+        <button class="stepper-btn" onclick="adjReps(1)">＋</button>
+      </div>
+    </div>
+    <div class="weight-row">
+      <span class="stepper-label">重量 (kg)</span>
+      <input class="weight-input" id="weightInput" type="number" min="0" step="2.5" placeholder="—">
+    </div>
+  </div>
+  <button class="btn-primary" onclick="addStrengthLog()">添加记录</button>`;
+  body.innerHTML = tabs + options + inputs;
+}
+
+function selectMuscleGroup(g) {
+  _selectedMuscle = g; _selectedExercise = '';
+  renderStrengthSheetBody();
+}
+function selectStrengthExercise(name) {
+  _selectedExercise = name;
+  document.querySelectorAll('.exercise-option').forEach(el =>
+    el.classList.toggle('sel', el.textContent.trim() === name));
+}
+function adjSets(d) {
+  _strengthSets = Math.max(1, Math.min(20, _strengthSets + d));
+  const el = document.getElementById('setsVal'); if (el) el.textContent = _strengthSets;
+}
+function adjReps(d) {
+  _strengthReps = Math.max(1, Math.min(100, _strengthReps + d));
+  const el = document.getElementById('repsVal'); if (el) el.textContent = _strengthReps;
+}
+function addStrengthLog() {
+  if (!_selectedExercise) { showToast('请选择训练动作'); return; }
+  const wInput = document.getElementById('weightInput');
+  const weight = wInput && wInput.value ? parseFloat(wInput.value) : null;
+  state.exerciseLogs = state.exerciseLogs || [];
+  state.exerciseLogs.push({
+    id: Date.now(), date: TODAY, type: 'strength',
+    muscleGroup: _selectedMuscle, name: _selectedExercise,
+    sets: _strengthSets, reps: _strengthReps, weight,
+  });
+  recalcWeeklyTotals();
+  save(); renderAbilities(); renderExerciseLogs();
+  closeStrengthSheet();
+  showToast(`${_selectedExercise} ${_strengthSets}组×${_strengthReps}次 已记录 💪`);
+}
+
+// ===== CARDIO SHEET =====
+let _selectedCardioActivity = '';
+
+function openCardioSheet() {
+  _selectedCardioActivity = '';
+  const body = document.getElementById('cardioSheetBody');
+  if (!body) return;
+  const chips = `<div class="cardio-type-chips">${CARDIO_ACTIVITIES.map(a =>
+    `<div class="cardio-type-chip" onclick="selectCardioActivity('${a}')">${a}</div>`
+  ).join('')}</div>`;
+  const inputs = `<div class="cardio-input-row">
+    <span class="stepper-label">时长</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <input class="cardio-num-input" id="cardioDurationInput" type="number" min="1" placeholder="—">
+      <span style="color:var(--muted);font-size:13px">分钟</span>
+    </div>
+  </div>
+  <div class="cardio-input-row">
+    <span class="stepper-label">距离（可选）</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <input class="cardio-num-input" id="cardioDistanceInput" type="number" min="0" step="0.1" placeholder="—">
+      <span style="color:var(--muted);font-size:13px">km</span>
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-top:16px" onclick="addCardioLog()">添加记录</button>`;
+  body.innerHTML = chips + inputs;
+  toggleSheet('cardioSheet', 'cardioSheetOverlay', true);
+}
+function closeCardioSheet() { toggleSheet('cardioSheet', 'cardioSheetOverlay', false); }
+function selectCardioActivity(type) {
+  _selectedCardioActivity = type;
+  document.querySelectorAll('.cardio-type-chip').forEach(el =>
+    el.classList.toggle('sel', el.textContent.trim() === type));
+}
+function addCardioLog() {
+  if (!_selectedCardioActivity) { showToast('请选择有氧项目'); return; }
+  const dEl = document.getElementById('cardioDurationInput');
+  const distEl = document.getElementById('cardioDistanceInput');
+  const duration = dEl ? parseInt(dEl.value) : 0;
+  if (!duration || duration < 1) { showToast('请填写时长'); return; }
+  const distance = distEl && distEl.value ? parseFloat(distEl.value) : null;
+  state.exerciseLogs = state.exerciseLogs || [];
+  state.exerciseLogs.push({
+    id: Date.now(), date: TODAY, type: 'cardio',
+    activity: _selectedCardioActivity, duration, distance,
+  });
+  recalcWeeklyTotals();
+  save(); renderAbilities(); renderExerciseLogs();
+  closeCardioSheet();
+  showToast(`${_selectedCardioActivity} ${duration}min${distance?' · '+distance+'km':''} 已记录 🏃`);
 }
 
 // ===== BOOKKEEPING =====
@@ -2988,9 +3158,7 @@ renderTransactions();
 renderTodos();
 renderReminders();
 updateSleepDisplay();
-updateExerciseDisplay();
-updateExerciseHint();
-selectCardio(0);
+renderExerciseLogs();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
