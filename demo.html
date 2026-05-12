@@ -1184,12 +1184,16 @@ body {
         </div>
         <button class="cal-today-add-btn" id="calTodayAddBtn" onclick="openTimeLogSheet()" title="记录时间段事项">＋</button>
       </div>
-      <div class="cal-day-dots">
-        <span class="cal-day-dot" id="cdot-1"></span>
-        <span class="cal-day-dot active" id="cdot0"></span>
-        <span class="cal-day-dot" id="cdot1"></span>
+      <div style="overflow:hidden">
+        <div id="calTodayInner">
+          <div class="cal-day-dots">
+            <span class="cal-day-dot" id="cdot-1"></span>
+            <span class="cal-day-dot active" id="cdot0"></span>
+            <span class="cal-day-dot" id="cdot1"></span>
+          </div>
+          <div id="calTodayTodos"></div>
+        </div>
       </div>
-      <div id="calTodayTodos"></div>
     </div>
   </div>
 
@@ -1271,7 +1275,10 @@ const DEFAULTS = {
 };
 
 const STORAGE_KEY = 'lifeapp_v2';
-const TODAY = new Date().toISOString().slice(0, 10);
+function localDateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const TODAY = localDateStr(new Date());
 
 function load() {
   try {
@@ -2200,7 +2207,7 @@ function nextRecurDate(fromDate, recurrence) {
       if (days.includes((cur + i) % 7)) { d.setDate(d.getDate() + i); break; }
     }
   }
-  return d.toISOString().slice(0, 10);
+  return localDateStr(d);
 }
 
 const RECUR_LABEL = { daily:'每天', weekly:'每周', monthly:'每月' };
@@ -2557,7 +2564,7 @@ function renderCalendarPage() {
 function offsetToDateStr(offset) {
   const d = new Date(TODAY + 'T00:00:00');
   d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
+  return localDateStr(d);
 }
 
 function renderCalTodayTodos() {
@@ -2654,21 +2661,71 @@ function renderCalTodayTodos() {
   el.innerHTML = html;
 }
 
+function slideTodayTo(direction, callback) {
+  const inner = document.getElementById('calTodayInner');
+  if (!inner) { callback(); return; }
+  const outX = direction === 'left' ? '-105%' : '105%';
+  const inX  = direction === 'left' ? '105%'  : '-105%';
+  inner.style.transition = 'transform 0.22s ease';
+  inner.style.transform  = `translateX(${outX})`;
+  setTimeout(() => {
+    inner.style.transition = 'none';
+    inner.style.transform  = `translateX(${inX})`;
+    callback();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      inner.style.transition = 'transform 0.22s ease';
+      inner.style.transform  = 'translateX(0)';
+    }));
+  }, 220);
+}
+
 function initTodaySwipe() {
   const el = document.getElementById('calModeToday');
   if (!el) return;
-  let startX = 0, startY = 0;
+  let startX = 0, startY = 0, dragging = false, locked = false;
   el.addEventListener('touchstart', e => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    dragging = true; locked = false;
+    const inner = document.getElementById('calTodayInner');
+    if (inner) inner.style.transition = 'none';
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (!dragging || locked) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+      dragging = false;
+      const inner = document.getElementById('calTodayInner');
+      if (inner) { inner.style.transition = 'transform 0.2s ease'; inner.style.transform = 'translateX(0)'; }
+      return;
+    }
+    const inner = document.getElementById('calTodayInner');
+    if (!inner) return;
+    const atBoundary = (dx > 0 && calTodayOffset === -1) || (dx < 0 && calTodayOffset === 1);
+    inner.style.transform = `translateX(${atBoundary ? dx * 0.15 : dx * 0.6}px)`;
   }, { passive: true });
   el.addEventListener('touchend', e => {
+    if (!dragging) return;
+    dragging = false;
     const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-    // 左滑→明天, 右滑→昨天
-    if (dx < 0 && calTodayOffset < 1)  { calTodayOffset++; renderCalTodayTodos(); }
-    if (dx > 0 && calTodayOffset > -1) { calTodayOffset--; renderCalTodayTodos(); }
+    const inner = document.getElementById('calTodayInner');
+    if (!inner) return;
+    if (Math.abs(dx) > 60 && !locked) {
+      if (dx < 0 && calTodayOffset < 1) {
+        locked = true; calTodayOffset++;
+        slideTodayTo('left', renderCalTodayTodos);
+      } else if (dx > 0 && calTodayOffset > -1) {
+        locked = true; calTodayOffset--;
+        slideTodayTo('right', renderCalTodayTodos);
+      } else {
+        inner.style.transition = 'transform 0.2s ease';
+        inner.style.transform  = 'translateX(0)';
+      }
+    } else {
+      inner.style.transition = 'transform 0.2s ease';
+      inner.style.transform  = 'translateX(0)';
+    }
   }, { passive: true });
 }
 
