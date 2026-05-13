@@ -203,6 +203,13 @@ body {
 .exercise-col-unit { font-size: 12px; color: var(--muted); font-weight: 400; }
 .exercise-add-btn { padding:4px 10px; border-radius:14px; background:var(--accent); color:white;
   border:none; font-size:12px; font-weight:600; cursor:pointer; }
+.history-link { font-size:12px; color:var(--accent); font-weight:600; cursor:pointer; }
+.history-date-group { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.04em; padding:12px 0 6px; border-bottom:0.5px solid var(--border); }
+.history-date-group:first-child { padding-top:4px; }
+.history-item { padding:8px 0; border-bottom:0.5px solid var(--border); display:flex; flex-direction:column; gap:3px; }
+.history-item:last-child { border-bottom:none; }
+.history-item-title { font-size:14px; font-weight:600; }
+.history-item-meta { font-size:12px; color:var(--muted); }
 .exlog-list { margin-top:8px; }
 .exlog-row { display:flex; align-items:center; justify-content:space-between;
   padding:5px 0; font-size:12px; border-bottom:0.5px solid var(--border); }
@@ -1076,6 +1083,26 @@ body {
 </div>
 
 <!-- ===== HABIT ADD SHEET ===== -->
+<div class="sheet-overlay" id="sleepHistoryOverlay" onclick="closeSleepHistory()"></div>
+<div class="settings-sheet" id="sleepHistorySheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">睡眠历史</div>
+    <button class="sheet-close" onclick="closeSleepHistory()">✕</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;padding:0 20px 24px" id="sleepHistoryList"></div>
+</div>
+
+<div class="sheet-overlay" id="exerciseHistoryOverlay" onclick="closeExerciseHistory()"></div>
+<div class="settings-sheet" id="exerciseHistorySheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">运动历史</div>
+    <button class="sheet-close" onclick="closeExerciseHistory()">✕</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;padding:0 20px 24px" id="exerciseHistoryList"></div>
+</div>
+
 <div class="sheet-overlay" id="habitOverlay" onclick="closeHabitSheet()"></div>
 <div class="settings-sheet" id="habitSheet">
   <div class="sheet-handle"></div>
@@ -1130,10 +1157,16 @@ body {
 <div id="page-records" class="page">
   <div class="page-header"><h1>生活记录</h1></div>
 
-  <div class="section-label">睡眠 · 今天</div>
+  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+    <span>睡眠 · 今天</span>
+    <span class="history-link" onclick="openSleepHistory()">历史 ›</span>
+  </div>
   <div class="card" id="sleepCard"></div>
 
-  <div class="section-label">本周运动</div>
+  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between">
+    <span>本周运动</span>
+    <span class="history-link" onclick="openExerciseHistory()">历史 ›</span>
+  </div>
   <div class="card">
     <div class="exercise-cols">
       <div class="exercise-col">
@@ -1838,6 +1871,49 @@ function deleteSleep() {
   save(); renderAbilities(); updateSleepDisplay(); closeSleepSheet();
   showToast('睡眠记录已删除');
 }
+function openSleepHistory() {
+  const list = document.getElementById('sleepHistoryList');
+  if (!list) return;
+  const sorted = [...(state.sleepHistory || [])].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+  if (!sorted.length) { list.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0">暂无历史记录</div>'; }
+  else {
+    list.innerHTML = sorted.map(r => {
+      const durStr = r.durH != null ? r.durH.toFixed(1) + ' 小时' : '';
+      const timeStr = (r.bedTime && r.wakeTime) ? `${r.bedTime} → ${r.wakeTime}` : '';
+      return `<div class="history-item">
+        <div class="history-item-title">${r.date || ''} ${r.rating || ''}</div>
+        <div class="history-item-meta">${[timeStr, durStr, r.note].filter(Boolean).join(' · ')}</div>
+      </div>`;
+    }).join('');
+  }
+  toggleSheet('sleepHistorySheet', 'sleepHistoryOverlay', true);
+}
+function closeSleepHistory() { toggleSheet('sleepHistorySheet', 'sleepHistoryOverlay', false); }
+function openExerciseHistory() {
+  const list = document.getElementById('exerciseHistoryList');
+  if (!list) return;
+  const logs = [...(state.exerciseLogs || [])].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+  if (!logs.length) { list.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0">暂无历史记录</div>'; }
+  else {
+    const byDate = {};
+    logs.forEach(l => { (byDate[l.date] = byDate[l.date] || []).push(l); });
+    list.innerHTML = Object.entries(byDate).map(([date, items]) =>
+      `<div class="history-date-group">${date}</div>` +
+      items.map(l => {
+        const isStr = l.type === 'strength';
+        const detail = isStr
+          ? (Array.isArray(l.sets) ? l.sets.map((s,i)=>`第${i+1}组 ${s.reps}次${s.weight?' '+s.weight+'kg':''}`).join(' · ') : `${l.sets}组×${l.reps}次${l.weight?' · '+l.weight+'kg':''}`)
+          : `${l.duration}min${l.distance?' · '+l.distance+'km':''}`;
+        return `<div class="history-item">
+          <div class="history-item-title">${isStr ? l.name : l.activity}</div>
+          <div class="history-item-meta">${isStr?'力量':'有氧'} · ${detail}</div>
+        </div>`;
+      }).join('')
+    ).join('');
+  }
+  toggleSheet('exerciseHistorySheet', 'exerciseHistoryOverlay', true);
+}
+function closeExerciseHistory() { toggleSheet('exerciseHistorySheet', 'exerciseHistoryOverlay', false); }
 
 // ===== EXERCISE =====
 const STRENGTH_EFFECT = [-0.1, 0.1, 0.2, 0.3];
