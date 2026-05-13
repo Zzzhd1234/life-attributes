@@ -1169,6 +1169,16 @@ body {
   <div class="card">
     <div class="stat-grid" id="reportStats"></div>
   </div>
+
+  <div class="section-label">本月运动</div>
+  <div class="card">
+    <div class="stat-grid" id="reportExercise"></div>
+  </div>
+
+  <div class="section-label">本月财务</div>
+  <div class="card">
+    <div class="stat-grid" id="reportFinance"></div>
+  </div>
 </div>
 
 <!-- ===== PAGE: 日历 ===== -->
@@ -1275,6 +1285,7 @@ const DEFAULTS = {
   todos: [],
   weekStrength: 0, weekCardio: 0, weekStrengthApplied: null, weekCardioApplied: null,
   exerciseLogs: [],
+  abilitySnapshots: [],
   abilityDisplayNames: { 颜值:'颜值', 魅力:'魅力', 智商:'智商', 体质:'体质', 专注力:'专注力', 认知:'认知' },
   habitPointMultipliers: {},
   fontSize: 16,
@@ -1285,6 +1296,12 @@ const DEFAULTS = {
 const STORAGE_KEY = 'lifeapp_v2';
 function localDateStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function getWeekStart(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  return localDateStr(d);
 }
 const TODAY = localDateStr(new Date());
 
@@ -1324,6 +1341,18 @@ function load() {
       return t;
     });
 
+    // Monthly snapshot: when month rolls over, save last month's ability state
+    const prevMonthStr = saved.lastDate ? saved.lastDate.slice(0, 7) : null;
+    const snapshots = [...(saved.abilitySnapshots || [])];
+    if (prevMonthStr && prevMonthStr !== TODAY.slice(0, 7)) {
+      if (!snapshots.find(s => s.yearMonth === prevMonthStr) && saved.abilities) {
+        const vals = Object.values(saved.abilities);
+        const snapshotScore = Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+        snapshots.push({ yearMonth: prevMonthStr, abilities: {...saved.abilities}, score: snapshotScore });
+        while (snapshots.length > 18) snapshots.shift();
+      }
+    }
+
     return {
       ...DEFAULTS, ...saved, habits, todos,
       lastDate: TODAY,
@@ -1335,7 +1364,8 @@ function load() {
       weekCardio:           (isNewDay && isMonday) ? 0    : (saved.weekCardio || 0),
       weekStrengthApplied:  (isNewDay && isMonday) ? null : (saved.weekStrengthApplied ?? null),
       weekCardioApplied:    (isNewDay && isMonday) ? null : (saved.weekCardioApplied ?? null),
-      exerciseLogs:         (isNewDay && isMonday) ? []   : (saved.exerciseLogs || []),
+      exerciseLogs:         saved.exerciseLogs || [],
+      abilitySnapshots:     snapshots,
       abilityDisplayNames:  saved.abilityDisplayNames || {...DEFAULTS.abilityDisplayNames},
       habitPointMultipliers: saved.habitPointMultipliers || {},
       fontSize:    saved.fontSize    ?? 16,
@@ -1763,9 +1793,10 @@ function recalcWeeklyTotals() {
     const prevCE = cardioEffect(state.weekCardioApplied);
     nudge('体质', -prevCE.body); nudge('魅力', -prevCE.charm);
   }
-  const logs = state.exerciseLogs || [];
-  state.weekStrength = new Set(logs.filter(l => l.type === 'strength').map(l => l.date)).size;
-  state.weekCardio   = logs.filter(l => l.type === 'cardio').reduce((s, l) => s + (l.duration || 0), 0);
+  const weekStart = getWeekStart(TODAY);
+  const weekLogs = (state.exerciseLogs || []).filter(l => l.date >= weekStart);
+  state.weekStrength = new Set(weekLogs.filter(l => l.type === 'strength').map(l => l.date)).size;
+  state.weekCardio   = weekLogs.filter(l => l.type === 'cardio').reduce((s, l) => s + (l.duration || 0), 0);
   const newSLvl = Math.min(3, state.weekStrength);
   const newSE   = STRENGTH_EFFECT[newSLvl];
   const newCE   = cardioEffect(state.weekCardio);
@@ -1991,44 +2022,60 @@ function changeMonth(d) {
 }
 
 function renderReport() {
-  document.getElementById('reportMonthLabel').textContent =
-    `${reportMonth.getFullYear()}年${reportMonth.getMonth()+1}月`;
+  const y = reportMonth.getFullYear();
+  const m = reportMonth.getMonth(); // 0-indexed
+  const monthStr = `${y}-${String(m+1).padStart(2,'0')}`;
+  const isCurrentMonth = monthStr === TODAY.slice(0, 7);
+  document.getElementById('reportMonthLabel').textContent = `${y}年${m+1}月`;
 
-  // Ability changes list
+  // ── Ability changes ──
+  const prevMonthStr = m === 0 ? `${y-1}-12` : `${y}-${String(m).padStart(2,'0')}`;
+  const prevSnap = (state.abilitySnapshots || []).find(s => s.yearMonth === prevMonthStr);
+  const currSnap = (state.abilitySnapshots || []).find(s => s.yearMonth === monthStr);
+  const currAbils = isCurrentMonth ? state.abilities : currSnap?.abilities;
   const abilEl = document.getElementById('abilityChangeList');
   if (abilEl) {
-    const entries = Object.entries(state.abilities);
-    abilEl.innerHTML = entries.map(([k, v], i) => {
-      const delta = (v - 60).toFixed(1);
-      const positive = +delta >= 0;
-      const name = abilityDisplayName(k);
-      const isLast = i === entries.length - 1;
-      return `<div style="display:flex;align-items:center;padding:12px 16px;border-bottom:${isLast ? 'none' : '0.5px solid var(--border)'}">
-        <div style="flex:1;font-size:15px">${name}</div>
-        <div style="width:100px;height:4px;background:#E5E5EA;border-radius:2px;margin-right:12px;overflow:hidden">
-          <div style="width:${Math.min(100,Math.max(0,v))}%;height:100%;background:var(--accent)"></div>
-        </div>
-        <div style="width:44px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:${positive ? 'var(--success)' : 'var(--danger)'}">
-          ${positive ? '+' : ''}${delta}
-        </div>
-      </div>`;
-    }).join('');
+    if (currAbils) {
+      abilEl.innerHTML = Object.entries(currAbils).map(([k, v], i, arr) => {
+        const prev = prevSnap?.abilities?.[k];
+        const delta = prev !== undefined ? v - prev : null;
+        const isLast = i === arr.length - 1;
+        const deltaHtml = delta !== null
+          ? `<span style="font-size:13px;font-variant-numeric:tabular-nums;color:${delta>=0?'var(--success)':'var(--danger)'}">${delta>=0?'+':''}${delta.toFixed(1)}</span>`
+          : `<span style="font-size:12px;color:var(--muted)">${v.toFixed(0)}</span>`;
+        return `<div style="display:flex;align-items:center;padding:12px 16px;border-bottom:${isLast?'none':'0.5px solid var(--border)'}">
+          <div style="flex:1;font-size:15px">${abilityDisplayName(k)}</div>
+          <div style="width:90px;height:4px;background:#E5E5EA;border-radius:2px;margin-right:12px;overflow:hidden">
+            <div style="width:${Math.min(100,Math.max(0,v))}%;height:100%;background:var(--accent)"></div>
+          </div>
+          <div style="min-width:44px;text-align:right">${deltaHtml}</div>
+        </div>`;
+      }).join('');
+      if (!prevSnap) {
+        abilEl.innerHTML += `<div style="padding:8px 16px;font-size:11px;color:var(--muted)">
+          ※ 首月暂无对比，下月起显示月度变化</div>`;
+      }
+    } else {
+      abilEl.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">暂无该月数据</div>';
+    }
   }
 
-  // Habit completion bars
+  // ── Habit completion rate (real monthly data) ──
+  const daysInMonth = new Date(y, m+1, 0).getDate();
   const habitChart = document.getElementById('habitChart');
   if (habitChart) {
     const habitEntries = Object.entries(state.habits);
     if (habitEntries.length) {
       habitChart.innerHTML = habitEntries.map(([,h]) => {
-        const pct = Math.round((h.weekCount || 0) / 7 * 100);
+        const count = (h.history || []).filter(d => d.startsWith(monthStr)).length;
+        const pct = Math.round(count / daysInMonth * 100);
         return `<div style="margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
             <span>${h.icon} ${h.name}</span>
-            <span style="font-variant-numeric:tabular-nums;color:var(--muted)">${pct}%</span>
+            <span style="font-variant-numeric:tabular-nums;color:var(--muted)">${count}/${daysInMonth}天 · ${pct}%</span>
           </div>
           <div style="height:6px;background:#E5E5EA;border-radius:3px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:var(--accent);border-radius:3px"></div>
+            <div style="width:${pct}%;height:100%;background:var(--accent);border-radius:3px;transition:width 0.4s"></div>
           </div>
         </div>`;
       }).join('');
@@ -2037,42 +2084,45 @@ function renderReport() {
     }
   }
 
-  // 4-month trend
-  const avgScore = totalScore();
-  const m = reportMonth.getMonth();
-  const y = reportMonth.getFullYear();
-  const trendData = [
-    { label: ((m-2+12)%12+1) + '月', val: Math.max(30, avgScore - 6) },
-    { label: ((m-1+12)%12+1) + '月', val: Math.max(30, avgScore - 3) },
-    { label: ((m  +12)%12+1) + '月', val: Math.max(30, avgScore - 1) },
-    { label: (m+1) + '月',           val: avgScore, current: true },
-  ];
+  // ── 4-month trend (real snapshot scores) ──
   const trendEl = document.getElementById('trendChart');
   if (trendEl) {
-    trendEl.innerHTML = trendData.map(d => `
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
-        <div style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums">${d.val}</div>
-        <div style="width:100%;background:${d.current ? 'var(--accent)' : '#D1D1D6'};height:${d.val}%;border-radius:4px 4px 0 0;min-height:8px;transition:height 0.4s"></div>
+    const trendData = [];
+    for (let i = 3; i >= 0; i--) {
+      const td = new Date(y, m - i, 1);
+      const tm = `${td.getFullYear()}-${String(td.getMonth()+1).padStart(2,'0')}`;
+      const snap = (state.abilitySnapshots || []).find(s => s.yearMonth === tm);
+      const isCur = tm === TODAY.slice(0, 7);
+      const val = snap ? snap.score : (isCur ? totalScore() : null);
+      trendData.push({ label: `${td.getMonth()+1}月`, val, highlight: tm === monthStr });
+    }
+    const maxVal = Math.max(...trendData.map(d => d.val || 0), 60);
+    trendEl.innerHTML = trendData.map(d => {
+      const pct = d.val ? Math.round(d.val / maxVal * 100) : 0;
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums">${d.val ?? '--'}</div>
+        <div style="width:100%;background:${d.highlight?'var(--accent)':'#D1D1D6'};height:${pct}%;border-radius:4px 4px 0 0;min-height:4px;transition:height 0.4s"></div>
         <div style="font-size:11px;color:var(--muted)">${d.label}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
-  // Stats
-  const sorted = Object.entries(state.abilities).sort((a,b)=>b[1]-a[1]);
+  // ── Stats (streak, sleep, best/worst ability) ──
+  const sorted = Object.entries(state.abilities).sort((a,b) => b[1]-a[1]);
   const top = sorted[0], low = sorted[sorted.length-1];
-  const avgSleep = state.sleepHistory.length
-    ? (state.sleepHistory.reduce((s,r)=>s+r.durH,0)/state.sleepHistory.length).toFixed(1)
-    : '--';
+  const monthSleep = (state.sleepHistory || []).filter(r => (r.date||'').startsWith(monthStr));
+  const avgSleep = monthSleep.length
+    ? (monthSleep.reduce((s,r) => s+(r.durH||0), 0)/monthSleep.length).toFixed(1) : '--';
   document.getElementById('reportStats').innerHTML = `
     <div class="stat-cell">
-      <div class="stat-cell-lbl">连击天数</div>
+      <div class="stat-cell-lbl">当前连击</div>
       <div class="stat-cell-val">${state.streak}</div>
       <div class="stat-cell-sub">天</div>
     </div>
     <div class="stat-cell">
-      <div class="stat-cell-lbl">平均睡眠</div>
+      <div class="stat-cell-lbl">本月均睡</div>
       <div class="stat-cell-val">${avgSleep}</div>
-      <div class="stat-cell-sub">小时</div>
+      <div class="stat-cell-sub">小时 · ${monthSleep.length}条记录</div>
     </div>
     <div class="stat-cell">
       <div class="stat-cell-lbl">最强属性</div>
@@ -2083,6 +2133,54 @@ function renderReport() {
       <div class="stat-cell-lbl">需要关注</div>
       <div class="stat-cell-val" style="font-size:20px;color:${low[1]<30?'var(--danger)':'var(--warning)'}">${abilityDisplayName(low[0])}</div>
       <div class="stat-cell-sub">${low[1].toFixed(1)} 分</div>
+    </div>`;
+
+  // ── Exercise stats ──
+  const monthExLogs = (state.exerciseLogs || []).filter(l => (l.date||'').startsWith(monthStr));
+  const strengthDays = new Set(monthExLogs.filter(l=>l.type==='strength').map(l=>l.date)).size;
+  const cardioMin   = monthExLogs.filter(l=>l.type==='cardio').reduce((s,l)=>s+(l.duration||0),0);
+  const strengthSets = monthExLogs.filter(l=>l.type==='strength')
+    .reduce((s,l)=>s+(Array.isArray(l.sets)?l.sets.length:(l.sets||0)),0);
+  const cardioSessions = monthExLogs.filter(l=>l.type==='cardio').length;
+  document.getElementById('reportExercise').innerHTML = `
+    <div class="stat-cell">
+      <div class="stat-cell-lbl">力量训练</div>
+      <div class="stat-cell-val">${strengthDays}</div>
+      <div class="stat-cell-sub">天 · ${strengthSets} 组</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-lbl">有氧运动</div>
+      <div class="stat-cell-val">${cardioMin}</div>
+      <div class="stat-cell-sub">分钟 · ${cardioSessions} 次</div>
+    </div>`;
+
+  // ── Finance stats (filter by id timestamp) ──
+  const ms = new Date(y, m, 1).getTime();
+  const me = new Date(y, m+1, 0, 23, 59, 59, 999).getTime();
+  const monthTx = (state.transactions||[]).filter(t => t.id >= ms && t.id <= me);
+  const income  = monthTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = monthTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const balance = income - expense;
+  document.getElementById('reportFinance').innerHTML = `
+    <div class="stat-cell">
+      <div class="stat-cell-lbl">收入</div>
+      <div class="stat-cell-val" style="font-size:20px;color:var(--success)">¥${Math.round(income).toLocaleString()}</div>
+      <div class="stat-cell-sub">${monthTx.filter(t=>t.type==='income').length} 笔</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-lbl">支出</div>
+      <div class="stat-cell-val" style="font-size:20px;color:var(--danger)">¥${Math.round(expense).toLocaleString()}</div>
+      <div class="stat-cell-sub">${monthTx.filter(t=>t.type==='expense').length} 笔</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-lbl">结余</div>
+      <div class="stat-cell-val" style="font-size:20px;color:${balance>=0?'var(--success)':'var(--danger)'}">${balance>=0?'+':''}¥${Math.abs(Math.round(balance)).toLocaleString()}</div>
+      <div class="stat-cell-sub">净收支</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-lbl">记录笔数</div>
+      <div class="stat-cell-val">${monthTx.length}</div>
+      <div class="stat-cell-sub">本月合计</div>
     </div>`;
 }
 
