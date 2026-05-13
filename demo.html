@@ -539,6 +539,8 @@ body {
   letter-spacing: 1px;
 }
 .cal-today-empty { font-size: 14px; color: var(--muted); text-align: center; padding: 24px 0; }
+.cal-section-header { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; padding: 6px 0 8px; margin-top: 4px; }
+.cal-section-header:first-child { margin-top: 0; padding-top: 0; }
 .cal-day-dots { display:flex; gap:5px; justify-content:center; margin:0 0 14px; padding-top:4px; }
 .cal-day-dot { width:6px; height:6px; border-radius:50%; background:#D1D1D6; transition:all .2s; flex-shrink:0; }
 .cal-day-dot.active { background:var(--accent); width:18px; border-radius:3px; }
@@ -907,15 +909,25 @@ body {
   </div>
   <div class="section-label">重复</div>
   <div class="card">
-    <div class="settings-row" style="border-bottom:none">
+    <div class="settings-row">
       <span class="settings-label">重复周期</span>
-      <select class="remind-select" id="reminderRecurrence">
+      <select class="remind-select" id="reminderRecurrence" onchange="onReminderRecurrenceChange()">
         <option value="none">不重复</option>
         <option value="daily">每天</option>
         <option value="weekly">每周</option>
         <option value="monthly">每月</option>
         <option value="yearly">每年</option>
+        <option value="custom">自选日期</option>
       </select>
+    </div>
+    <div id="reminderCustomDatesPanel" style="display:none;padding:0 0 8px">
+      <div style="display:flex;gap:8px;align-items:center;padding:8px 0 6px">
+        <input type="date" id="reminderCustomDateInput"
+               style="flex:1;border:1px solid #E5E5EA;border-radius:10px;padding:7px 12px;font-size:15px;color:var(--text);background:var(--surface);outline:none">
+        <button onclick="addCustomReminderDate()"
+                style="padding:7px 14px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">添加</button>
+      </div>
+      <div id="reminderCustomDateChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px"></div>
     </div>
   </div>
   <div class="section-label">地点（可选）</div>
@@ -2948,11 +2960,10 @@ function renderCalTodayTodos() {
 
   const logItems      = dateLogs.map(l => ({ _type:'log',      _sort: l.startTime || '99:', ...l }));
   const reminderItems = dateReminders.map(r => ({ _type:'reminder', _sort: r.datetime.slice(11,16) || '99:', ...r }));
-  const todoItems     = dateTodos.map(t => ({ _type:'todo',     _sort: t.deadlineTime || (t.done ? '999:' : '99:'), ...t }));
+  const todoItems     = dateTodos.map(t => ({ _type:'todo',     _sort: t.deadlineTime || '99:', ...t }));
   const all = [...logItems, ...reminderItems, ...todoItems].sort((a, b) => a._sort.localeCompare(b._sort));
-  const firstActiveTodo = all.findIndex(x => x._type === 'todo' && !x.done);
 
-  const html = `<div class="cal-timeline">${all.map((item, i) => {
+  function renderTlItem(item) {
     if (item._type === 'log') {
       const timeRange = `${item.startTime}–${item.endTime}`;
       return `<div class="cal-tl-item">
@@ -2980,7 +2991,7 @@ function renderCalTodayTodos() {
       </div>`;
     }
     const t = item;
-    const dotCls = t.done ? 'done' : (i === firstActiveTodo ? 'current' : '');
+    const dotCls = t.done ? 'done' : '';
     const dotTxt = t.done ? '✓' : '';
     const timeStr = t.deadlineTime ? `🕐 ${t.deadlineTime}` : '';
     const labelTag = t.label ? (() => { const c = labelColor(t.label); return `<span class="todo-label-tag" style="background:${c.bg};color:${c.text}">${t.label}</span>`; })() : '';
@@ -2996,7 +3007,17 @@ function renderCalTodayTodos() {
         <button class="cal-tl-more" onclick="openTodoDetail(${t.id})">···</button>
       </div>
     </div>`;
-  }).join('')}</div>`;
+  }
+
+  const morning   = all.filter(x => x._sort < '12:');
+  const afternoon = all.filter(x => x._sort >= '12:' && x._sort < '99:');
+  const noTime    = all.filter(x => x._sort >= '99:');
+
+  let html = '<div class="cal-timeline">';
+  if (morning.length)   html += `<div class="cal-section-header">上午</div>${morning.map(renderTlItem).join('')}`;
+  if (afternoon.length) html += `<div class="cal-section-header">下午</div>${afternoon.map(renderTlItem).join('')}`;
+  if (noTime.length)    html += `<div class="cal-section-header">待办</div>${noTime.map(renderTlItem).join('')}`;
+  html += '</div>';
   el.innerHTML = html;
 }
 
@@ -3151,7 +3172,8 @@ function renderReminders() {
       timeStr = dateLabel;
     }
     const locationStr = r.location ? `<div class="reminder-time" style="margin-top:1px">📍 ${r.location}</div>` : '';
-    const recurStr = r.recurrence ? `<span style="font-size:11px;color:var(--accent);margin-left:6px">↻ ${{daily:'每天',weekly:'每周',monthly:'每月',yearly:'每年'}[r.recurrence]}</span>` : '';
+    const recurLabels = {daily:'每天',weekly:'每周',monthly:'每月',yearly:'每年',custom:'自选'};
+    const recurStr = r.recurrence ? `<span style="font-size:11px;color:var(--accent);margin-left:6px">↻ ${recurLabels[r.recurrence]||''}</span>` : '';
     return `<div class="reminder-item${r.done?' reminder-done':''}" onclick="openReminderAddSheet(${r.id})">
       <button class="reminder-check${r.done?' done':''}" onclick="event.stopPropagation();toggleReminderDone(${r.id})">${r.done?'✓':''}</button>
       <div class="reminder-info">
@@ -3170,6 +3192,37 @@ function renderReminders() {
 }
 
 let editingReminderId = null;
+let _customDates = [];
+
+function onReminderRecurrenceChange() {
+  const val = document.getElementById('reminderRecurrence').value;
+  document.getElementById('reminderCustomDatesPanel').style.display = val === 'custom' ? '' : 'none';
+}
+function renderCustomDateChips() {
+  const el = document.getElementById('reminderCustomDateChips');
+  if (!el) return;
+  el.innerHTML = _customDates.map((d, i) => {
+    const [, m, day] = d.split('-');
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--accent);color:white;border-radius:20px;padding:4px 10px;font-size:13px;font-weight:600">
+      ${parseInt(m)}/${parseInt(day)}
+      <button onclick="removeCustomDate(${i})" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;padding:0;line-height:1">×</button>
+    </span>`;
+  }).join('');
+}
+function addCustomReminderDate() {
+  const input = document.getElementById('reminderCustomDateInput');
+  const val = input.value;
+  if (!val) { showToast('请选择日期'); return; }
+  if (_customDates.includes(val)) { showToast('该日期已添加'); return; }
+  _customDates.push(val);
+  _customDates.sort();
+  input.value = '';
+  renderCustomDateChips();
+}
+function removeCustomDate(i) {
+  _customDates.splice(i, 1);
+  renderCustomDateChips();
+}
 function openReminderAddSheet(id) {
   editingReminderId = id || null;
   const r = id ? state.reminders.find(x => x.id === id) : null;
@@ -3182,6 +3235,9 @@ function openReminderAddSheet(id) {
   document.getElementById('reminderNote').value       = r ? (r.note || '') : '';
   document.getElementById('reminderAdvance').value    = r ? (r.remind || 'none') : '15min';
   document.getElementById('reminderRecurrence').value = r ? (r.recurrence || 'none') : 'none';
+  _customDates = r?.recurrence === 'custom' ? [...(r.customDates || [])] : [];
+  document.getElementById('reminderCustomDatesPanel').style.display = (r?.recurrence === 'custom') ? '' : 'none';
+  renderCustomDateChips();
   toggleSheet('reminderAddSheet', 'reminderAddOverlay', true);
   setTimeout(() => document.getElementById('reminderTitle').focus(), 320);
 }
@@ -3198,20 +3254,28 @@ function saveReminder() {
   const recurrence = document.getElementById('reminderRecurrence').value;
   if (!title || !date || !time) { showToast('请填写名称、日期和开始时间'); return; }
   if (endTime && endTime <= time) { showToast('结束时间必须晚于开始时间'); return; }
+  if (recurrence === 'custom' && _customDates.length === 0) { showToast('请至少选择一个日期'); return; }
+  const recurrenceVal = recurrence !== 'none' ? recurrence : null;
+  const customDatesVal = recurrence === 'custom' ? [..._customDates] : null;
+  // For custom, use the first selected date as the primary datetime
+  const primaryDate = recurrence === 'custom' ? _customDates[0] : date;
+  const primaryDatetime = `${primaryDate} ${time}`;
   if (editingReminderId) {
     const r = state.reminders.find(x => x.id === editingReminderId);
     if (r) {
-      r.title = title; r.datetime = `${date} ${time}`; r.endTime = endTime || null;
+      r.title = title; r.datetime = primaryDatetime; r.endTime = endTime || null;
       r.location = location || null; r.note = note; r.remind = advance;
-      r.recurrence = recurrence !== 'none' ? recurrence : null;
+      r.recurrence = recurrenceVal;
+      r.customDates = customDatesVal ? customDatesVal.slice(1) : null;
       r.done = false;
     }
     save(); closeReminderAddSheet(); renderReminders();
     showToast('提醒已更新');
   } else {
-    const r = { id: Date.now(), title, datetime: `${date} ${time}`, endTime: endTime || null,
+    const r = { id: Date.now(), title, datetime: primaryDatetime, endTime: endTime || null,
       location: location || null, remind: advance, note, done: false,
-      recurrence: recurrence !== 'none' ? recurrence : null };
+      recurrence: recurrenceVal,
+      customDates: customDatesVal ? customDatesVal.slice(1) : null };
     state.reminders.push(r);
     save(); closeReminderAddSheet(); renderReminders();
     scheduleOneReminder(r);
@@ -3225,6 +3289,7 @@ function deleteReminder(id) {
 }
 
 function nextReminderDatetime(r) {
+  if (r.recurrence === 'custom') return null; // handled separately in toggleReminderDone
   const d = new Date(r.datetime.replace(' ', 'T'));
   switch (r.recurrence) {
     case 'daily':   d.setDate(d.getDate() + 1); break;
@@ -3242,7 +3307,21 @@ function toggleReminderDone(id) {
   const r = state.reminders.find(x => x.id === id);
   if (!r) return;
   if (r.recurrence && !r.done) {
-    // Mark done and auto-advance to next occurrence
+    if (r.recurrence === 'custom') {
+      const remaining = (r.customDates || []).filter(d => d > TODAY);
+      if (remaining.length > 0) {
+        r.datetime = `${remaining[0]} ${r.datetime.slice(11, 16)}`;
+        r.customDates = remaining.slice(1);
+        r.done = false;
+        save(); renderReminders();
+        showToast(`已完成，下次：${remaining[0].slice(5).replace('-', '/')}`);
+      } else {
+        r.done = true; r.recurrence = null; r.customDates = null;
+        save(); renderReminders();
+        showToast('已完成，无更多日期');
+      }
+      return;
+    }
     const next = nextReminderDatetime(r);
     if (next) {
       r.datetime = next; r.done = false;
