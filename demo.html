@@ -85,29 +85,16 @@ body {
 /* ===== PROFILE HERO ROW ===== */
 .profile-hero-row { display: flex; gap: 12px; margin: 12px 16px 4px; align-items: stretch; }
 .avatar-card {
-  flex: 1; background: white; border-radius: 22px; padding: 16px 14px 14px;
+  flex: 1; background: white; border-radius: 22px;
   box-shadow: 0 2px 12px rgba(88,86,214,0.10);
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  position: relative; overflow: hidden; min-height: 180px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; min-height: 160px;
 }
 .avatar-bg-blob {
-  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-  width: 130%; aspect-ratio: 1; border-radius: 50%;
+  position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
+  width: 120%; aspect-ratio: 1; border-radius: 50%;
   background: #EEEAF8; z-index: 0;
 }
-.avatar-canvas-wrap { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
-#avatarCanvas { display: block; image-rendering: pixelated; border-radius: 12px; }
-.avatar-level-row {
-  display: flex; align-items: center; gap: 8px; width: 100%; z-index: 1; flex-shrink: 0;
-}
-.avatar-lv-badge {
-  background: var(--accent); color: white; border-radius: 10px;
-  padding: 4px 9px; font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
-}
-.avatar-xp-info { flex: 1; min-width: 0; }
-.avatar-xp-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
-.avatar-xp-bar { height: 6px; background: #E5E5EA; border-radius: 3px; overflow: hidden; }
-.avatar-xp-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
 
 .score-card {
   flex: 1.1; background: linear-gradient(155deg, #5B56E8 0%, #7B79E0 100%); border-radius: 22px;
@@ -681,6 +668,15 @@ body {
 .reminder-check.done { background:var(--success); border-color:var(--success); color:white; }
 .reminder-add-row { display:flex; align-items:center; padding:13px 16px; color:var(--accent); font-size:15px; cursor:pointer; gap:8px; border-top:0.5px solid var(--border); }
 .reminder-empty { padding:20px; text-align:center; font-size:14px; color:#C7C7CC; }
+.mini-cal-nav { display:flex; justify-content:space-between; align-items:center; padding:6px 0 4px; }
+.mini-cal-nav button { background:none; border:none; color:var(--accent); font-size:22px; cursor:pointer; padding:0 6px; line-height:1; }
+.mini-cal-nav span { font-size:14px; font-weight:600; color:var(--text); }
+.mini-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px; }
+.mc-dh { text-align:center; font-size:11px; color:var(--muted); font-weight:600; padding:3px 0; }
+.mc-day { text-align:center; font-size:13px; padding:0; cursor:pointer; border-radius:50%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; transition:background 0.1s; }
+.mc-day:not(.sel):active { background:#f0eeff; }
+.mc-day.sel { background:var(--accent); color:white; font-weight:600; }
+.mc-day.today:not(.sel) { color:var(--accent); font-weight:700; }
 .remind-select { border:none; outline:none; font-size:15px; color:var(--accent); background:transparent; -webkit-appearance:none; text-align:right; }
 
 /* ===== DAY DETAIL ===== */
@@ -715,7 +711,6 @@ body {
 <body>
 
 <!-- hidden compat elements referenced by JS -->
-<canvas id="avatarCanvas" width="16" height="16" style="display:none"></canvas>
 <span id="displayAge" style="display:none"></span>
 <span id="displayWealth" style="display:none"></span>
 
@@ -734,16 +729,7 @@ body {
   <div class="profile-hero-row">
     <div class="avatar-card">
       <div class="avatar-bg-blob"></div>
-      <div class="avatar-canvas-wrap">
-        <canvas id="avatarCanvas" width="16" height="16" style="width:80px;height:80px"></canvas>
-      </div>
-      <div class="avatar-level-row">
-        <div class="avatar-lv-badge" id="profileLevel">Lv 1</div>
-        <div class="avatar-xp-info">
-          <div class="avatar-xp-label" id="profileXP">0 / 1000</div>
-          <div class="avatar-xp-bar"><div class="avatar-xp-fill" id="profileXPFill" style="width:0%"></div></div>
-        </div>
-      </div>
+      <canvas id="avatarCanvas" width="16" height="16" style="width:96px;height:96px;position:relative;z-index:1;image-rendering:pixelated"></canvas>
     </div>
     <div class="score-card" onclick="openAbilitySheet()">
       <div class="score-card-kicker">综合评分</div>
@@ -971,14 +957,14 @@ body {
         <option value="custom">自选日期</option>
       </select>
     </div>
-    <div id="reminderCustomDatesPanel" style="display:none;padding:0 0 8px">
-      <div style="display:flex;gap:8px;align-items:center;padding:8px 0 6px">
-        <input type="date" id="reminderCustomDateInput"
-               style="flex:1;border:1px solid #E5E5EA;border-radius:10px;padding:7px 12px;font-size:15px;color:var(--text);background:var(--surface);outline:none">
-        <button onclick="addCustomReminderDate()"
-                style="padding:7px 14px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">添加</button>
+    <div id="reminderCustomDatesPanel" style="display:none;padding:4px 0 8px">
+      <div class="mini-cal-nav">
+        <button onclick="miniCalPrev()">‹</button>
+        <span id="miniCalTitle"></span>
+        <button onclick="miniCalNext()">›</button>
       </div>
-      <div id="reminderCustomDateChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px"></div>
+      <div class="mini-cal-grid" id="miniCalGrid"></div>
+      <div id="reminderCustomDateChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:20px"></div>
     </div>
   </div>
   <div class="section-label">地点（可选）</div>
@@ -1529,13 +1515,6 @@ function updateHeroCard() {
   if (streakEl) streakEl.textContent = '连击 ' + state.streak + ' 天 🔥';
   const growthEl = document.getElementById('todayGrowthPoints');
   if (growthEl) growthEl.textContent = calcTodayGrowth().toLocaleString();
-  const { level, xpCurrent, xpNext } = profileLevelInfo();
-  const lvEl = document.getElementById('profileLevel');
-  if (lvEl) lvEl.textContent = 'Lv ' + level;
-  const xpLabel = document.getElementById('profileXP');
-  if (xpLabel) xpLabel.textContent = xpCurrent + ' / ' + xpNext;
-  const xpFill = document.getElementById('profileXPFill');
-  if (xpFill) xpFill.style.width = Math.round(xpCurrent / xpNext * 100) + '%';
 }
 function updateStreakBanner() {
   const bonus = streakBonus(state.streak);
@@ -3272,34 +3251,57 @@ function renderReminders() {
 let editingReminderId = null;
 let _customDates = [];
 
+let _miniCalYear = new Date().getFullYear();
+let _miniCalMonth = new Date().getMonth();
+
 function onReminderRecurrenceChange() {
   const val = document.getElementById('reminderRecurrence').value;
   document.getElementById('reminderCustomDatesPanel').style.display = val === 'custom' ? '' : 'none';
+  if (val === 'custom') renderMiniCal();
+}
+function renderMiniCal() {
+  const titleEl = document.getElementById('miniCalTitle');
+  if (titleEl) titleEl.textContent = `${_miniCalYear}年${_miniCalMonth + 1}月`;
+  const grid = document.getElementById('miniCalGrid');
+  if (!grid) return;
+  const daysInMonth = new Date(_miniCalYear, _miniCalMonth + 1, 0).getDate();
+  const firstDow = new Date(_miniCalYear, _miniCalMonth, 1).getDay();
+  const offset = firstDow === 0 ? 6 : firstDow - 1;
+  let html = ['一','二','三','四','五','六','日'].map(d => `<div class="mc-dh">${d}</div>`).join('');
+  for (let i = 0; i < offset; i++) html += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${_miniCalYear}-${String(_miniCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const sel = _customDates.includes(ds);
+    const isToday = ds === TODAY;
+    html += `<div class="mc-day${sel?' sel':''}${isToday&&!sel?' today':''}" onclick="toggleMiniCalDate('${ds}')">${d}</div>`;
+  }
+  grid.innerHTML = html;
+}
+function miniCalPrev() {
+  _miniCalMonth--; if (_miniCalMonth < 0) { _miniCalMonth = 11; _miniCalYear--; }
+  renderMiniCal();
+}
+function miniCalNext() {
+  _miniCalMonth++; if (_miniCalMonth > 11) { _miniCalMonth = 0; _miniCalYear++; }
+  renderMiniCal();
+}
+function toggleMiniCalDate(ds) {
+  const idx = _customDates.indexOf(ds);
+  if (idx >= 0) _customDates.splice(idx, 1);
+  else { _customDates.push(ds); _customDates.sort(); }
+  renderMiniCal();
+  renderCustomDateChips();
 }
 function renderCustomDateChips() {
   const el = document.getElementById('reminderCustomDateChips');
   if (!el) return;
   el.innerHTML = _customDates.map((d, i) => {
     const [, m, day] = d.split('-');
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--accent);color:white;border-radius:20px;padding:4px 10px;font-size:13px;font-weight:600">
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--accent);color:white;border-radius:20px;padding:3px 10px;font-size:13px;font-weight:600">
       ${parseInt(m)}/${parseInt(day)}
-      <button onclick="removeCustomDate(${i})" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;padding:0;line-height:1">×</button>
+      <button onclick="toggleMiniCalDate('${d}')" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;padding:0;line-height:1">×</button>
     </span>`;
   }).join('');
-}
-function addCustomReminderDate() {
-  const input = document.getElementById('reminderCustomDateInput');
-  const val = input.value;
-  if (!val) { showToast('请选择日期'); return; }
-  if (_customDates.includes(val)) { showToast('该日期已添加'); return; }
-  _customDates.push(val);
-  _customDates.sort();
-  input.value = '';
-  renderCustomDateChips();
-}
-function removeCustomDate(i) {
-  _customDates.splice(i, 1);
-  renderCustomDateChips();
 }
 function openReminderAddSheet(id) {
   editingReminderId = id || null;
@@ -3313,8 +3315,13 @@ function openReminderAddSheet(id) {
   document.getElementById('reminderNote').value       = r ? (r.note || '') : '';
   document.getElementById('reminderAdvance').value    = r ? (r.remind || 'none') : '15min';
   document.getElementById('reminderRecurrence').value = r ? (r.recurrence || 'none') : 'none';
-  _customDates = r?.recurrence === 'custom' ? [...(r.customDates || [])] : [];
-  document.getElementById('reminderCustomDatesPanel').style.display = (r?.recurrence === 'custom') ? '' : 'none';
+  const isCustom = r?.recurrence === 'custom';
+  _customDates = isCustom ? [r.datetime.slice(0,10), ...(r.customDates || [])] : [];
+  _customDates.sort();
+  document.getElementById('reminderCustomDatesPanel').style.display = isCustom ? '' : 'none';
+  const now = new Date();
+  _miniCalYear = now.getFullYear(); _miniCalMonth = now.getMonth();
+  if (isCustom) renderMiniCal();
   renderCustomDateChips();
   toggleSheet('reminderAddSheet', 'reminderAddOverlay', true);
   setTimeout(() => document.getElementById('reminderTitle').focus(), 320);
@@ -3386,7 +3393,7 @@ function toggleReminderDone(id) {
   if (!r) return;
   if (r.recurrence && !r.done) {
     if (r.recurrence === 'custom') {
-      const remaining = (r.customDates || []).filter(d => d > TODAY);
+      const remaining = r.customDates || [];
       if (remaining.length > 0) {
         r.datetime = `${remaining[0]} ${r.datetime.slice(11, 16)}`;
         r.customDates = remaining.slice(1);
@@ -3394,9 +3401,9 @@ function toggleReminderDone(id) {
         save(); renderReminders();
         showToast(`已完成，下次：${remaining[0].slice(5).replace('-', '/')}`);
       } else {
-        r.done = true; r.recurrence = null; r.customDates = null;
+        r.done = true;
         save(); renderReminders();
-        showToast('已完成，无更多日期');
+        showToast('所有日期已完成');
       }
       return;
     }
