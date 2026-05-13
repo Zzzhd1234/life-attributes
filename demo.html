@@ -1401,8 +1401,13 @@ function load() {
       }
     }
 
+    const abilities = {};
+    Object.entries({...DEFAULTS.abilities, ...(saved.abilities||{})}).forEach(([k,v]) => {
+      abilities[k] = Math.round(Math.min(100, Math.max(0, Number(v) || 0)));
+    });
+
     return {
-      ...DEFAULTS, ...saved, habits, todos,
+      ...DEFAULTS, ...saved, habits, todos, abilities,
       lastDate: TODAY,
       streakCheckedToday: isNewDay ? false : saved.streakCheckedToday,
       streakPendingUndo:  isNewDay ? false : saved.streakPendingUndo,
@@ -1556,7 +1561,7 @@ function abilityDisplayName(key) {
   return state.abilityDisplayNames?.[key] || key;
 }
 function clamp(v) { return Math.max(0, Math.min(100, v)); }
-function nudge(attr, delta) { state.abilities[attr] = clamp(state.abilities[attr] + delta); }
+function nudge(attr, delta) { state.abilities[attr] = Math.round(clamp(state.abilities[attr] + delta)); }
 
 function abilityBarsHTML() {
   return Object.entries(state.abilities).map(([key, val]) => {
