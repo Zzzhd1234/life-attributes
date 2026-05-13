@@ -87,8 +87,7 @@ body {
 .avatar-card {
   flex: 1; background: white; border-radius: 22px;
   box-shadow: 0 2px 12px rgba(88,86,214,0.10);
-  display: flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden; min-height: 160px;
+  position: relative; overflow: hidden; min-height: 190px;
 }
 .avatar-bg-blob {
   position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
@@ -719,8 +718,7 @@ body {
 
   <div class="profile-hero-row">
     <div class="avatar-card">
-      <div class="avatar-bg-blob"></div>
-      <canvas id="avatarCanvas" width="16" height="16" style="width:96px;height:96px;position:relative;z-index:1;image-rendering:pixelated"></canvas>
+      <canvas id="avatarCanvas" width="200" height="200" style="width:100%;height:100%;position:absolute;top:0;left:0"></canvas>
     </div>
     <div class="score-card">
       <div class="score-card-kicker">综合评分</div>
@@ -1444,18 +1442,142 @@ let reportMonth = new Date();
 function drawAvatar() {
   const c = document.getElementById('avatarCanvas');
   if (!c) return;
-  const x = c.getContext('2d');
-  x.fillStyle = state ? (state.avatarColor || state.accentColor || '#5856D6') : '#5856D6';
-  x.fillRect(0,0,16,16);
-  const rows = [
-    '0000111111110000','0011000000001100','0100000000000010',
-    '0100000000000010','1000110001100010','1000110001100010',
-    '1000000000000010','1000000000000010','1000001111000010',
-    '1000000000000010','0100010000010100','0100011111100100',
-    '0010000000001000','0001100000011000','0000011111110000','0000000000000000'
-  ];
-  x.fillStyle = '#fff';
-  rows.forEach((r,y) => r.split('').forEach((b,px) => { if(b==='1') x.fillRect(px,y,1,1); }));
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 200, 200);
+  const accent = (state && (state.avatarColor || state.accentColor)) || '#5856D6';
+
+  // Background lavender blob
+  ctx.beginPath(); ctx.ellipse(100, 118, 84, 76, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#EAE4F8'; ctx.fill();
+
+  // Stone ring
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * Math.PI * 2;
+    ctx.beginPath();
+    ctx.ellipse(104 + Math.cos(a) * 17, 163 + Math.sin(a) * 6, 4.5, 3.5, a * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#998E7A'; ctx.fill();
+  }
+  // Logs
+  ctx.save(); ctx.translate(98, 160); ctx.rotate(-0.55);
+  ctx.beginPath(); ctx.roundRect(-22, -5, 44, 10, 5);
+  ctx.fillStyle = '#7B4E28'; ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(110, 160); ctx.rotate(0.55);
+  ctx.beginPath(); ctx.roundRect(-22, -5, 44, 10, 5);
+  ctx.fillStyle = '#7B4E28'; ctx.fill(); ctx.restore();
+
+  // Flames (back to front)
+  ctx.beginPath(); ctx.moveTo(104, 156);
+  ctx.bezierCurveTo(92, 148, 83, 133, 92, 120);
+  ctx.bezierCurveTo(97, 114, 104, 120, 104, 156);
+  ctx.fillStyle = '#FF8C00'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(104, 156);
+  ctx.bezierCurveTo(116, 148, 125, 133, 116, 120);
+  ctx.bezierCurveTo(111, 114, 104, 120, 104, 156);
+  ctx.fillStyle = '#FF8C00'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(104, 153);
+  ctx.bezierCurveTo(96, 145, 91, 134, 97, 126);
+  ctx.bezierCurveTo(100, 122, 108, 122, 111, 126);
+  ctx.bezierCurveTo(117, 134, 112, 145, 104, 153);
+  ctx.fillStyle = '#FFA500'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(104, 150);
+  ctx.bezierCurveTo(98, 143, 95, 135, 100, 129);
+  ctx.bezierCurveTo(102, 126, 106, 126, 108, 129);
+  ctx.bezierCurveTo(113, 135, 110, 143, 104, 150);
+  ctx.fillStyle = '#FFD60A'; ctx.fill();
+
+  // Legs
+  ctx.save(); ctx.translate(78, 136); ctx.rotate(0.38);
+  ctx.beginPath(); ctx.roundRect(-9, 0, 17, 24, 8);
+  ctx.fillStyle = '#3D70EF'; ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(120, 136); ctx.rotate(-0.38);
+  ctx.beginPath(); ctx.roundRect(-8, 0, 17, 24, 8);
+  ctx.fillStyle = '#3D70EF'; ctx.fill(); ctx.restore();
+  ctx.beginPath(); ctx.ellipse(99, 139, 27, 13, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#3D70EF'; ctx.fill();
+  // Shoes
+  ctx.beginPath(); ctx.ellipse(72, 163, 12, 6.5, 0.18, 0, Math.PI * 2);
+  ctx.fillStyle = '#FF3B30'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(126, 163, 12, 6.5, -0.18, 0, Math.PI * 2);
+  ctx.fillStyle = '#FF3B30'; ctx.fill();
+
+  // Torso
+  ctx.beginPath(); ctx.roundRect(78, 108, 42, 34, 10);
+  ctx.fillStyle = '#FF9F0A'; ctx.fill();
+  // Left arm
+  ctx.save(); ctx.translate(76, 118); ctx.rotate(0.2);
+  ctx.beginPath(); ctx.roundRect(-7, -6, 14, 22, 7);
+  ctx.fillStyle = '#7D4B28'; ctx.fill(); ctx.restore();
+  // Right arm (raised)
+  ctx.save(); ctx.translate(122, 113); ctx.rotate(-0.72);
+  ctx.beginPath(); ctx.roundRect(-7, -5, 14, 26, 7);
+  ctx.fillStyle = '#7D4B28'; ctx.fill(); ctx.restore();
+
+  // Marshmallow stick
+  ctx.beginPath(); ctx.moveTo(124, 98); ctx.lineTo(108, 132);
+  ctx.strokeStyle = '#8B6030'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(121, 94, 8, 7, -0.3, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFF0D8'; ctx.fill();
+  ctx.strokeStyle = '#DDC08A'; ctx.lineWidth = 0.8; ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(124, 91, 3.5, 2.5, 0.4, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(190,110,30,0.65)'; ctx.fill();
+
+  // Hair (back, behind head)
+  ctx.beginPath(); ctx.ellipse(99, 62, 28, 20, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A1A1A'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(75, 70, 11, 14, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A1A1A'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(123, 70, 11, 14, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A1A1A'; ctx.fill();
+  // Head skin
+  ctx.beginPath(); ctx.ellipse(99, 79, 27, 27, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#8B5A2A'; ctx.fill();
+  // Hair (front puff on top of head)
+  ctx.beginPath(); ctx.ellipse(99, 57, 24, 18, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A1A1A'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(99, 46, 9, 9, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A1A1A'; ctx.fill();
+
+  // Headband (accent color, clipped to head)
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(99, 79, 27, 27, 0, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = accent; ctx.fillRect(72, 64, 54, 13);
+  ctx.restore();
+
+  // Neck
+  ctx.beginPath(); ctx.roundRect(92, 102, 14, 8, 4);
+  ctx.fillStyle = '#8B5A2A'; ctx.fill();
+
+  // Eyes white
+  ctx.beginPath(); ctx.ellipse(89, 80, 6.5, 7.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'white'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(109, 80, 6.5, 7.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'white'; ctx.fill();
+  // Pupils
+  ctx.beginPath(); ctx.ellipse(90, 81, 4, 4.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A1A1A'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(110, 81, 4, 4.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A1A1A'; ctx.fill();
+  // Highlights
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(88.5, 79, 1.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(108.5, 79, 1.6, 0, Math.PI * 2); ctx.fill();
+  // Nose
+  ctx.beginPath(); ctx.ellipse(99, 89, 3.5, 2.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#6A3818'; ctx.fill();
+  // Smile
+  ctx.beginPath(); ctx.arc(99, 90, 8.5, 0.2, Math.PI - 0.2);
+  ctx.strokeStyle = '#6A3818'; ctx.lineWidth = 2; ctx.stroke();
+  // Cheeks
+  ctx.beginPath(); ctx.ellipse(82, 88, 7, 5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,100,60,0.3)'; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(116, 88, 7, 5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,100,60,0.3)'; ctx.fill();
+
+  // Grass tufts
+  ctx.fillStyle = '#7AC07A';
+  [[40,178,5],[52,173,6],[64,177,4],[136,177,4],[148,173,6],[160,178,5]].forEach(([gx,gy,gr]) => {
+    ctx.beginPath(); ctx.arc(gx, gy, gr, Math.PI, 0); ctx.fill();
+  });
 }
 
 // ===== HERO CARD HELPERS =====
