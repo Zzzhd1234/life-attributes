@@ -82,34 +82,60 @@ body {
 
 /* ===== HERO CARD ===== */
 /* ===== MERGED PROFILE CARD ===== */
-.profile-merged-card {
-  margin: 8px 16px 4px; border-radius: 20px; overflow: hidden;
-  box-shadow: 0 2px 12px rgba(88,86,214,0.15);
+/* ===== PROFILE HERO ROW ===== */
+.profile-hero-row { display: flex; gap: 12px; margin: 12px 16px 4px; align-items: stretch; }
+.avatar-card {
+  flex: 1; background: white; border-radius: 22px; padding: 16px 14px 14px;
+  box-shadow: 0 2px 12px rgba(88,86,214,0.10);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  position: relative; overflow: hidden; min-height: 180px;
 }
-.hero-card {
-  padding: 20px;
-  background: linear-gradient(135deg, var(--accent) 0%, #7B79E0 100%);
-  color: white;
+.avatar-bg-blob {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  width: 130%; aspect-ratio: 1; border-radius: 50%;
+  background: #EEEAF8; z-index: 0;
 }
-.hero-top { display: flex; justify-content: space-between; align-items: center; }
-.hero-kicker { font-size: 12px; opacity: 0.75; letter-spacing: 0.06em; text-transform: uppercase; }
-.hero-score { font-size: 56px; font-weight: 700; line-height: 1; margin-top: 6px; font-variant-numeric: tabular-nums; }
-.hero-trend { font-size: 13px; opacity: 0.85; margin-top: 4px; }
-.rank-badge {
-  width: 72px; height: 72px; border-radius: 18px;
-  background: rgba(255,255,255,0.18);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; font-weight: 700; flex-shrink: 0;
+.avatar-canvas-wrap { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+#avatarCanvas { display: block; image-rendering: pixelated; border-radius: 12px; }
+.avatar-level-row {
+  display: flex; align-items: center; gap: 8px; width: 100%; z-index: 1; flex-shrink: 0;
 }
-.hero-footer {
-  margin-top: 16px; padding-top: 14px;
-  border-top: 0.5px solid rgba(255,255,255,0.25);
-  display: flex; justify-content: space-between;
-  opacity: 0.9; font-size: 14px; font-weight: 500;
+.avatar-lv-badge {
+  background: var(--accent); color: white; border-radius: 10px;
+  padding: 4px 9px; font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
 }
-.profile-abilities { background: white; }
+.avatar-xp-info { flex: 1; min-width: 0; }
+.avatar-xp-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+.avatar-xp-bar { height: 6px; background: #E5E5EA; border-radius: 3px; overflow: hidden; }
+.avatar-xp-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
 
-/* ===== ABILITY BAR ===== */
+.score-card {
+  flex: 1.1; background: linear-gradient(155deg, #5B56E8 0%, #7B79E0 100%); border-radius: 22px;
+  padding: 18px 16px 14px; color: white; display: flex; flex-direction: column;
+  box-shadow: 0 4px 16px rgba(88,86,214,0.28); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.score-card-kicker { font-size: 12px; opacity: 0.8; letter-spacing: 0.04em; margin-bottom: 4px; }
+.score-card-main { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.score-card-num { font-size: 52px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.score-card-rank {
+  background: rgba(255,255,255,0.2); border-radius: 12px;
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; flex-shrink: 0;
+}
+.score-card-streak { font-size: 14px; font-weight: 500; margin-bottom: 12px; opacity: 0.95; }
+.score-card-growth {
+  background: white; border-radius: 14px; padding: 10px 12px;
+  display: flex; align-items: center; gap: 10px; margin-top: auto;
+}
+.score-card-growth-berry {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  background: radial-gradient(circle at 35% 35%, #8B7CF7, #5B56E8);
+  box-shadow: 0 2px 6px rgba(88,86,214,0.4);
+}
+.score-card-growth-label { font-size: 11px; color: #8E8E93; margin-bottom: 1px; }
+.score-card-growth-val { font-size: 22px; font-weight: 700; color: #1C1C1E; font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+/* ===== ABILITY BAR (used in sheet) ===== */
 .ability-bar-row { padding: 10px 16px; border-bottom: 0.5px solid var(--border); }
 .ability-bar-row:last-child { border-bottom: none; }
 .ability-bar-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
@@ -705,23 +731,35 @@ body {
     </div>
   </div>
 
-  <div class="profile-merged-card">
-    <div class="hero-card">
-      <div class="hero-top">
-        <div>
-          <div class="hero-kicker">综合属性</div>
-          <div class="hero-score" id="heroScore">60</div>
-          <div class="hero-trend" id="heroTrend">加油提升中</div>
-        </div>
-        <div class="rank-badge" id="heroRank">B+</div>
+  <div class="profile-hero-row">
+    <div class="avatar-card">
+      <div class="avatar-bg-blob"></div>
+      <div class="avatar-canvas-wrap">
+        <canvas id="avatarCanvas" width="16" height="16" style="width:80px;height:80px"></canvas>
       </div>
-      <div class="hero-footer">
-        <div id="heroWealth">财富 ¥0</div>
-        <div id="heroAge">年龄 20</div>
-        <div id="heroStreak">连击 0 天 🔥</div>
+      <div class="avatar-level-row">
+        <div class="avatar-lv-badge" id="profileLevel">Lv 1</div>
+        <div class="avatar-xp-info">
+          <div class="avatar-xp-label" id="profileXP">0 / 1000</div>
+          <div class="avatar-xp-bar"><div class="avatar-xp-fill" id="profileXPFill" style="width:0%"></div></div>
+        </div>
       </div>
     </div>
-    <div class="profile-abilities" id="abilityList"></div>
+    <div class="score-card" onclick="openAbilitySheet()">
+      <div class="score-card-kicker">综合评分</div>
+      <div class="score-card-main">
+        <div class="score-card-num" id="heroScore">60</div>
+        <div class="score-card-rank" id="heroRank">B+</div>
+      </div>
+      <div class="score-card-streak" id="heroStreak">连击 0 天 🔥</div>
+      <div class="score-card-growth">
+        <div class="score-card-growth-berry"></div>
+        <div>
+          <div class="score-card-growth-label">今日成长点</div>
+          <div class="score-card-growth-val" id="todayGrowthPoints">0</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="section-label">近期待办</div>
@@ -732,6 +770,19 @@ body {
 
   <div class="section-label">近期提醒</div>
   <div class="card" id="profileReminderList"></div>
+</div>
+
+<!-- ===== ABILITY SHEET ===== -->
+<div class="sheet-overlay" id="abilitySheetOverlay" onclick="closeAbilitySheet()"></div>
+<div class="settings-sheet" id="abilitySheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">能力详情</div>
+    <button class="sheet-close" onclick="closeAbilitySheet()">✕</button>
+  </div>
+  <div class="card" style="margin:0 0 16px">
+    <div id="abilitySheetList"></div>
+  </div>
 </div>
 
 <!-- ===== SETTINGS SHEET ===== -->
@@ -1418,6 +1469,7 @@ let reportMonth = new Date();
 // ===== PIXEL AVATAR (kept for settings preview) =====
 function drawAvatar() {
   const c = document.getElementById('avatarCanvas');
+  if (!c) return;
   const x = c.getContext('2d');
   x.fillStyle = state ? (state.avatarColor || state.accentColor || '#5856D6') : '#5856D6';
   x.fillRect(0,0,16,16);
@@ -1454,18 +1506,36 @@ function greeting() {
   if (h < 18) return '下午好';
   return '晚上好';
 }
+function calcTodayGrowth() {
+  let pts = 0;
+  Object.values(state.habits).forEach(h => { if (h.checkedToday) pts += 100; });
+  (state.todos || []).forEach(t => { if (t.done && t.completedAt === TODAY) pts += 50; });
+  pts += state.streak * 5;
+  return pts;
+}
+function profileLevelInfo() {
+  const score = totalScore();
+  const level = 1 + Math.floor(score / 10);
+  const xpCurrent = (score % 10) * 100;
+  return { level, xpCurrent, xpNext: 1000 };
+}
 function updateHeroCard() {
   const score = totalScore();
   const el = document.getElementById('heroScore');
   if (el) el.textContent = score;
   const rankEl = document.getElementById('heroRank');
   if (rankEl) rankEl.textContent = rankLabel(score);
-  const wealthEl = document.getElementById('heroWealth');
-  if (wealthEl) wealthEl.textContent = '财富 ¥' + Math.round(state.wealth).toLocaleString();
-  const ageEl = document.getElementById('heroAge');
-  if (ageEl) ageEl.textContent = '年龄 ' + state.age;
   const streakEl = document.getElementById('heroStreak');
   if (streakEl) streakEl.textContent = '连击 ' + state.streak + ' 天 🔥';
+  const growthEl = document.getElementById('todayGrowthPoints');
+  if (growthEl) growthEl.textContent = calcTodayGrowth().toLocaleString();
+  const { level, xpCurrent, xpNext } = profileLevelInfo();
+  const lvEl = document.getElementById('profileLevel');
+  if (lvEl) lvEl.textContent = 'Lv ' + level;
+  const xpLabel = document.getElementById('profileXP');
+  if (xpLabel) xpLabel.textContent = xpCurrent + ' / ' + xpNext;
+  const xpFill = document.getElementById('profileXPFill');
+  if (xpFill) xpFill.style.width = Math.round(xpCurrent / xpNext * 100) + '%';
 }
 function updateStreakBanner() {
   const bonus = streakBonus(state.streak);
@@ -1489,10 +1559,8 @@ function abilityDisplayName(key) {
 function clamp(v) { return Math.max(0, Math.min(100, v)); }
 function nudge(attr, delta) { state.abilities[attr] = clamp(state.abilities[attr] + delta); }
 
-function renderAbilities() {
-  const el = document.getElementById('abilityList');
-  const entries = Object.entries(state.abilities);
-  el.innerHTML = entries.map(([key, val], i) => {
+function abilityBarsHTML() {
+  return Object.entries(state.abilities).map(([key, val]) => {
     const name = abilityDisplayName(key);
     const color = val < 30 ? 'var(--danger)' : val < 60 ? 'var(--warning)' : 'var(--accent)';
     const pct = Math.min(100, Math.max(0, val));
@@ -1506,9 +1574,19 @@ function renderAbilities() {
       </div>
     </div>`;
   }).join('');
+}
+function renderAbilities() {
+  const sheetEl = document.getElementById('abilitySheetList');
+  if (sheetEl) sheetEl.innerHTML = abilityBarsHTML();
   document.getElementById('displayWealth').textContent = '¥' + Math.round(state.wealth);
   updateHeroCard();
 }
+function openAbilitySheet() {
+  const el = document.getElementById('abilitySheetList');
+  if (el) el.innerHTML = abilityBarsHTML();
+  toggleSheet('abilitySheet', 'abilitySheetOverlay', true);
+}
+function closeAbilitySheet() { toggleSheet('abilitySheet', 'abilitySheetOverlay', false); }
 
 // ===== PROFILE =====
 function updateProfile() {
