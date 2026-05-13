@@ -228,6 +228,15 @@ body {
 .cardio-type-chip { padding:6px 14px; border-radius:20px; border:1.5px solid var(--border);
   font-size:13px; background:white; cursor:pointer; color:var(--text); }
 .cardio-type-chip.sel { background:var(--accent); border-color:var(--accent); color:white; }
+.set-row { display:flex; align-items:center; gap:6px; padding:7px 0; border-bottom:0.5px solid var(--border); }
+.set-row:last-of-type { border-bottom:none; }
+.set-num { font-size:11px; color:var(--muted); min-width:32px; }
+.set-input { width:50px; text-align:center; font-size:14px; font-weight:600;
+  border:1.5px solid var(--border); border-radius:7px; padding:5px 4px; background:white; }
+.set-unit { font-size:12px; color:var(--muted); }
+.set-del { background:none; border:none; color:#C7C7CC; font-size:16px; padding:2px 4px; cursor:pointer; margin-left:auto; line-height:1; }
+.set-add-btn { font-size:13px; color:var(--accent); background:none; border:1.5px dashed var(--accent);
+  border-radius:8px; padding:7px; width:100%; margin-top:8px; cursor:pointer; }
 .cardio-input-row { display:flex; align-items:center; justify-content:space-between;
   padding:11px 0; border-bottom:0.5px solid var(--border); }
 .cardio-input-row:last-of-type { border-bottom:none; }
@@ -1719,14 +1728,18 @@ function renderExerciseLogs() {
   if (cv) cv.textContent = state.weekCardio || 0;
   if (sl) {
     const sLogs = (state.exerciseLogs || []).filter(l => l.type === 'strength');
-    sl.innerHTML = sLogs.length ? sLogs.map(l =>
-      `<div class="exlog-row">
+    sl.innerHTML = sLogs.length ? sLogs.map(l => {
+      const setsStr = Array.isArray(l.sets)
+        ? l.sets.map((s,i) => `第${i+1}组 ${s.reps}次${s.weight?' '+s.weight+'kg':''}`).join(' · ')
+        : `${l.sets}组×${l.reps}次${l.weight?' · '+l.weight+'kg':''}`;
+      return `<div class="exlog-row">
         <div class="exlog-info">
           <div class="exlog-name">${l.name}</div>
-          <div class="exlog-meta">${l.sets}组×${l.reps}次${l.weight ? ' · ' + l.weight + 'kg' : ''}</div>
+          <div class="exlog-meta">${setsStr}</div>
         </div>
         <button class="exlog-del" onclick="deleteExerciseLog(${l.id})">×</button>
-      </div>`).join('') : '<div class="exercise-empty">暂无记录</div>';
+      </div>`;
+    }).join('') : '<div class="exercise-empty">暂无记录</div>';
   }
   if (cl) {
     const cLogs = (state.exerciseLogs || []).filter(l => l.type === 'cardio');
@@ -1773,7 +1786,7 @@ function deleteExerciseLog(id) {
 
 // ===== STRENGTH SHEET =====
 let _selectedMuscle = '胸';
-let _selectedExercises = []; // [{name, muscleGroup, sets, reps, weight}]
+let _selectedExercises = []; // [{name, muscleGroup, sets:[{reps,weight},...]}]
 
 function openStrengthSheet() {
   _selectedMuscle = Object.keys(EXERCISES)[0];
@@ -1783,10 +1796,14 @@ function openStrengthSheet() {
 }
 function closeStrengthSheet() { toggleSheet('strengthSheet', 'strengthSheetOverlay', false); }
 
-function _syncWeightInputs() {
-  _selectedExercises.forEach(ex => {
-    const el = document.getElementById('exw-' + ex.name);
-    if (el) ex.weight = el.value ? parseFloat(el.value) : null;
+function _syncSetInputs() {
+  _selectedExercises.forEach((ex, ei) => {
+    ex.sets.forEach((s, si) => {
+      const rEl = document.getElementById(`exreps-${ei}-${si}`);
+      const wEl = document.getElementById(`exwt-${ei}-${si}`);
+      if (rEl) s.reps = parseInt(rEl.value) || 1;
+      if (wEl) s.weight = wEl.value ? parseFloat(wEl.value) : null;
+    });
   });
 }
 
@@ -1797,30 +1814,27 @@ function renderStrengthSheetBody() {
     `<div class="muscle-tab${g===_selectedMuscle?' sel':''}" onclick="selectMuscleGroup('${g}')">${g}</div>`
   ).join('')}</div>`;
   const options = EXERCISES[_selectedMuscle].map(name => {
-    const ex = _selectedExercises.find(e => e.name === name);
+    const ei = _selectedExercises.findIndex(e => e.name === name);
+    const ex = ei >= 0 ? _selectedExercises[ei] : null;
+    const setRows = ex ? ex.sets.map((s, si) =>
+      `<div class="set-row">
+        <span class="set-num">第${si+1}组</span>
+        <input id="exreps-${ei}-${si}" class="set-input" type="number" min="1" placeholder="次" value="${s.reps||10}" onclick="event.stopPropagation()">
+        <span class="set-unit">次</span>
+        <input id="exwt-${ei}-${si}" class="set-input" type="number" min="0" step="2.5" placeholder="—" value="${s.weight||''}" onclick="event.stopPropagation()">
+        <span class="set-unit">kg</span>
+        ${ex.sets.length > 1 ? `<button class="set-del" onclick="event.stopPropagation();removeExSet(${ei},${si})">×</button>` : '<span style="width:24px"></span>'}
+      </div>`
+    ).join('') : '';
+    const addSetBtn = ex
+      ? `<button class="set-add-btn" onclick="event.stopPropagation();addExSet(${ei})">＋ 添加一组</button>` : '';
     return `<div class="exercise-option${ex?' sel':''}">
-      <div style="display:flex;align-items:center;justify-content:space-between" onclick="toggleExerciseSelect('${name}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleExerciseSelect('${name}')">
         <span>${name}</span>
         <span style="font-size:16px;color:${ex?'var(--accent)':'#C7C7CC'}">${ex?'✓':'+'}</span>
       </div>
-      ${ex ? `<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:12px;color:var(--muted)">组</span>
-          <button class="stepper-btn" onclick="event.stopPropagation();adjExSets('${name}',-1)">−</button>
-          <span id="exs-${name}" style="font-weight:700;min-width:18px;text-align:center">${ex.sets}</span>
-          <button class="stepper-btn" onclick="event.stopPropagation();adjExSets('${name}',1)">＋</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:12px;color:var(--muted)">次</span>
-          <button class="stepper-btn" onclick="event.stopPropagation();adjExReps('${name}',-1)">−</button>
-          <span id="exr-${name}" style="font-weight:700;min-width:18px;text-align:center">${ex.reps}</span>
-          <button class="stepper-btn" onclick="event.stopPropagation();adjExReps('${name}',1)">＋</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:12px;color:var(--muted)">kg</span>
-          <input id="exw-${name}" class="weight-input" style="width:56px" type="number" min="0" step="2.5" placeholder="—"
-            value="${ex.weight||''}" onclick="event.stopPropagation()" oninput="event.stopPropagation()">
-        </div>
+      ${ex ? `<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--border)" onclick="event.stopPropagation()">
+        ${setRows}${addSetBtn}
       </div>` : ''}
     </div>`;
   }).join('');
@@ -1834,34 +1848,33 @@ function renderStrengthSheetBody() {
 }
 
 function selectMuscleGroup(g) {
-  _syncWeightInputs();
-  _selectedMuscle = g;
-  renderStrengthSheetBody();
+  _syncSetInputs(); _selectedMuscle = g; renderStrengthSheetBody();
 }
 function toggleExerciseSelect(name) {
-  _syncWeightInputs();
+  _syncSetInputs();
   const idx = _selectedExercises.findIndex(e => e.name === name);
   if (idx >= 0) {
     _selectedExercises.splice(idx, 1);
   } else {
-    _selectedExercises.push({ name, muscleGroup: _selectedMuscle, sets: 3, reps: 10, weight: null });
+    _selectedExercises.push({ name, muscleGroup: _selectedMuscle, sets: [{reps:10, weight:null}] });
   }
   renderStrengthSheetBody();
 }
-function adjExSets(name, d) {
-  const ex = _selectedExercises.find(e => e.name === name);
-  if (!ex) return;
-  ex.sets = Math.max(1, Math.min(20, ex.sets + d));
-  const el = document.getElementById('exs-' + name); if (el) el.textContent = ex.sets;
+function addExSet(ei) {
+  _syncSetInputs();
+  const ex = _selectedExercises[ei]; if (!ex) return;
+  const last = ex.sets[ex.sets.length - 1];
+  ex.sets.push({ reps: last ? last.reps : 10, weight: last ? last.weight : null });
+  renderStrengthSheetBody();
 }
-function adjExReps(name, d) {
-  const ex = _selectedExercises.find(e => e.name === name);
-  if (!ex) return;
-  ex.reps = Math.max(1, Math.min(100, ex.reps + d));
-  const el = document.getElementById('exr-' + name); if (el) el.textContent = ex.reps;
+function removeExSet(ei, si) {
+  _syncSetInputs();
+  const ex = _selectedExercises[ei]; if (!ex || ex.sets.length <= 1) return;
+  ex.sets.splice(si, 1);
+  renderStrengthSheetBody();
 }
 function addStrengthLog() {
-  _syncWeightInputs();
+  _syncSetInputs();
   if (_selectedExercises.length === 0) { showToast('请选择训练动作'); return; }
   state.exerciseLogs = state.exerciseLogs || [];
   const now = Date.now();
@@ -1869,7 +1882,7 @@ function addStrengthLog() {
     state.exerciseLogs.push({
       id: now + i, date: TODAY, type: 'strength',
       muscleGroup: ex.muscleGroup, name: ex.name,
-      sets: ex.sets, reps: ex.reps, weight: ex.weight,
+      sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight })),
     });
   });
   recalcWeeklyTotals();
