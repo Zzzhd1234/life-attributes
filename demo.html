@@ -1531,7 +1531,7 @@ function updateHeroCard() {
       `<div class="hero-ab-row">
         <span class="hero-ab-name">${names[k]||k}</span>
         <div class="hero-ab-bar"><div class="hero-ab-bar-fill" style="width:${v}%"></div></div>
-        <span class="hero-ab-val">${Math.round(v)}</span>
+        <span class="hero-ab-val">${Number(v).toFixed(1)}</span>
       </div>`
     ).join('');
   }
@@ -1566,7 +1566,7 @@ function abilityBarsHTML() {
     return `<div class="ability-bar-row">
       <div class="ability-bar-header">
         <span class="ability-bar-name">${name}</span>
-        <span class="ability-bar-val">${val.toFixed(0)}<span style="color:var(--muted);font-weight:400"> / 100</span></span>
+        <span class="ability-bar-val">${Number(val).toFixed(1)}<span style="color:var(--muted);font-weight:400"> / 100</span></span>
       </div>
       <div class="ability-bar-track">
         <div class="ability-bar-fill" style="width:${pct}%;background:${color}"></div>
