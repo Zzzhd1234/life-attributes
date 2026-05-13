@@ -98,18 +98,17 @@ body {
 /* Right: radar card (white) */
 .radar-card {
   flex: 1; background: white; border-radius: 22px;
-  padding: 14px 14px 12px; display: flex; flex-direction: column; align-items: center;
+  padding: 16px 16px 14px; display: flex; flex-direction: column;
   box-shadow: 0 2px 12px rgba(88,86,214,0.10); min-height: 190px;
-}
-.radar-card-title { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 8px; align-self: flex-start; }
-.score-card-ability-btn {
-  background: var(--accent); border-radius: 14px; padding: 9px 14px;
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: auto; width: 100%; box-sizing: border-box;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.score-card-ability-btn-label { font-size: 13px; font-weight: 600; color: white; }
-.score-card-ability-btn-arrow { font-size: 16px; color: white; font-weight: 700; }
+.radar-card-title { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.hero-ability-list { display: flex; flex-direction: column; gap: 7px; flex: 1; justify-content: center; }
+.hero-ab-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.hero-ab-name { font-size: 12px; color: #888; font-weight: 500; flex-shrink: 0; }
+.hero-ab-bar { flex: 1; height: 4px; background: #F0EEF8; border-radius: 2px; overflow: hidden; }
+.hero-ab-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+.hero-ab-val { font-size: 13px; font-weight: 700; color: var(--accent); min-width: 24px; text-align: right; flex-shrink: 0; }
 
 /* ===== ABILITY BAR (used in sheet) ===== */
 .ability-bar-row { padding: 10px 16px; border-bottom: 0.5px solid var(--border); }
@@ -721,13 +720,9 @@ body {
       <div class="score-card-num" id="heroScore">60</div>
       <div class="score-card-streak" id="heroStreak">连击 0 天 🔥</div>
     </div>
-    <div class="radar-card">
-      <div class="radar-card-title">能力维度</div>
-      <canvas id="abilityRadar" width="130" height="130" style="flex:1"></canvas>
-      <div class="score-card-ability-btn" onclick="openAbilitySheet()">
-        <span class="score-card-ability-btn-label">能力值详情</span>
-        <span class="score-card-ability-btn-arrow">›</span>
-      </div>
+    <div class="radar-card" onclick="openAbilitySheet()">
+      <div class="radar-card-title">能力值 ›</div>
+      <div id="heroAbilityList" class="hero-ability-list"></div>
     </div>
   </div>
 
@@ -1529,7 +1524,17 @@ function updateHeroCard() {
   if (el) el.textContent = score;
   const streakEl = document.getElementById('heroStreak');
   if (streakEl) streakEl.textContent = '连击 ' + state.streak + ' 天 🔥';
-  drawRadarChart();
+  const listEl = document.getElementById('heroAbilityList');
+  if (listEl) {
+    const names = {颜值:'颜值',魅力:'魅力',智商:'智商',体质:'体质',专注力:'专注',认知:'认知'};
+    listEl.innerHTML = Object.entries(state.abilities).map(([k,v]) =>
+      `<div class="hero-ab-row">
+        <span class="hero-ab-name">${names[k]||k}</span>
+        <div class="hero-ab-bar"><div class="hero-ab-bar-fill" style="width:${v}%"></div></div>
+        <span class="hero-ab-val">${v}</span>
+      </div>`
+    ).join('');
+  }
 }
 function updateStreakBanner() {
   const bonus = streakBonus(state.streak);
