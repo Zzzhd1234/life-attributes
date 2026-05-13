@@ -99,28 +99,19 @@ body {
 .score-card {
   flex: 1.1; background: linear-gradient(155deg, #5B56E8 0%, #7B79E0 100%); border-radius: 22px;
   padding: 18px 16px 14px; color: white; display: flex; flex-direction: column;
-  box-shadow: 0 4px 16px rgba(88,86,214,0.28); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 16px rgba(88,86,214,0.28);
 }
 .score-card-kicker { font-size: 12px; opacity: 0.8; letter-spacing: 0.04em; margin-bottom: 4px; }
-.score-card-main { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.score-card-num { font-size: 52px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.score-card-rank {
-  background: rgba(255,255,255,0.2); border-radius: 12px;
-  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; font-weight: 700; flex-shrink: 0;
+.score-card-main { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.score-card-num { font-size: 48px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.score-card-streak { font-size: 13px; font-weight: 500; margin-bottom: 10px; opacity: 0.9; }
+.score-card-ability-btn {
+  background: white; border-radius: 14px; padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.score-card-streak { font-size: 14px; font-weight: 500; margin-bottom: 12px; opacity: 0.95; }
-.score-card-growth {
-  background: white; border-radius: 14px; padding: 10px 12px;
-  display: flex; align-items: center; gap: 10px; margin-top: auto;
-}
-.score-card-growth-berry {
-  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-  background: radial-gradient(circle at 35% 35%, #8B7CF7, #5B56E8);
-  box-shadow: 0 2px 6px rgba(88,86,214,0.4);
-}
-.score-card-growth-label { font-size: 11px; color: #8E8E93; margin-bottom: 1px; }
-.score-card-growth-val { font-size: 22px; font-weight: 700; color: #1C1C1E; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.score-card-ability-btn-label { font-size: 13px; font-weight: 600; color: #3C3C43; }
+.score-card-ability-btn-arrow { font-size: 16px; color: var(--accent); font-weight: 700; }
 
 /* ===== ABILITY BAR (used in sheet) ===== */
 .ability-bar-row { padding: 10px 16px; border-bottom: 0.5px solid var(--border); }
@@ -731,19 +722,16 @@ body {
       <div class="avatar-bg-blob"></div>
       <canvas id="avatarCanvas" width="16" height="16" style="width:96px;height:96px;position:relative;z-index:1;image-rendering:pixelated"></canvas>
     </div>
-    <div class="score-card" onclick="openAbilitySheet()">
+    <div class="score-card">
       <div class="score-card-kicker">综合评分</div>
       <div class="score-card-main">
         <div class="score-card-num" id="heroScore">60</div>
-        <div class="score-card-rank" id="heroRank">B+</div>
+        <canvas id="abilityRadar" width="80" height="80" style="flex-shrink:0"></canvas>
       </div>
       <div class="score-card-streak" id="heroStreak">连击 0 天 🔥</div>
-      <div class="score-card-growth">
-        <div class="score-card-growth-berry"></div>
-        <div>
-          <div class="score-card-growth-label">今日成长点</div>
-          <div class="score-card-growth-val" id="todayGrowthPoints">0</div>
-        </div>
+      <div class="score-card-ability-btn" onclick="openAbilitySheet()">
+        <span class="score-card-ability-btn-label">能力值详情</span>
+        <span class="score-card-ability-btn-arrow">›</span>
       </div>
     </div>
   </div>
@@ -1499,22 +1487,66 @@ function calcTodayGrowth() {
   pts += state.streak * 5;
   return pts;
 }
-function profileLevelInfo() {
-  const score = totalScore();
-  const level = 1 + Math.floor(score / 10);
-  const xpCurrent = (score % 10) * 100;
-  return { level, xpCurrent, xpNext: 1000 };
+function drawRadarChart() {
+  const c = document.getElementById('abilityRadar');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  const cx = W / 2, cy = H / 2;
+  const maxR = Math.min(W, H) / 2 - 4;
+  const vals = Object.values(state.abilities);
+  const n = vals.length;
+  ctx.clearRect(0, 0, W, H);
+  // Grid rings
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 0.8;
+  [0.33, 0.66, 1].forEach(t => {
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      const x = cx + Math.cos(a) * maxR * t, y = cy + Math.sin(a) * maxR * t;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath(); ctx.stroke();
+  });
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * maxR, cy + Math.sin(a) * maxR);
+    ctx.stroke();
+  }
+  // Data polygon
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const r = (vals[i] / 100) * maxR;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Vertex dots
+  vals.forEach((v, i) => {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const r = (v / 100) * maxR;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'white'; ctx.fill();
+  });
 }
 function updateHeroCard() {
   const score = totalScore();
   const el = document.getElementById('heroScore');
   if (el) el.textContent = score;
-  const rankEl = document.getElementById('heroRank');
-  if (rankEl) rankEl.textContent = rankLabel(score);
   const streakEl = document.getElementById('heroStreak');
   if (streakEl) streakEl.textContent = '连击 ' + state.streak + ' 天 🔥';
-  const growthEl = document.getElementById('todayGrowthPoints');
-  if (growthEl) growthEl.textContent = calcTodayGrowth().toLocaleString();
+  drawRadarChart();
 }
 function updateStreakBanner() {
   const bonus = streakBonus(state.streak);
