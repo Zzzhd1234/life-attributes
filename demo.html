@@ -83,23 +83,23 @@ body {
 /* ===== HERO CARD ===== */
 /* ===== MERGED PROFILE CARD ===== */
 /* ===== PROFILE HERO ROW ===== */
-.profile-hero-row { display: flex; gap: 12px; margin: 12px 16px 4px; align-items: stretch; }
+.profile-hero-row { display: flex; gap: 0; margin: 12px 16px 4px; align-items: stretch; box-shadow: 0 4px 16px rgba(88,86,214,0.22); border-radius: 22px; }
 
 /* Left: score card (purple gradient) */
 .score-card {
-  flex: 1; background: linear-gradient(155deg, #5B56E8 0%, #7B79E0 100%); border-radius: 22px;
-  padding: 20px 18px 16px; color: white; display: flex; flex-direction: column;
-  box-shadow: 0 4px 16px rgba(88,86,214,0.28); min-height: 190px;
+  flex: 2; background: linear-gradient(155deg, #5B56E8 0%, #7B79E0 100%); border-radius: 22px 8px 8px 22px;
+  padding: 20px 16px 16px; color: white; display: flex; flex-direction: column;
+  min-height: 190px;
 }
 .score-card-kicker { font-size: 12px; opacity: 0.75; letter-spacing: 0.05em; margin-bottom: 6px; }
-.score-card-num { font-size: 60px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
-.score-card-streak { font-size: 14px; font-weight: 500; opacity: 0.9; margin-top: auto; }
+.score-card-num { font-size: 56px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+.score-card-streak { font-size: 13px; font-weight: 500; opacity: 0.9; margin-top: auto; }
 
-/* Right: radar card (white) */
+/* Right: ability card (white) */
 .radar-card {
-  flex: 1; background: white; border-radius: 22px;
+  flex: 3; background: white; border-radius: 8px 22px 22px 8px;
   padding: 16px 16px 14px; display: flex; flex-direction: column;
-  box-shadow: 0 2px 12px rgba(88,86,214,0.10); min-height: 190px;
+  min-height: 190px;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .radar-card-title { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
