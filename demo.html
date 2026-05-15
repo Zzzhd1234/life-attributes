@@ -194,16 +194,21 @@ body {
 .sleep-moon-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#6B5CE7,#9B8BF7); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
 .sleep-record-title { font-size:15px; font-weight:600; color:var(--text); }
 .sleep-record-date { font-size:12px; color:var(--muted); margin-top:1px; }
-.sleep-stats-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--border); border-radius:10px; overflow:hidden; margin-bottom:12px; }
-.sleep-stat-cell { background:var(--bg); padding:10px 10px 8px; display:flex; flex-direction:column; gap:2px; }
-.sleep-stat-value { font-size:20px; font-weight:700; color:var(--text); letter-spacing:-0.5px; line-height:1; }
-.sleep-stat-unit { font-size:11px; font-weight:600; color:var(--text); opacity:0.5; }
-.sleep-stat-label { font-size:11px; color:var(--muted); margin-top:1px; }
-.sleep-arc-row { display:flex; align-items:center; gap:12px; }
-.sleep-arc-wrap { position:relative; width:64px; height:36px; flex-shrink:0; }
-.sleep-arc-track { fill:none; stroke:#E5E5EA; stroke-width:5; stroke-linecap:round; }
-.sleep-arc-fill { fill:none; stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset 0.6s; }
-.sleep-arc-pct { position:absolute; bottom:0; left:0; right:0; text-align:center; font-size:12px; font-weight:700; color:var(--text); }
+.sleep-record-meta { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); margin-top:6px; }
+.sleep-timeline-track { height:8px; background:#E5E5EA; border-radius:4px; position:relative; margin:12px 0 4px; }
+.sleep-timeline-fill { position:absolute; top:0; bottom:0; border-radius:4px; background:#6B5CE7; }
+.sleep-timeline-ticks { display:flex; justify-content:space-between; }
+.sleep-timeline-tick { font-size:10px; color:var(--muted); }
+.sleep-hist-row { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:0.5px solid var(--border); }
+.sleep-hist-row:last-child { border-bottom:none; }
+.sleep-hist-left { width:52px; flex-shrink:0; }
+.sleep-hist-date { font-size:13px; font-weight:600; color:var(--text); }
+.sleep-hist-time { font-size:11px; color:var(--muted); margin-top:1px; }
+.sleep-hist-center { flex:1; }
+.sleep-mini-bar-track { height:6px; background:#E5E5EA; border-radius:3px; position:relative; overflow:hidden; }
+.sleep-mini-bar-fill { position:absolute; top:0; bottom:0; border-radius:3px; }
+.sleep-hist-right { text-align:right; flex-shrink:0; width:52px; }
+.sleep-hist-dur { font-size:13px; font-weight:600; color:var(--text); }
 .sleep-rating-row { flex:1; display:flex; flex-direction:column; gap:4px; }
 .sleep-rating-pill { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; padding:3px 9px; border-radius:10px; }
 .sleep-rating-pill.excellent,.sleep-rating-pill.good { background:rgba(52,199,89,0.12); color:#34C759; }
@@ -2207,60 +2212,29 @@ function updateSleepDisplay() {
   const durM  = Math.round((durH - durHInt) * 60);
   const cls   = last.cls || 'good';
   const effectStr = last.effect > 0 ? `全属性 +${last.effect}` : last.effect < 0 ? `全属性 ${last.effect}` : '无变化';
-  const pct = Math.min(100, Math.round(durH / 8 * 100));
-  const arcColor = cls === 'excellent' || cls === 'good' ? '#34C759' : cls === 'ok' ? '#FF9500' : '#FF3B30';
-  const r = 26, cx = 32, cy = 36;
-  const startAngle = -180, endAngle = 0;
-  const toRad = a => a * Math.PI / 180;
-  const sx = cx + r * Math.cos(toRad(startAngle));
-  const sy = cy + r * Math.sin(toRad(startAngle));
-  const ex = cx + r * Math.cos(toRad(endAngle));
-  const ey = cy + r * Math.sin(toRad(endAngle));
-  const fillEnd = startAngle + (endAngle - startAngle) * pct / 100;
-  const fex = cx + r * Math.cos(toRad(fillEnd));
-  const fey = cy + r * Math.sin(toRad(fillEnd));
-  const lg = fillEnd > startAngle + 180 ? 1 : 0;
+  const { leftPct, widthPct } = sleepBarPos(last.bedTime, last.wakeTime);
+  const durLabel = `${durHInt}h ${durM}m`;
   el.innerHTML = `<div class="sleep-record" onclick="openSleepSheet()">
     <div class="sleep-record-header">
       <div class="sleep-moon-icon">🌙</div>
-      <div>
+      <div style="flex:1">
         <div class="sleep-record-title">${bedT} — ${wakeT}</div>
         <div class="sleep-record-date">今日睡眠</div>
       </div>
+      <span class="sleep-rating-pill ${cls}">${last.rating}</span>
     </div>
-    <div class="sleep-stats-grid">
-      <div class="sleep-stat-cell">
-        <div style="display:flex;align-items:baseline;gap:2px">
-          <span class="sleep-stat-value">${durHInt}</span><span class="sleep-stat-unit">h</span>
-          <span class="sleep-stat-value" style="margin-left:2px">${durM}</span><span class="sleep-stat-unit">m</span>
-        </div>
-        <div class="sleep-stat-label">睡眠时长</div>
-      </div>
-      <div class="sleep-stat-cell">
-        <div style="display:flex;align-items:baseline;gap:2px">
-          <span class="sleep-stat-value">${bedT}</span>
-        </div>
-        <div class="sleep-stat-label">入睡时间</div>
-      </div>
-      <div class="sleep-stat-cell">
-        <div style="display:flex;align-items:baseline;gap:2px">
-          <span class="sleep-stat-value">${wakeT}</span>
-        </div>
-        <div class="sleep-stat-label">起床时间</div>
-      </div>
+    <div class="sleep-timeline-track">
+      <div class="sleep-timeline-fill" style="left:${leftPct}%;width:${widthPct}%"></div>
     </div>
-    <div class="sleep-arc-row">
-      <div class="sleep-arc-wrap">
-        <svg width="64" height="36" viewBox="0 0 64 36">
-          <path class="sleep-arc-track" d="M ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey}"/>
-          <path class="sleep-arc-fill" stroke="${arcColor}" d="M ${sx} ${sy} A ${r} ${r} 0 ${lg} 1 ${fex} ${fey}"/>
-        </svg>
-        <div class="sleep-arc-pct">${pct}%</div>
-      </div>
-      <div class="sleep-rating-row">
-        <span class="sleep-rating-pill ${cls}">${last.rating}</span>
-        <div class="sleep-effect-text">${effectStr}</div>
-      </div>
+    <div class="sleep-timeline-ticks">
+      <span class="sleep-timeline-tick">20</span>
+      <span class="sleep-timeline-tick">00</span>
+      <span class="sleep-timeline-tick">04</span>
+      <span class="sleep-timeline-tick">08</span>
+      <span class="sleep-timeline-tick">12</span>
+    </div>
+    <div class="sleep-record-meta">
+      <span>${durLabel}</span><span>·</span><span class="sleep-effect-text">${effectStr}</span>
     </div>
   </div>`;
 }
@@ -2310,6 +2284,21 @@ function deleteSleep() {
   save(); renderAbilities(); updateSleepDisplay(); closeSleepSheet();
   showToast('睡眠记录已删除');
 }
+function sleepBarPos(bedTime, wakeTime) {
+  const WIN_START = 20 * 60, WIN_DUR = 16 * 60;
+  function toMin(t) {
+    if (!t) return WIN_START;
+    const [h, m] = t.split(':').map(Number);
+    let v = h * 60 + m;
+    if (v < WIN_START) v += 24 * 60;
+    return v;
+  }
+  const bedMin  = toMin(bedTime);
+  const wakeMin = toMin(wakeTime);
+  const leftPct  = Math.max(0, Math.min(100, (bedMin  - WIN_START) / WIN_DUR * 100));
+  const rightPct = Math.max(0, Math.min(100, (wakeMin - WIN_START) / WIN_DUR * 100));
+  return { leftPct: leftPct.toFixed(1), widthPct: Math.max(0, rightPct - leftPct).toFixed(1) };
+}
 function openSleepHistory() {
   const list = document.getElementById('sleepHistoryList');
   if (!list) return;
@@ -2317,11 +2306,26 @@ function openSleepHistory() {
   if (!sorted.length) { list.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0">暂无历史记录</div>'; }
   else {
     list.innerHTML = sorted.map(r => {
-      const durStr = r.durH != null ? r.durH.toFixed(1) + ' 小时' : '';
-      const timeStr = (r.bedTime && r.wakeTime) ? `${r.bedTime} → ${r.wakeTime}` : '';
-      return `<div class="history-item">
-        <div class="history-item-title">${r.date || ''} ${r.rating || ''}</div>
-        <div class="history-item-meta">${[timeStr, durStr, r.note].filter(Boolean).join(' · ')}</div>
+      const durH = r.durH ?? 0;
+      const durLabel = `${Math.floor(durH)}h ${Math.round((durH % 1) * 60)}m`;
+      const dateStr = (r.date || '').replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3');
+      const timeStr = (r.bedTime && r.wakeTime) ? `${r.bedTime}→${r.wakeTime}` : '';
+      const cls = r.cls || 'good';
+      const { leftPct, widthPct } = sleepBarPos(r.bedTime, r.wakeTime);
+      return `<div class="sleep-hist-row">
+        <div class="sleep-hist-left">
+          <div class="sleep-hist-date">${dateStr}</div>
+          <div class="sleep-hist-time">${timeStr}</div>
+        </div>
+        <div class="sleep-hist-center">
+          <div class="sleep-mini-bar-track">
+            <div class="sleep-mini-bar-fill" style="left:${leftPct}%;width:${widthPct}%;background:#6B5CE7"></div>
+          </div>
+        </div>
+        <div class="sleep-hist-right">
+          <div class="sleep-hist-dur">${durLabel}</div>
+          <span class="sleep-rating-pill ${cls}" style="font-size:10px;padding:1px 6px">${r.rating||''}</span>
+        </div>
       </div>`;
     }).join('');
   }
@@ -3553,9 +3557,16 @@ function renderTodoDetail() {
   const doneCount = subs.filter(s => s.done).length;
   const subTitle = subs.length ? `细分事项（${doneCount}/${subs.length} 已完成）` : '细分事项';
   const groupSubTitle = subs.length ? `子事项（${doneCount}/${subs.length} 完成）` : '子事项';
-  const labelChips = t.label ? `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px">
-    <span class="todo-label-tag" style="font-size:13px">${t.label}</span>
-  </div>` : '';
+  const labelChips = `
+    <div class="section-label">分类标签</div>
+    <div class="tag-chip-grid" id="detailLabelPicker">
+      ${(state.todoLabels||[]).map(lb =>
+        `<div class="tag-chip ${t.label===lb?'sel':''}" onclick="selectDetailLabel(${t.id},'${lb.replace(/'/g,"\\'")}')">
+          ${lb}
+        </div>`
+      ).join('')}
+      <div class="tag-chip tag-chip-add" onclick="showDetailLabelInput(${t.id})">＋</div>
+    </div>`;
   const groupSection = t.isGroup ? `
     <div class="section-label" style="color:var(--accent)">${groupSubTitle}</div>
     <div class="card">
@@ -3627,6 +3638,36 @@ function saveTodoNotes(id, text) {
 function saveTodoTime(id, time) {
   const t = state.todos.find(t => t.id === id);
   if (t) { t.deadlineTime = time || null; save(); renderTodos(); }
+}
+function selectDetailLabel(id, label) {
+  const t = state.todos.find(t => t.id === id);
+  if (!t) return;
+  t.label = t.label === label ? null : label;
+  save(); renderTodoDetail(); renderTodos();
+}
+function showDetailLabelInput(id) {
+  const el = document.getElementById('detailLabelPicker');
+  if (!el) return;
+  const addChip = el.querySelector('.tag-chip-add');
+  if (!addChip) return;
+  const input = document.createElement('input');
+  input.className = 'tag-chip-input';
+  input.placeholder = '新标签名';
+  input.maxLength = 8;
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const val = input.value.trim();
+      if (val && !state.todoLabels.includes(val)) { state.todoLabels.push(val); save(); }
+      if (val) {
+        const t = state.todos.find(t => t.id === id);
+        if (t) { t.label = val; save(); }
+      }
+      renderTodoDetail(); renderTodos();
+    }
+    if (e.key === 'Escape') renderTodoDetail();
+  });
+  addChip.replaceWith(input);
+  input.focus();
 }
 function addSubtask(todoId) {
   const input = document.getElementById('newSubtaskInput');
