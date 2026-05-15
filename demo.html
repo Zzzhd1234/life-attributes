@@ -739,6 +739,7 @@ body {
   <div class="card">
     <div id="todoList"></div>
     <div class="habit-add-row" onclick="openTodoAddSheet()">＋ 添加待办</div>
+    <div id="doneTodosRow"></div>
   </div>
 
   <div class="section-label">近期提醒</div>
@@ -3169,8 +3170,11 @@ function renderTodos() {
     items.forEach(t => { html += todoItemHTML(t); });
   });
   if (!active.length && !done.length) html = '<div class="todo-empty">暂无待办事项</div>';
-  if (done.length) html += `<div class="habit-add-row" style="color:var(--muted);font-weight:500" onclick="openDoneTodosSheet()">已完成 ${done.length} 项 ›</div>`;
   el.innerHTML = html;
+  const doneRow = document.getElementById('doneTodosRow');
+  if (doneRow) doneRow.innerHTML = done.length
+    ? `<div class="habit-add-row" style="color:var(--muted);font-weight:500" onclick="openDoneTodosSheet()">已完成 ${done.length} 项 ›</div>`
+    : '';
 }
 
 function openDoneTodosSheet() {
