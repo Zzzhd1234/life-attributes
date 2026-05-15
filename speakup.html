@@ -2040,8 +2040,10 @@ async function explainMarked() {
 
   const btn = document.getElementById("explain-btn");
   btn.disabled = true;
-  document.getElementById("explain-status").style.display = "block";
+  const statusEl = document.getElementById("explain-status");
+  statusEl.style.display = "block";
   document.getElementById("explain-results").style.display = "none";
+  statusEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
   const songCtx = currentLyricsTrack
     ? `歌曲：${currentLyricsTrack.title}${currentLyricsTrack.artist ? " by " + currentLyricsTrack.artist : ""}\n`
@@ -2099,6 +2101,7 @@ function renderExplainResults() {
     </div>
     <button class="btn btn-primary" onclick="importExplainedPhrases()" style="font-size:.85rem;padding:7px 18px;margin-right:10px">全部加入短语库</button>
   `;
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function importExplainedPhrases() {
