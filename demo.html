@@ -365,12 +365,26 @@ body {
 }
 .reading-overlay { z-index: 2003; }
 .reading-edit-sheet { z-index: 2004; }
+.reading-list-card {
+  margin: 12px 16px; background: white; border-radius: 14px;
+  overflow: hidden;
+}
 .reading-book-card {
-  margin: 12px 16px 4px; padding: 16px; background: white;
-  border-radius: 14px; cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 14px 16px 0; cursor: pointer;
+  border-top: 0.5px solid var(--border);
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none; user-select: none;
+}
+.reading-book-card:first-child { border-top: none; }
+.reading-book-progress {
+  height: 3px; background: #E5E5EA; margin-top: 12px;
+}
+.reading-book-progress-fill {
+  height: 100%; border-radius: 0; transition: width 0.4s;
+}
+.reading-book-badge {
+  font-size: 12px; font-weight: 600; padding: 3px 8px;
+  border-radius: 20px; flex-shrink: 0;
 }
 .btn-export {
   background: white; color: var(--accent); border: none; border-radius: 12px;
@@ -3525,26 +3539,31 @@ function renderReadingBooks() {
     el.innerHTML = '<div style="padding:60px 20px;text-align:center;color:var(--muted);font-size:15px">还没有书籍<br>点击右上角 ＋ 添加</div>';
     return;
   }
-  el.innerHTML = books.map(b => {
+  const rows = books.map(b => {
     const pct = b.totalPages > 0 ? Math.min(100, Math.round((b.currentPage||0) / b.totalPages * 100)) : 0;
-    const color = pct >= 100 ? 'var(--success)' : 'var(--accent)';
-    const pageText = b.totalPages > 0 ? `第 ${b.currentPage||0} / ${b.totalPages} 页` : '未设置总页数';
+    const done = pct >= 100;
+    const barColor = done ? 'var(--success)' : 'var(--accent)';
+    const badgeBg = done ? '#e8f8ee' : '#eef3ff';
+    const badgeColor = done ? 'var(--success)' : 'var(--accent)';
+    const badgeText = done ? '已完成' : (b.totalPages > 0 ? `${pct}%` : '进行中');
+    const pageText = b.totalPages > 0 ? `第 ${b.currentPage||0} / ${b.totalPages} 页` : '点击编辑页数';
     return `<div class="reading-book-card"
       onclick="if(_longPressTriggered){_longPressTriggered=false;return;}openReadingEdit(${b.id})"
       ontouchstart="startBookLongPress(event,${b.id})" ontouchend="cancelBookLongPress()" ontouchmove="cancelBookLongPress()"
       onmousedown="startBookLongPress(event,${b.id})" onmouseup="cancelBookLongPress()" onmouseleave="cancelBookLongPress()">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">《${b.title || '未命名'}》</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:3px">${pageText}</div>
+          <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.title || '未命名'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">${pageText}</div>
         </div>
-        <div style="font-size:20px;font-weight:800;color:${color};flex-shrink:0">${pct}%</div>
+        <span class="reading-book-badge" style="background:${badgeBg};color:${badgeColor}">${badgeText}</span>
       </div>
-      <div style="margin-top:12px;height:6px;background:#E5E5EA;border-radius:3px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width 0.4s"></div>
+      <div class="reading-book-progress">
+        <div class="reading-book-progress-fill" style="width:${pct}%;background:${barColor}"></div>
       </div>
     </div>`;
-  }).join('') + '<div style="height:20px"></div>';
+  }).join('');
+  el.innerHTML = `<div class="reading-list-card">${rows}</div><div style="height:20px"></div>`;
 }
 let _editingBookId = null;
 function openReadingEdit(id) {
