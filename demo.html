@@ -363,6 +363,14 @@ body {
   padding: 14px; font-size: 16px; font-weight: 500;
   width: calc(100% - 32px); margin: 4px 16px; cursor: pointer; display: block;
 }
+.reading-overlay { z-index: 2003; }
+.reading-edit-sheet { z-index: 2004; }
+.reading-book-card {
+  margin: 12px 16px 4px; padding: 16px; background: white;
+  border-radius: 14px; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  -webkit-tap-highlight-color: transparent;
+}
 .btn-export {
   background: white; color: var(--accent); border: none; border-radius: 12px;
   padding: 14px; font-size: 16px; font-weight: 500;
@@ -1034,18 +1042,28 @@ body {
   <div class="todo-page-body" id="todoDetailContent"></div>
 </div>
 
-<!-- ===== READING TRACKER SHEET ===== -->
-<div class="sheet-overlay" id="readingTrackerOverlay" onclick="closeReadingTracker()"></div>
-<div class="settings-sheet" id="readingTrackerSheet">
+<!-- ===== READING PAGE ===== -->
+<div id="page-reading" class="todo-fullpage">
+  <div class="todo-page-nav">
+    <button class="todo-page-back" onclick="closeReadingPage()">‹ 返回</button>
+    <div class="todo-page-title">📚 阅读书单</div>
+    <button class="todo-page-action" onclick="openReadingEdit(null)">＋ 添加</button>
+  </div>
+  <div class="todo-page-body" id="readingBookList"></div>
+</div>
+
+<!-- ===== READING EDIT SHEET (above fullpage) ===== -->
+<div class="sheet-overlay reading-overlay" id="readingEditOverlay" onclick="closeReadingEdit()"></div>
+<div class="settings-sheet reading-edit-sheet" id="readingEditSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
-    <div class="sheet-title">📚 阅读记录</div>
-    <button class="sheet-close" onclick="closeReadingTracker()">✕</button>
+    <div class="sheet-title" id="readingEditSheetTitle">添加书籍</div>
+    <button class="sheet-close" onclick="closeReadingEdit()">✕</button>
   </div>
-  <div class="section-label">当前书籍</div>
+  <div class="section-label">书名</div>
   <div class="card">
     <div class="settings-row">
-      <input id="readingTitle" type="text" placeholder="书名"
+      <input id="readingEditTitle" type="text" placeholder="请输入书名"
              style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
     </div>
   </div>
@@ -1053,24 +1071,25 @@ body {
   <div class="card">
     <div class="settings-row">
       <span class="settings-label">当前页</span>
-      <input id="readingCurrent" type="number" min="0" placeholder="0"
+      <input id="readingEditCurrent" type="number" min="0" placeholder="0" oninput="updateReadingEditBar()"
              style="width:80px;border:1px solid #c7c7cc;border-radius:8px;padding:5px 8px;font-size:15px;text-align:right;outline:none">
     </div>
     <div class="settings-row">
       <span class="settings-label">总页数</span>
-      <input id="readingTotal" type="number" min="1" placeholder="0"
+      <input id="readingEditTotal" type="number" min="1" placeholder="0" oninput="updateReadingEditBar()"
              style="width:80px;border:1px solid #c7c7cc;border-radius:8px;padding:5px 8px;font-size:15px;text-align:right;outline:none">
     </div>
     <div style="padding:12px 16px 8px">
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px">
-        <span>进度</span><span id="readingPct">0%</span>
+        <span>进度</span><span id="readingEditPct">0%</span>
       </div>
       <div style="height:8px;background:#F0EEF8;border-radius:4px;overflow:hidden">
-        <div id="readingBar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.3s"></div>
+        <div id="readingEditBar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.3s"></div>
       </div>
     </div>
   </div>
-  <button class="btn-primary" style="margin-top:4px" onclick="saveReadingData()">保存</button>
+  <button class="btn-primary" style="margin-top:4px" onclick="saveBook()">保存</button>
+  <button id="readingEditDeleteBtn" class="btn-destructive" style="display:none" onclick="deleteBook()">删除书籍</button>
 </div>
 
 <!-- ===== HABIT CALENDAR SHEET ===== -->
@@ -1924,12 +1943,14 @@ function renderHabits() {
       : '';
     const metaLine = tagBadges || h.desc;
     const isReading = key === 'reading';
-    const readingMeta = isReading && h.book?.title
-      ? `📖 ${h.book.title}${h.book.totalPages ? ` · ${h.book.currentPage||0}/${h.book.totalPages}页` : ''}` : metaLine;
+    const books = h.books || (h.book?.title ? [h.book] : []);
+    const readingMeta = isReading
+      ? (books.length ? books.map(b => `📖 ${b.title}`).join('  ·  ') : '点击管理书单')
+      : metaLine;
     return `<div>
       <div class="habit-row" ontouchstart="startHabitLongPress('${key}')" ontouchend="cancelHabitLongPress()" ontouchmove="cancelHabitLongPress()" onmousedown="startHabitLongPress('${key}')" onmouseup="cancelHabitLongPress()" onmouseleave="cancelHabitLongPress()">
         <div class="habit-icon-tile" onclick="openHabitCalendar('${key}')" style="cursor:pointer">${h.icon}</div>
-        <div class="habit-info" onclick="${isReading ? `openReadingTracker()` : `openHabitCalendar('${key}')`}" style="cursor:pointer">
+        <div class="habit-info" onclick="${isReading ? `openReadingPage()` : `openHabitCalendar('${key}')`}" style="cursor:pointer">
           <div class="habit-name">${h.name}</div>
           <div class="habit-meta">${readingMeta}</div>
           <div class="habit-week-segs">${weekSegs}</div>
@@ -3454,38 +3475,98 @@ let habitCalKey = null;
 let habitCalYear = new Date().getFullYear();
 let habitCalMonth = new Date().getMonth();
 
-function openReadingTracker() {
-  const book = state.habits.reading?.book || {};
-  const cur = document.getElementById('readingCurrent');
-  const tot = document.getElementById('readingTotal');
-  const tit = document.getElementById('readingTitle');
-  if (tit) tit.value = book.title || '';
-  if (cur) cur.value = book.currentPage || '';
-  if (tot) tot.value = book.totalPages || '';
-  updateReadingBar();
-  document.getElementById('readingCurrent')?.addEventListener('input', updateReadingBar);
-  document.getElementById('readingTotal')?.addEventListener('input', updateReadingBar);
-  toggleSheet('readingTrackerSheet', 'readingTrackerOverlay', true);
+function openReadingPage() {
+  if (state.habits.reading) {
+    if (!state.habits.reading.books) {
+      state.habits.reading.books = [];
+      if (state.habits.reading.book?.title) {
+        state.habits.reading.books.push({ id: Date.now(), ...state.habits.reading.book });
+        delete state.habits.reading.book;
+        save();
+      }
+    }
+  }
+  renderReadingBooks();
+  document.getElementById('page-reading').classList.add('open');
 }
-function updateReadingBar() {
-  const cur = parseInt(document.getElementById('readingCurrent')?.value) || 0;
-  const tot = parseInt(document.getElementById('readingTotal')?.value) || 0;
+function closeReadingPage() {
+  document.getElementById('page-reading').classList.remove('open');
+}
+function renderReadingBooks() {
+  const el = document.getElementById('readingBookList');
+  if (!el) return;
+  const books = state.habits.reading?.books || [];
+  if (!books.length) {
+    el.innerHTML = '<div style="padding:60px 20px;text-align:center;color:var(--muted);font-size:15px">还没有书籍<br>点击右上角 ＋ 添加</div>';
+    return;
+  }
+  el.innerHTML = books.map(b => {
+    const pct = b.totalPages > 0 ? Math.min(100, Math.round((b.currentPage||0) / b.totalPages * 100)) : 0;
+    const color = pct >= 100 ? 'var(--success)' : 'var(--accent)';
+    const pageText = b.totalPages > 0 ? `第 ${b.currentPage||0} / ${b.totalPages} 页` : '未设置总页数';
+    return `<div class="reading-book-card" onclick="openReadingEdit(${b.id})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">《${b.title || '未命名'}》</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">${pageText}</div>
+        </div>
+        <div style="font-size:20px;font-weight:800;color:${color};flex-shrink:0">${pct}%</div>
+      </div>
+      <div style="margin-top:12px;height:6px;background:#E5E5EA;border-radius:3px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width 0.4s"></div>
+      </div>
+    </div>`;
+  }).join('') + '<div style="height:20px"></div>';
+}
+let _editingBookId = null;
+function openReadingEdit(id) {
+  _editingBookId = id || null;
+  const books = state.habits.reading?.books || [];
+  const book = id ? books.find(b => b.id == id) : null;
+  const titleEl = document.getElementById('readingEditSheetTitle');
+  const delBtn  = document.getElementById('readingEditDeleteBtn');
+  if (titleEl) titleEl.textContent = id ? '编辑书籍' : '添加书籍';
+  if (delBtn)  delBtn.style.display = id ? 'block' : 'none';
+  document.getElementById('readingEditTitle').value   = book?.title || '';
+  document.getElementById('readingEditCurrent').value = book?.currentPage || '';
+  document.getElementById('readingEditTotal').value   = book?.totalPages || '';
+  updateReadingEditBar();
+  toggleSheet('readingEditSheet', 'readingEditOverlay', true);
+}
+function closeReadingEdit() { toggleSheet('readingEditSheet', 'readingEditOverlay', false); }
+function updateReadingEditBar() {
+  const cur = parseInt(document.getElementById('readingEditCurrent')?.value) || 0;
+  const tot = parseInt(document.getElementById('readingEditTotal')?.value) || 0;
   const pct = tot > 0 ? Math.min(100, Math.round(cur / tot * 100)) : 0;
-  const bar = document.getElementById('readingBar');
-  const pctEl = document.getElementById('readingPct');
-  if (bar) bar.style.width = pct + '%';
+  const bar   = document.getElementById('readingEditBar');
+  const pctEl = document.getElementById('readingEditPct');
+  if (bar)   bar.style.width = pct + '%';
   if (pctEl) pctEl.textContent = pct + '%';
 }
-function saveReadingData() {
+function saveBook() {
   if (!state.habits.reading) { showToast('阅读习惯不存在'); return; }
-  const title = document.getElementById('readingTitle')?.value.trim() || '';
-  const currentPage = parseInt(document.getElementById('readingCurrent')?.value) || 0;
-  const totalPages = parseInt(document.getElementById('readingTotal')?.value) || 0;
-  state.habits.reading.book = { title, currentPage, totalPages };
-  save(); renderHabits(); closeReadingTracker();
-  showToast(title ? `《${title}》已保存` : '进度已保存');
+  const title = document.getElementById('readingEditTitle')?.value.trim();
+  if (!title) { showToast('请填写书名'); return; }
+  const currentPage = parseInt(document.getElementById('readingEditCurrent')?.value) || 0;
+  const totalPages  = parseInt(document.getElementById('readingEditTotal')?.value) || 0;
+  if (!state.habits.reading.books) state.habits.reading.books = [];
+  if (_editingBookId) {
+    const b = state.habits.reading.books.find(b => b.id == _editingBookId);
+    if (b) { b.title = title; b.currentPage = currentPage; b.totalPages = totalPages; }
+  } else {
+    state.habits.reading.books.push({ id: Date.now(), title, currentPage, totalPages });
+  }
+  save(); renderReadingBooks(); renderHabits(); closeReadingEdit();
+  showToast(_editingBookId ? `《${title}》已更新` : `《${title}》已添加`);
 }
-function closeReadingTracker() { toggleSheet('readingTrackerSheet', 'readingTrackerOverlay', false); }
+function deleteBook() {
+  if (!_editingBookId || !state.habits.reading?.books) return;
+  const b = state.habits.reading.books.find(b => b.id == _editingBookId);
+  if (!b || !confirm(`删除《${b.title}》？`)) return;
+  state.habits.reading.books = state.habits.reading.books.filter(b => b.id != _editingBookId);
+  save(); renderReadingBooks(); renderHabits(); closeReadingEdit();
+  showToast(`《${b.title}》已删除`);
+}
 
 function openHabitCalendar(key) {
   habitCalKey = key;
