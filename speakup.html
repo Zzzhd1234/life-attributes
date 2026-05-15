@@ -408,13 +408,9 @@
       .hero h1 { font-size: 1.8rem; }
       .flashcard-box { height: 240px; }
     }
-    /* ── LYRICS STUDY ── */
-    .lyrics-line { padding: 4px 14px; font-size: .9rem; color: var(--text1); cursor: text; line-height: 1.85; }
-    .lyrics-line:hover { background: rgba(88,101,242,.04); border-radius: 4px; }
-    .lyrics-blank { height: 6px; }
     mark.pm { background: rgba(255,180,0,.30); border-radius: 3px; padding: 0 1px; color: inherit; font-style: normal; }
-    .marked-chip { display:inline-flex;align-items:center;gap:5px;padding:4px 11px;background:rgba(255,180,0,.15);color:#966600;border-radius:16px;font-size:.8rem;font-weight:600; }
-    .marked-chip button { background:none;border:none;color:#966600;cursor:pointer;font-size:14px;line-height:1;padding:0;opacity:.7; }
+    .marked-chip { display:inline-flex;align-items:center;gap:5px;padding:4px 11px;background:rgba(255,195,0,.15);color:#b89000;border-radius:16px;font-size:.8rem;font-weight:600; }
+    .marked-chip button { background:none;border:none;color:#b89000;cursor:pointer;font-size:14px;line-height:1;padding:0;opacity:.7; }
     .marked-chip button:hover { opacity:1; }
     .explain-item { padding:12px 0;border-bottom:1px solid var(--border); }
     .explain-item:last-child { border-bottom:none; }
@@ -422,14 +418,82 @@
     .explain-meaning { font-size:.85rem;color:var(--text2);margin-bottom:2px; }
     .explain-def { font-size:.82rem;color:var(--text3);font-style:italic;margin-bottom:3px; }
     .explain-ex { font-size:.82rem;color:var(--text2); }
-    /* ── SAVED SONGS ── */
-    .saved-song-card { padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:12px; }
-    .saved-song-card:last-child { border-bottom:none; }
-    .saved-song-card:hover { background:rgba(88,101,242,.04); }
-    .saved-song-icon { width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0; }
-    .saved-song-info { flex:1;min-width:0; }
-    .saved-song-title { font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-    .saved-song-meta { font-size:.78rem;color:var(--text3);margin-top:2px; }
+
+    /* ── LYRICS PAGE (strict Spotify style) ── */
+    #page-lyrics { padding: 0; }
+
+    /* Search bar */
+    .lp-search-section { padding: 20px 24px; background: var(--bg); border-bottom: 1px solid rgba(255,255,255,.06); }
+    .lp-page-title { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 12px; }
+    .lp-search-row { display: flex; gap: 8px; }
+    .lp-search-input { flex: 1; min-width: 0; background: rgba(255,255,255,.08); border: none; color: #fff; border-radius: 4px; padding: 11px 16px; font-size: .95rem; outline: none; font-family: inherit; }
+    .lp-search-input::placeholder { color: rgba(255,255,255,.4); }
+    .lp-search-input:focus { background: rgba(255,255,255,.12); }
+    .lp-search-btn { background: #1ed760; color: #000; border: none; border-radius: 500px; padding: 11px 24px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; font-size: .88rem; letter-spacing: .02em; flex-shrink: 0; }
+    .lp-search-btn:hover { transform: scale(1.04); background: #1fdf64; }
+    .lp-search-btn:disabled { opacity: .6; transform: none; }
+
+    /* Saved songs */
+    .lp-saved-strip { padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .lp-strip-label { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 12px; }
+    .lp-strip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .lp-strip-scroll::-webkit-scrollbar { display: none; }
+    .lp-saved-chip { flex: 0 0 auto; background: rgba(255,255,255,.08); border-radius: 4px; padding: 8px 12px; cursor: pointer; min-width: 0; max-width: 150px; transition: background .15s; }
+    .lp-saved-chip:hover { background: rgba(255,255,255,.14); }
+    .lp-chip-title { font-size: .84rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+    .lp-chip-artist { font-size: .72rem; color: rgba(255,255,255,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+    /* Song header */
+    .lp-song-header { padding: 32px 24px 24px; background: #121212; }
+    .lp-song-meta { margin-bottom: 20px; }
+    .lp-song-title-main { font-size: 2rem; font-weight: 800; line-height: 1.15; color: #fff; margin-bottom: 6px; }
+    .lp-song-artist-name { font-size: 1rem; color: rgba(255,255,255,.65); font-weight: 500; }
+    .lp-song-actions { display: flex; gap: 10px; align-items: center; }
+    .lp-action-btn { padding: 8px 20px; border-radius: 500px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: rgba(255,255,255,.75); cursor: pointer; font-size: .82rem; font-family: inherit; font-weight: 600; transition: all .15s; letter-spacing: .02em; }
+    .lp-action-btn:hover { border-color: #fff; color: #fff; }
+
+    /* Lyrics card — Spotify "Lyrics" widget */
+    .lp-lyrics-card { margin: 0 24px 24px; border-radius: 12px; background: rgba(108,99,255,.22); overflow: hidden; position: relative; }
+    .lp-lyrics-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
+    .lp-lyrics-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.85); }
+    .lp-lyrics-hint { font-size: .72rem; color: rgba(255,255,255,.45); }
+    .lp-lyrics-body { padding: 14px 20px 28px; user-select: text; -webkit-user-select: text; position: relative; }
+    .lp-lyrics-body::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(transparent, rgba(108,99,255,.22)); pointer-events: none; }
+    .lp-lyric-line { font-size: 1.5rem; font-weight: 800; color: rgba(255,255,255,.42); line-height: 1.3; padding: 6px 0; cursor: text; transition: color .18s; letter-spacing: -.01em; }
+    .lp-lyric-line:hover { color: #fff; }
+    .lp-lyric-gap { height: 22px; }
+    .lp-lyric-line mark.pm { background: rgba(255,220,0,.3); border-radius: 3px; padding: 0 3px; color: #fff; font-style: normal; }
+
+    /* Bottom toolbar (below lyrics card) */
+    .lp-toolbar { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 0 24px 28px; }
+    .lp-tool-btn { background: none; border: none; color: rgba(255,255,255,.5); cursor: pointer; font-size: .8rem; font-family: inherit; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: color .15s; padding: 6px; }
+    .lp-tool-btn:hover { color: #fff; }
+    .lp-tool-icon { font-size: 1.1rem; line-height: 1; }
+
+    /* Marked phrases */
+    .lp-marked-section { padding: 0 24px 20px; }
+    .lp-marked-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .lp-marked-label { font-size: .82rem; font-weight: 700; color: rgba(255,255,255,.7); }
+    .lp-text-btn { background: none; border: none; color: rgba(255,255,255,.4); font-size: .75rem; cursor: pointer; font-family: inherit; }
+    .lp-text-btn:hover { color: rgba(255,255,255,.7); }
+    .lp-marked-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+    .lp-primary-btn { background: #1ed760; color: #000; border: none; border-radius: 500px; padding: 10px 24px; font-size: .88rem; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: .02em; }
+    .lp-primary-btn:hover { background: #1fdf64; transform: scale(1.02); }
+
+    /* Explain + chat */
+    .lp-explain-wrap { padding: 0 24px 24px; }
+    .lp-chat-wrap { border-top: 1px solid rgba(255,255,255,.08); padding: 20px 24px 32px; }
+    .lp-chat-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font-size: .82rem; font-weight: 700; color: rgba(255,255,255,.65); letter-spacing: .04em; text-transform: uppercase; }
+    .lp-chat-msgs { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .lp-chat-input-row { display: flex; gap: 8px; }
+    .lp-chat-input-row input { flex: 1; background: rgba(255,255,255,.08); border: none; color: #fff; border-radius: 4px; padding: 11px 16px; font-size: .88rem; outline: none; font-family: inherit; }
+    .lp-chat-input-row input::placeholder { color: rgba(255,255,255,.4); }
+    .lp-chat-input-row input:focus { background: rgba(255,255,255,.12); }
+    .lp-chat-send { background: #1ed760; color: #000; border: none; border-radius: 500px; padding: 11px 20px; cursor: pointer; font-size: .85rem; font-family: inherit; font-weight: 700; white-space: nowrap; }
+    @media(max-width:640px) {
+      .lp-song-title-main { font-size: 1.6rem; }
+      .lp-lyric-line { font-size: 1.3rem; }
+    }
   </style>
 </head>
 <body>
@@ -443,6 +507,7 @@
     <button class="nav-tab" onclick="switchPage('scenarios')">情景对话</button>
     <button class="nav-tab" onclick="switchPage('tips')">表达技巧</button>
     <button class="nav-tab" onclick="switchPage('artists')">艺人库</button>
+    <button class="nav-tab" onclick="switchPage('lyrics')">歌词</button>
     <button class="nav-tab" onclick="switchPage('add')">添加</button>
   </div>
 </nav>
@@ -540,6 +605,110 @@
   <div class="tips-grid" id="tips-grid"></div>
 </div>
 
+<!-- LYRICS -->
+<div class="page" id="page-lyrics">
+  <!-- Search bar -->
+  <div class="lp-search-section">
+    <div class="lp-page-title">🎵 歌词学习</div>
+    <div class="lp-search-row">
+      <input type="text" id="lyrics-artist" class="lp-search-input" placeholder="歌手名（如 Taylor Swift）" />
+      <input type="text" id="lyrics-title" class="lp-search-input" placeholder="歌曲名（如 Love Story）"
+             onkeydown="if(event.key==='Enter')searchLyrics()" />
+      <button class="lp-search-btn" onclick="searchLyrics()" id="lyrics-search-btn">搜索</button>
+    </div>
+    <div id="lyrics-status" style="font-size:.82rem;margin-top:8px;display:none"></div>
+  </div>
+
+  <!-- Saved songs strip -->
+  <div class="lp-saved-strip" id="lp-saved-strip" style="display:none">
+    <div class="lp-strip-label">已保存的歌曲</div>
+    <div class="lp-strip-scroll" id="lp-strip-scroll"></div>
+  </div>
+
+  <!-- Song + lyrics (shown after load) -->
+  <div id="lp-player" style="display:none;background:#121212">
+    <!-- Song header -->
+    <div class="lp-song-header">
+      <div class="lp-song-meta">
+        <div class="lp-song-title-main" id="lyrics-song-title"></div>
+        <div class="lp-song-artist-name" id="lp-song-artist"></div>
+      </div>
+      <div class="lp-song-actions">
+        <button class="lp-action-btn" id="save-song-btn" onclick="saveSong()">＋ 保存</button>
+        <button class="lp-action-btn" onclick="toggleLyricsChat()">💬 AI</button>
+      </div>
+    </div>
+
+    <!-- Lyrics card (Spotify widget style) -->
+    <div class="lp-lyrics-card">
+      <div class="lp-lyrics-card-header">
+        <span class="lp-lyrics-label">Lyrics</span>
+        <span class="lp-lyrics-hint">划选词语 → 标记</span>
+      </div>
+      <div id="lyrics-view" class="lp-lyrics-body"
+           onmouseup="onLyricsSelect(event)" ontouchend="onLyricsSelect(event)"></div>
+    </div>
+
+    <!-- Bottom toolbar -->
+    <div class="lp-toolbar">
+      <button class="lp-tool-btn" onclick="explainMarked()" id="explain-btn">
+        <span class="lp-tool-icon">🤖</span>AI 解释
+      </button>
+      <button class="lp-tool-btn" onclick="clearMarked()">
+        <span class="lp-tool-icon">✕</span>清除标记
+      </button>
+    </div>
+
+    <!-- Marked phrases -->
+    <div id="marked-section" class="lp-marked-section" style="display:none">
+      <div class="lp-marked-header">
+        <span class="lp-marked-label" id="marked-count-label"></span>
+        <button class="lp-text-btn" onclick="clearMarked()">清除全部</button>
+      </div>
+      <div id="marked-chips" class="lp-marked-chips"></div>
+    </div>
+
+    <!-- Explain status -->
+    <div id="explain-status" style="display:none;text-align:center;padding:28px 24px;color:rgba(255,255,255,.5);font-size:.9rem">
+      <div class="spinner"></div>
+      <div style="margin-top:10px">正在解释标记的短语，请稍候…</div>
+    </div>
+
+    <!-- Explain results -->
+    <div id="explain-results" class="lp-explain-wrap" style="display:none"></div>
+
+    <!-- AI Chat -->
+    <div id="lyrics-chat-section" class="lp-chat-wrap" style="display:none">
+      <div class="lp-chat-header-row">
+        <span>AI 对话</span>
+        <button class="lp-text-btn" onclick="clearLyricsChat()">清空</button>
+      </div>
+      <div id="lyrics-chat-messages" class="lp-chat-msgs"></div>
+      <div class="lp-chat-input-row">
+        <input id="lyrics-chat-input" type="text" placeholder="问关于这首歌的任何问题…"
+               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendLyricsChat()}" />
+        <button class="lp-chat-send" onclick="sendLyricsChat()" id="lyrics-chat-send">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating mark tooltip -->
+  <div id="mark-tooltip" style="display:none;position:fixed;z-index:9999;transform:translateX(-50%)" onmousedown="event.preventDefault()">
+    <div style="background:#1c1c1e;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.6);display:flex;overflow:hidden;white-space:nowrap">
+      <button onclick="markSelectedPhrase()"
+              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em">
+        ＋ 标记
+      </button>
+      <div style="width:1px;background:rgba(255,255,255,.12);margin:8px 0"></div>
+      <button onclick="markAndExplainSelected()"
+              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em">
+        AI 解释
+      </button>
+    </div>
+    <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid #1c1c1e;margin:0 auto"></div>
+  </div>
+</div>
+
 <!-- ADD -->
 <div class="page" id="page-add">
   <div class="form-card">
@@ -616,22 +785,8 @@
       <div id="apikey-status" style="font-size:.78rem;margin-top:6px;color:var(--text3)"></div>
     </div>
 
-    <!-- LYRICS SEARCH -->
-    <div style="margin-bottom:20px">
-      <div style="font-size:.82rem;color:var(--text3);margin-bottom:8px;font-weight:600">🎵 从歌词搜索</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input type="text" id="lyrics-artist" placeholder="歌手名（如 Taylor Swift）"
-               style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.88rem;outline:none" />
-        <input type="text" id="lyrics-title" placeholder="歌曲名（如 Love Story）"
-               style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.88rem;outline:none"
-               onkeydown="if(event.key==='Enter')searchLyrics()" />
-        <button class="btn btn-outline" onclick="searchLyrics()" id="lyrics-search-btn"
-                style="font-size:.82rem;padding:7px 14px;white-space:nowrap">搜索歌词</button>
-      </div>
-      <div id="lyrics-status" style="font-size:.82rem;margin-top:6px;display:none"></div>
-    </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;color:var(--text3);font-size:.8rem">
-      <div style="flex:1;height:1px;background:var(--border)"></div>或上传字幕文件<div style="flex:1;height:1px;background:var(--border)"></div>
+      <div style="flex:1;height:1px;background:var(--border)"></div>上传字幕文件提取短语<div style="flex:1;height:1px;background:var(--border)"></div>
     </div>
 
     <!-- SRT UPLOAD -->
@@ -687,64 +842,6 @@
       </div>
 
       <div id="extract-error" style="display:none;background:rgba(255,101,132,.1);border:1px solid rgba(255,101,132,.3);color:var(--accent2);border-radius:8px;padding:12px 16px;font-size:.88rem;margin-top:8px"></div>
-    </div>
-  </div>
-
-  <!-- LYRICS STUDY CARD -->
-  <div class="form-card" id="lyrics-study-card" style="margin-top:24px;display:none">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px">
-      <div style="flex:1">
-        <div class="form-title" id="lyrics-song-title" style="margin-bottom:3px"></div>
-        <div style="font-size:.8rem;color:var(--text3)">选中歌词中的词语或短语，出现标记按钮后点击即可添加</div>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
-        <button class="btn btn-outline" onclick="toggleLyricsChat()" style="font-size:.8rem;padding:6px 13px;white-space:nowrap">💬 问 AI</button>
-        <button class="btn btn-outline" id="save-song-btn" onclick="saveSong()" style="font-size:.8rem;padding:6px 13px;white-space:nowrap">💾 保存歌曲</button>
-      </div>
-    </div>
-
-    <div id="lyrics-view"
-         style="max-height:65vh;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:6px 0;background:var(--bg);margin:14px 0 16px;user-select:text;-webkit-user-select:text"
-         onmouseup="onLyricsSelect(event)" ontouchend="onLyricsSelect(event)"></div>
-
-    <!-- floating tooltip -->
-    <div id="mark-tooltip"
-         style="display:none;position:fixed;background:var(--accent);color:#fff;border-radius:20px;padding:7px 18px;font-size:.82rem;font-weight:600;cursor:pointer;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);white-space:nowrap;transform:translateX(-50%)"
-         onmousedown="event.preventDefault()" onclick="markSelectedPhrase()">＋ 标记此短语</div>
-
-    <!-- marked list -->
-    <div id="marked-section" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <span style="font-size:.85rem;font-weight:600" id="marked-count-label"></span>
-        <button onclick="clearMarked()" style="background:none;border:none;color:var(--text3);font-size:.78rem;cursor:pointer">清除全部</button>
-      </div>
-      <div id="marked-chips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
-      <button class="btn btn-primary" id="explain-btn" onclick="explainMarked()" style="font-size:.85rem;padding:7px 18px">🤖 AI 解释已标记</button>
-    </div>
-
-    <!-- explain loading -->
-    <div id="explain-status" style="display:none;text-align:center;padding:20px;color:var(--text2);font-size:.9rem">
-      <div class="spinner"></div>
-      <div style="margin-top:10px">正在解释标记的短语，请稍候…</div>
-    </div>
-
-    <!-- explain results -->
-    <div id="explain-results" style="display:none;margin-top:16px"></div>
-
-    <!-- chat panel -->
-    <div id="lyrics-chat-section" style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <span style="font-size:.88rem;font-weight:600;color:var(--text2)">💬 问 AI</span>
-        <button onclick="clearLyricsChat()" style="background:none;border:none;color:var(--text3);font-size:.75rem;cursor:pointer">清空对话</button>
-      </div>
-      <div id="lyrics-chat-messages" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
-      <div style="display:flex;gap:8px">
-        <input id="lyrics-chat-input" type="text" placeholder="问关于这首歌的任何问题…"
-               style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 13px;font-size:.88rem;outline:none"
-               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendLyricsChat()}" />
-        <button class="btn btn-primary" onclick="sendLyricsChat()" id="lyrics-chat-send"
-                style="font-size:.85rem;padding:8px 16px;white-space:nowrap">发送</button>
-      </div>
     </div>
   </div>
 
@@ -1529,12 +1626,14 @@ async function searchLyrics() {
     document.getElementById("raw-text-section").style.display = "none";
     showLyricsStatus("✓ " + track.trackName + " — " + track.artistName, true);
     renderLyricsView();
+    renderLyricsStrip();
     saveLyricsSession();
+    switchPage("lyrics");
   } catch (err) {
     showLyricsStatus("✗ " + err.message, false);
   } finally {
     btn.disabled = false;
-    btn.textContent = "搜索歌词";
+    btn.textContent = "搜索";
   }
 }
 
@@ -1776,29 +1875,46 @@ function renderLyricsView() {
   const view = document.getElementById("lyrics-view");
   if (!view) return;
   view.innerHTML = lyricsLines.map(line => {
-    if (!line.trim()) return `<div class="lyrics-line" style="height:10px"></div>`;
-    return `<div class="lyrics-line">${applyMarks(line, markedPhrases)}</div>`;
+    if (!line.trim()) return `<div class="lp-lyric-gap"></div>`;
+    return `<div class="lp-lyric-line">${applyMarks(line, markedPhrases)}</div>`;
   }).join("");
 
-  const songTitle = document.getElementById("lyrics-song-title");
   if (currentLyricsTrack) {
-    songTitle.textContent = currentLyricsTrack.title + (currentLyricsTrack.artist ? " — " + currentLyricsTrack.artist : "");
+    const titleEl = document.getElementById("lyrics-song-title");
+    const artistEl = document.getElementById("lp-song-artist");
+    if (titleEl) titleEl.textContent = currentLyricsTrack.title || "";
+    if (artistEl) artistEl.textContent = currentLyricsTrack.artist || "";
   }
-  document.getElementById("lyrics-study-card").style.display = "block";
+  document.getElementById("lp-player").style.display = "block";
   updateMarkedSection();
+}
+
+function renderLyricsStrip() {
+  const strip = document.getElementById("lp-saved-strip");
+  const scroll = document.getElementById("lp-strip-scroll");
+  if (!strip || !scroll) return;
+  const songs = getSavedSongs();
+  if (!songs.length) { strip.style.display = "none"; return; }
+  strip.style.display = "block";
+  scroll.innerHTML = songs.map(s =>
+    `<div class="lp-saved-chip" onclick="openSavedSong(${s.id})">
+      <div class="lp-chip-title">${escHtml(s.title)}</div>
+      <div class="lp-chip-artist">${escHtml(s.artist || "")}</div>
+    </div>`
+  ).join("");
 }
 
 function onLyricsSelect(e) {
   const sel = window.getSelection();
-  if (!sel || sel.isCollapsed) { hideMarkTooltip(); return; }
+  if (!sel || sel.isCollapsed) { if (!currentSelection) hideMarkTooltip(); return; }
   const text = sel.toString().trim();
-  if (!text || text.length < 2 || text.length > 80) { hideMarkTooltip(); return; }
+  if (!text || text.length < 2 || text.length > 80) { if (!currentSelection) hideMarkTooltip(); return; }
   currentSelection = text;
   const range = sel.getRangeAt(0);
   const rect = range.getBoundingClientRect();
   const tt = document.getElementById("mark-tooltip");
   tt.style.left = (rect.left + rect.right) / 2 + "px";
-  tt.style.top  = Math.max(8, rect.top - 46) + "px";
+  tt.style.top  = Math.max(8, rect.top - 58) + "px";
   tt.style.display = "block";
 }
 
@@ -1819,6 +1935,19 @@ function markSelectedPhrase() {
   hideMarkTooltip();
 }
 
+function markAndExplainSelected() {
+  if (!currentSelection) return;
+  const phrase = currentSelection.trim();
+  if (!markedPhrases.includes(phrase)) {
+    markedPhrases.push(phrase);
+    renderLyricsView();
+    saveLyricsSession();
+  }
+  window.getSelection()?.removeAllRanges();
+  hideMarkTooltip();
+  explainMarked();
+}
+
 function updateMarkedSection() {
   const section = document.getElementById("marked-section");
   const chips   = document.getElementById("marked-chips");
@@ -1827,7 +1956,7 @@ function updateMarkedSection() {
   section.style.display = "block";
   label.textContent = `已标记 ${markedPhrases.length} 个短语`;
   chips.innerHTML = markedPhrases.map((p, i) =>
-    `<span class="marked-chip">${escHtml(p)}<button onclick="removeMarked(${i})" title="删除">×</button></span>`
+    `<span class="marked-chip">${escHtml(p)}<button onclick="addMarkedToLibrary(${i})" title="加入词库" style="background:none;border:none;color:#1ed760;cursor:pointer;font-size:13px;line-height:1;padding:0;opacity:.9;font-weight:700">＋</button><button onclick="removeMarked(${i})" title="删除">×</button></span>`
   ).join("");
   document.getElementById("explain-results").style.display = "none";
 }
@@ -1836,6 +1965,28 @@ function removeMarked(idx) {
   markedPhrases.splice(idx, 1);
   renderLyricsView();
   saveLyricsSession();
+}
+
+function addMarkedToLibrary(idx) {
+  const phrase = markedPhrases[idx];
+  if (!phrase) return;
+  const exists = data.phrases.some(x => x.phrase.toLowerCase() === phrase.toLowerCase());
+  if (exists) { alert(`"${phrase}" 已在词库中`); return; }
+  const exampleSource = currentLyricsTrack
+    ? `${currentLyricsTrack.title}${currentLyricsTrack.artist ? " — " + currentLyricsTrack.artist : ""}`
+    : "";
+  data.phrases.push({
+    id: Date.now() + Math.random(),
+    phrase,
+    meaning: "",
+    example: "",
+    exampleSource,
+    tags: ["lyrics"],
+    review: { stage: 0, correct: 0, wrong: 0 }
+  });
+  saveData(data);
+  const btn = document.querySelectorAll("#marked-chips .marked-chip")[idx]?.querySelector("button[title='加入词库']");
+  if (btn) { btn.textContent = "✓"; btn.disabled = true; btn.style.color = "rgba(30,215,96,.5)"; }
 }
 
 function clearMarked() {
@@ -1965,6 +2116,7 @@ function loadLyricsSession() {
     markedPhrases = session.marked || [];
     lyricsChatHistory = session.chat || [];
     renderLyricsView();
+    renderLyricsStrip();
     const container = document.getElementById("lyrics-chat-messages");
     lyricsChatHistory.forEach(msg => {
       const el = document.createElement("div");
@@ -2078,10 +2230,11 @@ function saveSong() {
     lines: lyricsLines
   });
   setSavedSongs(songs);
+  renderLyricsStrip();
   const btn = document.getElementById("save-song-btn");
   btn.textContent = "✓ 已保存";
   btn.disabled = true;
-  setTimeout(() => { btn.textContent = "💾 保存歌曲"; btn.disabled = false; }, 2000);
+  setTimeout(() => { btn.textContent = "＋ 保存歌曲"; btn.disabled = false; }, 2000);
 }
 
 function openSavedSong(id) {
@@ -2095,8 +2248,8 @@ function openSavedSong(id) {
   document.getElementById("lyrics-chat-messages").innerHTML = "";
   document.getElementById("lyrics-chat-section").style.display = "none";
   renderLyricsView();
-  switchPage("add");
-  setTimeout(() => document.getElementById("lyrics-study-card").scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  switchPage("lyrics");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 // ─── ARTISTS DATA ────────────────────────────────────────────────────────────

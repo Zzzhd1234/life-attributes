@@ -154,11 +154,14 @@ body {
 .habit-info { flex: 1; min-width: 0; }
 .habit-name { font-size: 16px; font-weight: 600; }
 .habit-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.habit-week-dots { display: flex; gap: 5px; margin-top: 8px; }
-.habit-week-dot { width: 8px; height: 8px; border-radius: 50%; background: #E5E5EA; flex-shrink: 0; }
+.habit-week-day-labels { display: flex; gap: 4px; margin-top: 8px; }
+.habit-week-day-label { width: 11px; font-size: 9px; color: var(--muted); text-align: center; flex-shrink: 0; }
+.habit-week-dots { display: flex; gap: 4px; margin-top: 3px; }
+.habit-week-dot { width: 11px; height: 11px; border-radius: 3px; background: #E5E5EA; flex-shrink: 0; }
 .habit-week-dot.filled { background: var(--accent); }
-.habit-week-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-.habit-week-bar-track { flex: 1; height: 5px; background: #E5E5EA; border-radius: 3px; overflow: hidden; }
+.habit-week-dot.today-empty { background: transparent; border: 1.5px solid var(--accent); }
+.habit-week-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.habit-week-bar-track { flex: 1; height: 6px; background: #E5E5EA; border-radius: 3px; overflow: hidden; }
 .habit-week-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
 .habit-week-count { font-size: 11px; color: var(--muted); font-weight: 600; flex-shrink: 0; min-width: 24px; text-align: right; }
 .habit-check-btn {
@@ -1981,16 +1984,28 @@ function renderHabits() {
   const habitsLabel = document.getElementById('habitsLabel');
   if (habitsLabel) habitsLabel.textContent = `今日 · ${entries.length} 项`;
 
+  const weekStartStr = getWeekStart(TODAY);
+  const weekDates = Array.from({length: 7}, (_, i) => {
+    const d = new Date(weekStartStr + 'T00:00:00'); d.setDate(d.getDate() + i); return localDateStr(d);
+  });
+  const DAY_LABELS = ['一','二','三','四','五','六','日'];
+  const dayLabelsHTML = DAY_LABELS.map(l => `<span class="habit-week-day-label">${l}</span>`).join('');
+
   const el = document.getElementById('habitList');
   el.innerHTML = entries.map(([key, h]) => {
-    const wc = h.weekCount || 0;
-    const weekDots = Array.from({length: 7}, (_, j) =>
-      `<div class="habit-week-dot${j < wc ? ' filled' : ''}"></div>`
-    ).join('');
-    const barPct = Math.round(wc / 7 * 100);
+    const history = h.history || [];
+    const filledCount = weekDates.filter(d => history.includes(d)).length;
+    const weekDots = weekDates.map(dateStr => {
+      const filled = history.includes(dateStr);
+      const isToday = dateStr === TODAY;
+      if (filled) return `<div class="habit-week-dot filled"></div>`;
+      if (isToday) return `<div class="habit-week-dot today-empty"></div>`;
+      return `<div class="habit-week-dot"></div>`;
+    }).join('');
+    const barPct = Math.round(filledCount / 7 * 100);
     const weekBar = `<div class="habit-week-bar-row">
       <div class="habit-week-bar-track"><div class="habit-week-bar-fill" style="width:${barPct}%;background:var(--accent)"></div></div>
-      <span class="habit-week-count">${wc}/7</span>
+      <span class="habit-week-count">${filledCount}/7</span>
     </div>`;
     const tagBadges = h.isCustom && h.tags?.length
       ? h.tags.map(t => `<span class="habit-tag-badge">${HABIT_TAGS[t]?.name || t}</span>`).join('')
@@ -2007,6 +2022,7 @@ function renderHabits() {
         <div class="habit-info" onclick="${isReading ? `openReadingPage()` : `openHabitCalendar('${key}')`}" style="cursor:pointer">
           <div class="habit-name">${h.name}</div>
           <div class="habit-meta">${readingMeta}</div>
+          <div class="habit-week-day-labels">${dayLabelsHTML}</div>
           <div class="habit-week-dots">${weekDots}</div>
           ${weekBar}
         </div>
