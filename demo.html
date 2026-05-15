@@ -552,6 +552,8 @@ body {
 .cal-day-dots { display:flex; gap:5px; justify-content:center; margin:0 0 14px; padding-top:4px; }
 .cal-day-dot { width:6px; height:6px; border-radius:50%; background:#D1D1D6; transition:all .2s; flex-shrink:0; }
 .cal-day-dot.active { background:var(--accent); width:18px; border-radius:3px; }
+.todo-item.is-group { background: #f8f7ff; border-left: 3px solid var(--accent); padding-left: 13px; }
+.todo-group-tag { font-size: 10px; font-weight: 700; color: var(--accent); background: #eef4ff; border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
 .subtask-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 11px; color: var(--muted); background: #f2f2f7;
@@ -735,8 +737,8 @@ body {
 
   <div class="section-label">近期待办</div>
   <div class="card">
-    <div class="habit-add-row" style="border-top:none" onclick="openTodoAddSheet()">＋ 添加待办</div>
     <div id="todoList"></div>
+    <div class="habit-add-row" onclick="openTodoAddSheet()">＋ 添加待办</div>
   </div>
 
   <div class="section-label">近期提醒</div>
@@ -851,6 +853,28 @@ body {
     <input type="text" id="newTodoLabelInput" placeholder="新建分类标签，回车添加"
            onkeydown="if(event.key==='Enter')addCustomTodoLabel()">
     <button class="todo-label-add-btn" onclick="addCustomTodoLabel()">添加</button>
+  </div>
+
+  <div class="section-label">细分事项（可选）</div>
+  <div class="card">
+    <div id="newTodoSubList"></div>
+    <div class="subtask-add-row" style="padding:8px 0 2px;border-top:none">
+      <input type="text" id="newTodoSubInput" placeholder="添加细分事项，回车确认"
+             style="flex:1;border:none;outline:none;font-size:14px;background:transparent"
+             onkeydown="if(event.key==='Enter'){addNewTodoSub();event.preventDefault()}">
+      <button class="subtask-add-btn" onclick="addNewTodoSub()">+</button>
+    </div>
+  </div>
+
+  <div class="section-label">组事项</div>
+  <div class="card">
+    <div class="recur-check-row" style="border-top:none">
+      <label>开启组事项</label>
+      <button class="toggle-switch" id="groupToggle" onclick="toggleGroupMode()"></button>
+    </div>
+    <div id="groupModeHint" style="display:none;padding:4px 16px 10px;font-size:12px;color:var(--muted);border-top:0.5px solid var(--border)">
+      组事项为多个子事项的集合，子事项全部完成后自动标记完成
+    </div>
   </div>
 
   <div class="section-label">循环</div>
@@ -2752,10 +2776,49 @@ const CATEGORY_META = {
   future: { label: '未来事项',  color: 'var(--muted)' },
 };
 
+let _newTodoSubs = [];
+let _isGroupTodo = false;
+
+function addNewTodoSub() {
+  const input = document.getElementById('newTodoSubInput');
+  const text = input.value.trim();
+  if (!text) return;
+  _newTodoSubs.push({ id: Date.now(), text, done: false });
+  input.value = '';
+  renderNewTodoSubList();
+  input.focus();
+}
+function removeNewTodoSub(id) {
+  _newTodoSubs = _newTodoSubs.filter(s => s.id !== id);
+  renderNewTodoSubList();
+}
+function renderNewTodoSubList() {
+  const el = document.getElementById('newTodoSubList');
+  if (!el) return;
+  el.innerHTML = _newTodoSubs.map(s =>
+    `<div class="subtask-item">
+      <div class="subtask-text">${s.text}</div>
+      <button class="exlog-del" onclick="removeNewTodoSub(${s.id})">×</button>
+    </div>`
+  ).join('');
+}
+function toggleGroupMode() {
+  _isGroupTodo = !_isGroupTodo;
+  const btn = document.getElementById('groupToggle');
+  if (btn) btn.classList.toggle('active', _isGroupTodo);
+  const hint = document.getElementById('groupModeHint');
+  if (hint) hint.style.display = _isGroupTodo ? 'block' : 'none';
+}
+
 function openTodoAddSheet() {
   document.getElementById('todoText').value = '';
   document.getElementById('todoDate').value = TODAY;
   document.getElementById('todoTime').value = '';
+  document.getElementById('newTodoSubInput').value = '';
+  _newTodoSubs = []; _isGroupTodo = false;
+  renderNewTodoSubList();
+  const gt = document.getElementById('groupToggle'); if (gt) gt.classList.remove('active');
+  const gh = document.getElementById('groupModeHint'); if (gh) gh.style.display = 'none';
   if (recurEnabled) toggleRecurCheck();
   selectedTodoLabel = null;
   renderTodoLabelPicker();
@@ -2770,7 +2833,10 @@ function addTodo() {
   if (!text || !date) { showToast('请填写内容和截止日期'); return; }
   const recurrence = getRecurrence();
   const time = document.getElementById('todoTime').value || null;
-  state.todos.push({ id: Date.now(), text, deadline: date, deadlineTime: time, done: false, recurrence, label: selectedTodoLabel });
+  const entry = { id: Date.now(), text, deadline: date, deadlineTime: time, done: false, recurrence, label: selectedTodoLabel };
+  if (_newTodoSubs.length) entry.subtasks = [..._newTodoSubs];
+  if (_isGroupTodo) entry.isGroup = true;
+  state.todos.push(entry);
   closeTodoAddSheet();
   save(); renderTodos();
 }
@@ -2877,7 +2943,14 @@ function toggleSubtask(todoId, subtaskId) {
   const t = state.todos.find(t => t.id === todoId);
   if (!t) return;
   const s = (t.subtasks || []).find(s => s.id === subtaskId);
-  if (s) { s.done = !s.done; save(); renderTodoDetail(); renderTodos(); }
+  if (!s) return;
+  s.done = !s.done;
+  if (t.isGroup && (t.subtasks || []).every(s => s.done)) {
+    t.done = true; t.completedAt = TODAY;
+  } else if (t.isGroup && !s.done) {
+    t.done = false; t.completedAt = null;
+  }
+  save(); renderTodoDetail(); renderTodos();
 }
 function deleteSubtask(todoId, subtaskId) {
   const t = state.todos.find(t => t.id === todoId);
@@ -2931,10 +3004,11 @@ function todoItemHTML(t) {
   } else if (t.details) {
     badge = `<span class="subtask-badge">📝 有备注</span>`;
   }
-  return `<div class="todo-item">
+  const groupTag = t.isGroup ? `<span class="todo-group-tag">组</span>` : '';
+  return `<div class="todo-item${t.isGroup?' is-group':''}">
     <div class="todo-check ${t.done?'done':''}" onclick="toggleTodo(${t.id})">${t.done?'✓':''}</div>
     <div class="todo-body" onclick="openTodoDetail(${t.id})">
-      <div class="todo-text ${t.done?'done':''}">${t.text}${recurTag(t.recurrence)}${labelTag}</div>
+      <div class="todo-text ${t.done?'done':''}">${t.text}${groupTag}${recurTag(t.recurrence)}${labelTag}</div>
       <div class="todo-deadline ${isOverdue?'overdue':''}">截止 ${dlLabel}${isOverdue?' · 已逾期':''}</div>
       ${badge}
     </div>
