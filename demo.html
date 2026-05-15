@@ -266,18 +266,35 @@ body {
 .ledger-balance { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ===== BOOKKEEPING ===== */
-.add-tx { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 0.5px solid var(--border); }
-.add-tx input, .add-tx select {
+.add-tx-inputs { display: flex; gap: 8px; padding: 12px 16px; }
+.add-tx-inputs input, .add-tx-inputs select {
   border: 1px solid #C7C7CC; border-radius: 8px; padding: 8px 10px;
   font-size: 14px; outline: none; background: white;
 }
-.add-tx input.desc { flex: 1; min-width: 0; }
-.add-tx input.amt { width: 80px; }
-.add-tx select { width: 76px; }
-.add-tx button {
+.add-tx-inputs input.desc { flex: 1; min-width: 0; }
+.add-tx-inputs input.amt { width: 80px; }
+.add-tx-inputs select { width: 76px; }
+.add-tx-inputs button {
   background: var(--accent); color: white; border: none;
   border-radius: 8px; padding: 8px 14px; font-size: 15px; font-weight: 600; cursor: pointer;
 }
+.vc-acc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; cursor: pointer; border-top: 0.5px solid var(--border); user-select: none;
+}
+.vc-acc-header-label { font-size: 15px; color: var(--text); font-weight: 500; }
+.vc-acc-header-right { display: flex; align-items: center; gap: 6px; }
+.vc-acc-header-val { font-size: 15px; }
+.vc-acc-header-chev { font-size: 11px; color: var(--muted); transition: transform 0.2s; display: inline-block; }
+.vc-acc-header.open .vc-acc-header-chev { transform: rotate(180deg); }
+.vc-acc-opt {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; border-top: 0.5px solid var(--border);
+  font-size: 15px; cursor: pointer; color: var(--text);
+}
+.vc-acc-opt.sel { color: var(--accent); }
+.vc-acc-opt-check { color: var(--accent); font-size: 16px; opacity: 0; }
+.vc-acc-opt.sel .vc-acc-opt-check { opacity: 1; }
 .tx-item {
   display: flex; justify-content: space-between; align-items: center;
   padding: 11px 16px; border-bottom: 0.5px solid var(--border);
@@ -458,36 +475,6 @@ body {
   padding: 10px 16px; border-top: 0.5px solid var(--border);
 }
 .recur-check-row label { font-size: 15px; color: var(--text); }
-.recur-options { border-top: 0.5px solid var(--border); }
-.recur-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 16px 10px; gap: 8px; flex-wrap: wrap;
-}
-.recur-row label { font-size: 14px; color: #3c3c43; }
-.recur-select {
-  border: 1px solid #C7C7CC; border-radius: 8px; padding: 6px 10px;
-  font-size: 14px; outline: none; background: white; color: var(--text); flex: 1;
-}
-.tx-type-seg {
-  display: flex; border-radius: 8px; border: 1px solid #C7C7CC;
-  overflow: hidden; flex-shrink: 0;
-}
-.tx-type-btn {
-  flex: 1; padding: 7px 14px; border: none; background: white;
-  font-size: 13px; font-weight: 500; cursor: pointer; color: var(--muted);
-  transition: background 0.15s, color 0.15s;
-}
-.tx-type-btn + .tx-type-btn { border-left: 1px solid #C7C7CC; }
-.tx-type-btn.active[data-type="expense"] { background: var(--danger); color: white; border-color: var(--danger); }
-.tx-type-btn.active[data-type="income"]  { background: var(--success); color: white; border-color: var(--success); }
-.recur-option {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 13px 16px; border-top: 0.5px solid var(--border);
-  font-size: 15px; cursor: pointer; color: var(--text); transition: background 0.1s;
-}
-.recur-option.sel { color: var(--accent); font-weight: 500; }
-.recur-option-check { color: var(--accent); font-size: 17px; opacity: 0; transition: opacity 0.1s; }
-.recur-option.sel .recur-option-check { opacity: 1; }
 .day-picker { display: flex; gap: 6px; padding: 0 16px 12px; flex-wrap: wrap; }
 .day-btn {
   width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #C7C7CC;
@@ -980,17 +967,18 @@ body {
         <button class="toggle-switch" id="recurToggle" onclick="toggleRecurCheck()"></button>
       </div>
       <div id="recurOptions" style="display:none">
-        <div class="recur-option sel" data-val="daily" onclick="selectRecur('daily')">
-          每天<span class="recur-option-check">✓</span>
+        <div class="vc-acc-header" id="recurAccHeader" onclick="toggleRecurAccordion()" style="border-top:0.5px solid var(--border)">
+          <span class="vc-acc-header-label">方式</span>
+          <span class="vc-acc-header-right">
+            <span class="vc-acc-header-val" id="recurAccVal" style="color:var(--accent)">每天</span>
+            <span class="vc-acc-header-chev">∨</span>
+          </span>
         </div>
-        <div class="recur-option" data-val="weekly" onclick="selectRecur('weekly')">
-          每周（同一天）<span class="recur-option-check">✓</span>
-        </div>
-        <div class="recur-option" data-val="monthly" onclick="selectRecur('monthly')">
-          每月（同一日期）<span class="recur-option-check">✓</span>
-        </div>
-        <div class="recur-option" data-val="custom" onclick="selectRecur('custom')">
-          自选每周哪几天<span class="recur-option-check">✓</span>
+        <div id="recurAccList" style="display:none">
+          <div class="vc-acc-opt sel" data-val="daily" onclick="selectRecur('daily')">每天<span class="vc-acc-opt-check">✓</span></div>
+          <div class="vc-acc-opt" data-val="weekly" onclick="selectRecur('weekly')">每周（同一天）<span class="vc-acc-opt-check">✓</span></div>
+          <div class="vc-acc-opt" data-val="monthly" onclick="selectRecur('monthly')">每月（同一日期）<span class="vc-acc-opt-check">✓</span></div>
+          <div class="vc-acc-opt" data-val="custom" onclick="selectRecur('custom')">自选每周哪几天<span class="vc-acc-opt-check">✓</span></div>
         </div>
         <div class="day-picker" id="dayPicker" style="display:none">
           <button class="day-btn" data-day="1" onclick="toggleDay(1)">一</button>
@@ -1374,7 +1362,7 @@ body {
         </div>
       </div>
     </div>
-    <div class="add-tx">
+    <div class="add-tx-inputs">
       <input class="desc" type="text" id="txDesc" placeholder="备注">
       <input class="amt" type="number" id="txAmount" placeholder="¥金额">
       <select id="txCat" style="font-size:12px;border:none;outline:none;background:transparent;color:var(--muted)">
@@ -1386,11 +1374,18 @@ body {
         <option value="工资">工资</option>
         <option value="医疗">医疗</option>
       </select>
-      <div class="tx-type-seg">
-        <button class="tx-type-btn active" data-type="expense" onclick="setTxType('expense',this)">支出</button>
-        <button class="tx-type-btn" data-type="income" onclick="setTxType('income',this)">收入</button>
-      </div>
       <button onclick="addTransaction()">+</button>
+    </div>
+    <div class="vc-acc-header" id="txTypeAccHeader" onclick="toggleTxTypeAccordion()">
+      <span class="vc-acc-header-label">类型</span>
+      <span class="vc-acc-header-right">
+        <span class="vc-acc-header-val" id="txTypeAccVal" style="color:var(--danger)">支出</span>
+        <span class="vc-acc-header-chev">∨</span>
+      </span>
+    </div>
+    <div id="txTypeAccList" style="display:none">
+      <div class="vc-acc-opt sel" data-type="expense" onclick="setTxType('expense')">支出<span class="vc-acc-opt-check">✓</span></div>
+      <div class="vc-acc-opt" data-type="income" onclick="setTxType('income')">收入<span class="vc-acc-opt-check">✓</span></div>
     </div>
     <div id="txList"></div>
   </div>
@@ -2353,10 +2348,27 @@ function addCardioLog() {
 
 // ===== BOOKKEEPING =====
 let _txType = 'expense';
-function setTxType(type, el) {
+function toggleTxTypeAccordion() {
+  const hdr = document.getElementById('txTypeAccHeader');
+  const list = document.getElementById('txTypeAccList');
+  if (!hdr || !list) return;
+  const open = !hdr.classList.contains('open');
+  hdr.classList.toggle('open', open);
+  list.style.display = open ? 'block' : 'none';
+}
+function setTxType(type) {
   _txType = type;
-  el.closest('.tx-type-seg').querySelectorAll('.tx-type-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+  const val = document.getElementById('txTypeAccVal');
+  if (val) {
+    val.textContent = type === 'expense' ? '支出' : '收入';
+    val.style.color = type === 'expense' ? 'var(--danger)' : 'var(--success)';
+  }
+  document.querySelectorAll('#txTypeAccList .vc-acc-opt').forEach(el =>
+    el.classList.toggle('sel', el.dataset.type === type));
+  const hdr = document.getElementById('txTypeAccHeader');
+  const list = document.getElementById('txTypeAccList');
+  if (hdr) hdr.classList.remove('open');
+  if (list) list.style.display = 'none';
 }
 function addTransaction() {
   const desc   = document.getElementById('txDesc').value.trim();
@@ -2951,13 +2963,35 @@ function toggleRecurCheck() {
   const btn = document.getElementById('recurToggle');
   btn.classList.toggle('on', recurEnabled);
   document.getElementById('recurOptions').style.display = recurEnabled ? 'block' : 'none';
-  if (!recurEnabled) { selectedDays = []; updateDayPicker(); }
+  if (!recurEnabled) {
+    selectedDays = [];
+    updateDayPicker();
+    const hdr = document.getElementById('recurAccHeader');
+    const list = document.getElementById('recurAccList');
+    if (hdr) hdr.classList.remove('open');
+    if (list) list.style.display = 'none';
+  }
+}
+function toggleRecurAccordion() {
+  const hdr = document.getElementById('recurAccHeader');
+  const list = document.getElementById('recurAccList');
+  if (!hdr || !list) return;
+  const open = !hdr.classList.contains('open');
+  hdr.classList.toggle('open', open);
+  list.style.display = open ? 'block' : 'none';
 }
 let _selectedRecur = 'daily';
 function selectRecur(val) {
   _selectedRecur = val;
-  document.querySelectorAll('.recur-option').forEach(el =>
+  document.querySelectorAll('#recurAccList .vc-acc-opt').forEach(el =>
     el.classList.toggle('sel', el.dataset.val === val));
+  const labels = {daily:'每天', weekly:'每周（同一天）', monthly:'每月（同一日期）', custom:'自选每周哪几天'};
+  const valEl = document.getElementById('recurAccVal');
+  if (valEl) valEl.textContent = labels[val] || '';
+  const hdr = document.getElementById('recurAccHeader');
+  const list = document.getElementById('recurAccList');
+  if (hdr) hdr.classList.remove('open');
+  if (list) list.style.display = 'none';
   updateDayPicker();
 }
 function updateDayPicker() {
