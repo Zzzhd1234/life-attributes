@@ -645,8 +645,7 @@
         <span class="lp-lyrics-label">Lyrics</span>
         <span class="lp-lyrics-hint">划选词语 → 标记</span>
       </div>
-      <div id="lyrics-view" class="lp-lyrics-body"
-           onmouseup="onLyricsSelect(event)" ontouchend="onLyricsSelect(event)"></div>
+      <div id="lyrics-view" class="lp-lyrics-body"></div>
     </div>
 
     <!-- Bottom toolbar -->
@@ -694,18 +693,22 @@
 
   <!-- Floating mark tooltip -->
   <div id="mark-tooltip" style="display:none;position:fixed;z-index:9999;transform:translateX(-50%)" onmousedown="event.preventDefault()">
+    <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid #1c1c1e;margin:0 auto"></div>
     <div style="background:#1c1c1e;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.6);display:flex;overflow:hidden;white-space:nowrap">
-      <button onclick="markSelectedPhrase()"
-              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em">
+      <button id="tt-mark" onclick="markSelectedPhrase()"
+              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit">
         ＋ 标记
       </button>
-      <div style="width:1px;background:rgba(255,255,255,.12);margin:8px 0"></div>
-      <button onclick="markAndExplainSelected()"
-              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em">
+      <div id="tt-div1" style="width:1px;background:rgba(255,255,255,.12);margin:8px 0"></div>
+      <button id="tt-explain" onclick="markAndExplainSelected()"
+              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit">
         AI 解释
       </button>
+      <button id="tt-unmark" onclick="unmarkSelected()"
+              style="display:none;background:none;border:none;color:#ff6584;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit">
+        取消标记
+      </button>
     </div>
-    <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid #1c1c1e;margin:0 auto"></div>
   </div>
 </div>
 
@@ -1828,9 +1831,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("mousedown", e => {
     const tt = document.getElementById("mark-tooltip");
-    if (tt && tt.style.display !== "none" && !tt.contains(e.target)) {
-      hideMarkTooltip();
-    }
+    if (tt && tt.style.display !== "none" && !tt.contains(e.target)) hideMarkTooltip();
+  });
+
+  let _selTimer = null;
+  document.addEventListener("selectionchange", () => {
+    clearTimeout(_selTimer);
+    _selTimer = setTimeout(() => {
+      const sel = window.getSelection();
+      const view = document.getElementById("lyrics-view");
+      if (!view) return;
+      if (!sel || sel.isCollapsed) { if (!currentSelection) hideMarkTooltip(); return; }
+      const text = sel.toString().trim();
+      if (!text || text.length < 2 || text.length > 80) { if (!currentSelection) hideMarkTooltip(); return; }
+      let inView = false;
+      try { inView = view.contains(sel.getRangeAt(0).commonAncestorContainer); } catch {}
+      if (!inView) return;
+      currentSelection = text;
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      const tt = document.getElementById("mark-tooltip");
+      const already = markedPhrases.some(p => p.toLowerCase() === text.toLowerCase());
+      document.getElementById("tt-mark").style.display    = already ? "none" : "";
+      document.getElementById("tt-div1").style.display    = already ? "none" : "";
+      document.getElementById("tt-explain").style.display = already ? "none" : "";
+      document.getElementById("tt-unmark").style.display  = already ? "" : "none";
+      tt.style.left = (rect.left + rect.right) / 2 + "px";
+      tt.style.top  = Math.min(window.innerHeight - 80, rect.bottom + 8) + "px";
+      tt.style.display = "block";
+    }, 200);
   });
 });
 
@@ -1865,7 +1893,7 @@ function applyMarks(plainText, phrases) {
   let out = "", pos = 0;
   merged.forEach(([s, e]) => {
     out += escHtml(plainText.slice(pos, s));
-    out += `<mark class="pm">${escHtml(plainText.slice(s, e))}</mark>`;
+    out += `<mark class="pm" onclick="event.stopPropagation();unmarkPhrase('${plainText.slice(s,e).replace(/'/g,"\\'")}') ">${escHtml(plainText.slice(s, e))}</mark>`;
     pos = e;
   });
   return out + escHtml(plainText.slice(pos));
@@ -1904,23 +1932,24 @@ function renderLyricsStrip() {
   ).join("");
 }
 
-function onLyricsSelect(e) {
-  const sel = window.getSelection();
-  if (!sel || sel.isCollapsed) { if (!currentSelection) hideMarkTooltip(); return; }
-  const text = sel.toString().trim();
-  if (!text || text.length < 2 || text.length > 80) { if (!currentSelection) hideMarkTooltip(); return; }
-  currentSelection = text;
-  const range = sel.getRangeAt(0);
-  const rect = range.getBoundingClientRect();
-  const tt = document.getElementById("mark-tooltip");
-  tt.style.left = (rect.left + rect.right) / 2 + "px";
-  tt.style.top  = Math.max(8, rect.top - 58) + "px";
-  tt.style.display = "block";
-}
-
 function hideMarkTooltip() {
   document.getElementById("mark-tooltip").style.display = "none";
   currentSelection = "";
+}
+
+function unmarkSelected() {
+  const phrase = currentSelection;
+  hideMarkTooltip();
+  window.getSelection()?.removeAllRanges();
+  unmarkPhrase(phrase);
+}
+
+function unmarkPhrase(phrase) {
+  const idx = markedPhrases.findIndex(p => p.toLowerCase() === phrase.toLowerCase());
+  if (idx === -1) return;
+  markedPhrases.splice(idx, 1);
+  renderLyricsView();
+  saveLyricsSession();
 }
 
 function markSelectedPhrase() {
