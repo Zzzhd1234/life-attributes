@@ -370,6 +370,7 @@ body {
   border-radius: 14px; cursor: pointer;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none; user-select: none;
 }
 .btn-export {
   background: white; color: var(--accent); border: none; border-radius: 12px;
@@ -3528,7 +3529,10 @@ function renderReadingBooks() {
     const pct = b.totalPages > 0 ? Math.min(100, Math.round((b.currentPage||0) / b.totalPages * 100)) : 0;
     const color = pct >= 100 ? 'var(--success)' : 'var(--accent)';
     const pageText = b.totalPages > 0 ? `第 ${b.currentPage||0} / ${b.totalPages} 页` : '未设置总页数';
-    return `<div class="reading-book-card" onclick="openReadingEdit(${b.id})">
+    return `<div class="reading-book-card"
+      onclick="if(_longPressTriggered){_longPressTriggered=false;return;}openReadingEdit(${b.id})"
+      ontouchstart="startBookLongPress(event,${b.id})" ontouchend="cancelBookLongPress()" ontouchmove="cancelBookLongPress()"
+      onmousedown="startBookLongPress(event,${b.id})" onmouseup="cancelBookLongPress()" onmouseleave="cancelBookLongPress()">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div style="flex:1;min-width:0">
           <div style="font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">《${b.title || '未命名'}》</div>
@@ -4314,6 +4318,23 @@ function cancelTodoLongPress() {
   clearTimeout(_todoLongPressTimer);
   _todoLongPressTimer = null;
 }
+
+let _bookLongPressTimer = null;
+function startBookLongPress(e, id) {
+  e.preventDefault();
+  _bookLongPressTimer = setTimeout(() => {
+    _longPressTriggered = true;
+    const el = e.target.closest('.reading-book-card');
+    showContextMenu([
+      { label: '编辑信息', icon: '✏️', action: () => openReadingEdit(id) },
+    ], el);
+  }, 500);
+}
+function cancelBookLongPress() {
+  clearTimeout(_bookLongPressTimer);
+  _bookLongPressTimer = null;
+}
+
 function pinTodo(id) {
   const t = state.todos.find(t => t.id === id);
   if (!t) return;
