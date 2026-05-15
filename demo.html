@@ -1886,7 +1886,12 @@ function openAbilitySheet() {
   toggleSheet('abilitySheet', 'abilitySheetOverlay', true);
 }
 function closeAbilitySheet() { toggleSheet('abilitySheet', 'abilitySheetOverlay', false); }
+let _openAbilityLogKey = null;
 function openAbilityLog(key) {
+  if (_openAbilityLogKey === key && document.getElementById('abilityLogSheet')?.classList.contains('open')) {
+    closeAbilityLog(); return;
+  }
+  _openAbilityLogKey = key;
   const name = abilityDisplayName(key);
   const titleEl = document.getElementById('abilityLogTitle');
   if (titleEl) titleEl.textContent = name + ' · 变化记录';
@@ -1914,7 +1919,7 @@ function openAbilityLog(key) {
   }
   toggleSheet('abilityLogSheet', 'abilityLogOverlay', true);
 }
-function closeAbilityLog() { toggleSheet('abilityLogSheet', 'abilityLogOverlay', false); }
+function closeAbilityLog() { _openAbilityLogKey = null; toggleSheet('abilityLogSheet', 'abilityLogOverlay', false); }
 
 // ===== PROFILE =====
 function updateProfile() {
