@@ -457,7 +457,7 @@
     .lp-lyrics-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
     .lp-lyrics-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.85); }
     .lp-lyrics-hint { font-size: .72rem; color: rgba(255,255,255,.45); }
-    .lp-lyrics-body { padding: 14px 20px 28px; user-select: text; -webkit-user-select: text; position: relative; }
+    .lp-lyrics-body { padding: 14px 20px 28px; user-select: text; -webkit-user-select: text; -webkit-touch-callout: none; position: relative; }
     .lp-lyrics-body::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(transparent, rgba(108,99,255,.22)); pointer-events: none; }
     .lp-lyric-line { font-size: 1.5rem; font-weight: 800; color: rgba(255,255,255,.42); line-height: 1.3; padding: 6px 0; cursor: text; transition: color .18s; letter-spacing: -.01em; }
     .lp-lyric-line:hover { color: #fff; }
@@ -1854,8 +1854,31 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tt && tt.style.display !== "none" && !tt.contains(e.target)) hideMarkTooltip();
   });
 
+  // Mobile (iOS): touchend on lyrics-view — capture selection then clear it immediately
+  // so Safari never sees a live selection and cannot show its native menu.
+  const _lv = document.getElementById("lyrics-view");
+  if (_lv) {
+    _lv.addEventListener("touchend", () => {
+      const sel = window.getSelection();
+      const view = document.getElementById("lyrics-view");
+      if (!view || !sel || sel.isCollapsed) return;
+      const text = sel.toString().trim();
+      if (!text || text.length < 2 || text.length > 80) return;
+      let inView = false;
+      try { inView = view.contains(sel.getRangeAt(0).commonAncestorContainer); } catch {}
+      if (!inView) return;
+      let rect;
+      try { rect = sel.getRangeAt(0).getBoundingClientRect(); } catch { return; }
+      currentSelection = text;
+      sel.removeAllRanges(); // kill native iOS menu before it renders
+      _showMarkTooltip(text, rect);
+    }, { passive: true });
+  }
+
+  // Desktop: selectionchange for mouse-driven selection
   let _selTimer = null;
   document.addEventListener("selectionchange", () => {
+    if (navigator.maxTouchPoints > 0) return; // handled by touchend on mobile
     clearTimeout(_selTimer);
     _selTimer = setTimeout(() => {
       const sel = window.getSelection();
@@ -1869,16 +1892,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!inView) return;
       currentSelection = text;
       const rect = sel.getRangeAt(0).getBoundingClientRect();
-      const tt = document.getElementById("mark-tooltip");
-      const already = markedPhrases.some(p => p.toLowerCase() === text.toLowerCase());
-      document.getElementById("tt-mark").style.display    = already ? "none" : "";
-      document.getElementById("tt-div1").style.display    = already ? "none" : "";
-      document.getElementById("tt-explain").style.display = already ? "none" : "";
-      document.getElementById("tt-unmark").style.display  = already ? "" : "none";
-      tt.style.left = (rect.left + rect.right) / 2 + "px";
-      tt.style.top  = Math.min(window.innerHeight - 80, rect.bottom + 8) + "px";
-      tt.style.display = "block";
-    }, 200);
+      _showMarkTooltip(text, rect);
+    }, 150);
   });
 });
 
@@ -1950,6 +1965,18 @@ function renderLyricsStrip() {
       <div class="lp-chip-artist">${escHtml(s.artist || "")}</div>
     </div>`
   ).join("");
+}
+
+function _showMarkTooltip(text, rect) {
+  const tt = document.getElementById("mark-tooltip");
+  const already = markedPhrases.some(p => p.toLowerCase() === text.toLowerCase());
+  document.getElementById("tt-mark").style.display    = already ? "none" : "";
+  document.getElementById("tt-div1").style.display    = already ? "none" : "";
+  document.getElementById("tt-explain").style.display = already ? "none" : "";
+  document.getElementById("tt-unmark").style.display  = already ? "" : "none";
+  tt.style.left = (rect.left + rect.right) / 2 + "px";
+  tt.style.top  = Math.min(window.innerHeight - 80, rect.bottom + 8) + "px";
+  tt.style.display = "block";
 }
 
 function hideMarkTooltip() {
