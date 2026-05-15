@@ -1931,8 +1931,27 @@ function markSelectedPhrase() {
     renderLyricsView();
     saveLyricsSession();
   }
+  addPhraseToLibrary(phrase);
   window.getSelection()?.removeAllRanges();
   hideMarkTooltip();
+}
+
+function addPhraseToLibrary(phrase) {
+  if (!phrase) return;
+  if (data.phrases.some(x => x.phrase.toLowerCase() === phrase.toLowerCase())) return;
+  const exampleSource = currentLyricsTrack
+    ? `${currentLyricsTrack.title}${currentLyricsTrack.artist ? " — " + currentLyricsTrack.artist : ""}`
+    : "";
+  data.phrases.push({
+    id: Date.now() + Math.random(),
+    phrase,
+    meaning: "",
+    example: "",
+    exampleSource,
+    tags: ["lyrics"],
+    review: { stage: 0, correct: 0, wrong: 0 }
+  });
+  saveData(data);
 }
 
 function markAndExplainSelected() {
@@ -1943,6 +1962,7 @@ function markAndExplainSelected() {
     renderLyricsView();
     saveLyricsSession();
   }
+  addPhraseToLibrary(phrase);
   window.getSelection()?.removeAllRanges();
   hideMarkTooltip();
   explainMarked();
@@ -1970,21 +1990,8 @@ function removeMarked(idx) {
 function addMarkedToLibrary(idx) {
   const phrase = markedPhrases[idx];
   if (!phrase) return;
-  const exists = data.phrases.some(x => x.phrase.toLowerCase() === phrase.toLowerCase());
-  if (exists) { alert(`"${phrase}" 已在词库中`); return; }
-  const exampleSource = currentLyricsTrack
-    ? `${currentLyricsTrack.title}${currentLyricsTrack.artist ? " — " + currentLyricsTrack.artist : ""}`
-    : "";
-  data.phrases.push({
-    id: Date.now() + Math.random(),
-    phrase,
-    meaning: "",
-    example: "",
-    exampleSource,
-    tags: ["lyrics"],
-    review: { stage: 0, correct: 0, wrong: 0 }
-  });
-  saveData(data);
+  const alreadyIn = data.phrases.some(x => x.phrase.toLowerCase() === phrase.toLowerCase());
+  if (!alreadyIn) addPhraseToLibrary(phrase);
   const btn = document.querySelectorAll("#marked-chips .marked-chip")[idx]?.querySelector("button[title='加入词库']");
   if (btn) { btn.textContent = "✓"; btn.disabled = true; btn.style.color = "rgba(30,215,96,.5)"; }
 }
