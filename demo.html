@@ -530,6 +530,7 @@ body {
 .todo-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px; border-bottom: 0.5px solid var(--border);
+  -webkit-touch-callout: none; user-select: none;
 }
 .todo-item:last-child { border-bottom: none; }
 .todo-check {
@@ -3526,9 +3527,7 @@ function renderReadingBooks() {
     const pct = b.totalPages > 0 ? Math.min(100, Math.round((b.currentPage||0) / b.totalPages * 100)) : 0;
     const color = pct >= 100 ? 'var(--success)' : 'var(--accent)';
     const pageText = b.totalPages > 0 ? `第 ${b.currentPage||0} / ${b.totalPages} 页` : '未设置总页数';
-    return `<div class="reading-book-card" onclick="if(_longPressTriggered){_longPressTriggered=false;return;}openReadingEdit(${b.id})"
-      ontouchstart="startBookLongPress(event,${b.id})" ontouchend="cancelBookLongPress()" ontouchmove="cancelBookLongPress()"
-      onmousedown="startBookLongPress(event,${b.id})" onmouseup="cancelBookLongPress()" onmouseleave="cancelBookLongPress()">
+    return `<div class="reading-book-card" onclick="openReadingEdit(${b.id})">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div style="flex:1;min-width:0">
           <div style="font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">《${b.title || '未命名'}》</div>
@@ -4296,6 +4295,7 @@ function hideContextMenu() {
 
 let _todoLongPressTimer = null;
 function startTodoLongPress(e, id) {
+  e.preventDefault();
   _todoLongPressTimer = setTimeout(() => {
     _longPressTriggered = true;
     const t = state.todos.find(t => t.id === id);
@@ -4320,21 +4320,6 @@ function pinTodo(id) {
   state.todos.unshift(t);
   save(); renderTodos();
   showToast('已置顶');
-}
-
-let _bookLongPressTimer = null;
-function startBookLongPress(e, id) {
-  _bookLongPressTimer = setTimeout(() => {
-    _longPressTriggered = true;
-    const el = e.target.closest('.reading-book-card');
-    showContextMenu([
-      { label: '编辑信息', icon: '✏️', action: () => openReadingEdit(id) },
-    ], el);
-  }, 500);
-}
-function cancelBookLongPress() {
-  clearTimeout(_bookLongPressTimer);
-  _bookLongPressTimer = null;
 }
 
 function showToast(msg) {
