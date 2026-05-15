@@ -1385,6 +1385,30 @@ body {
     <div class="intensity-btn sel" data-intensity="1" onclick="selectIntensity(this)">中 ×1</div>
     <div class="intensity-btn" data-intensity="1.25" onclick="selectIntensity(this)">高 ×1.25</div>
   </div>
+  <div class="section-label">频率</div>
+  <div class="card">
+    <div class="recur-check-row" style="border-top:none">
+      <label>自定义目标频率</label>
+      <button class="toggle-switch" id="habitFreqToggle" onclick="toggleHabitFreqSection()"></button>
+    </div>
+    <div id="habitFreqSection" style="display:none">
+      <div class="settings-row" style="border-top:0.5px solid var(--border)">
+        <span class="settings-label">周期</span>
+        <div style="display:flex;gap:8px">
+          <div class="intensity-btn sel" data-freq-type="weekly" onclick="selectFreqType(this)">每周</div>
+          <div class="intensity-btn" data-freq-type="monthly" onclick="selectFreqType(this)">每月</div>
+        </div>
+      </div>
+      <div class="settings-row" style="border-top:0.5px solid var(--border)">
+        <span class="settings-label">次数</span>
+        <div style="display:flex;align-items:center;gap:14px">
+          <button onclick="adjustFreqCount(-1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)">－</button>
+          <span id="freqCountDisplay" style="font-size:18px;font-weight:700;min-width:20px;text-align:center">3</span>
+          <button onclick="adjustFreqCount(1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)">＋</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <button class="btn-primary" style="margin-top:4px" onclick="saveCustomHabit()">添加习惯</button>
 </div>
 
@@ -1994,37 +2018,57 @@ function renderHabits() {
   const el = document.getElementById('habitList');
   el.innerHTML = entries.map(([key, h]) => {
     const history = h.history || [];
-    const filledCount = weekDates.filter(d => history.includes(d)).length;
-    const weekDots = weekDates.map(dateStr => {
-      const filled = history.includes(dateStr);
-      const isToday = dateStr === TODAY;
-      if (filled) return `<div class="habit-week-dot filled"></div>`;
-      if (isToday) return `<div class="habit-week-dot today-empty"></div>`;
-      return `<div class="habit-week-dot"></div>`;
-    }).join('');
-    const barPct = Math.round(filledCount / 7 * 100);
-    const weekBar = `<div class="habit-week-bar-row">
-      <div class="habit-week-bar-track"><div class="habit-week-bar-fill" style="width:${barPct}%;background:var(--accent)"></div></div>
-      <span class="habit-week-count">${filledCount}/7</span>
-    </div>`;
+    const freq = h.frequency || { type: 'daily', count: 7 };
     const tagBadges = h.isCustom && h.tags?.length
       ? h.tags.map(t => `<span class="habit-tag-badge">${HABIT_TAGS[t]?.name || t}</span>`).join('')
       : '';
-    const metaLine = tagBadges || h.desc;
     const isReading = key === 'reading';
     const books = h.books || (h.book?.title ? [h.book] : []);
+    const freqLabel = freq.type === 'weekly' ? `每周${freq.count}次` : freq.type === 'monthly' ? `每月${freq.count}次` : '';
+    const baseMeta = tagBadges || h.desc;
+    const metaExtra = freqLabel ? `<span style="margin-left:4px;font-size:10px;color:var(--accent);font-weight:600">${freqLabel}</span>` : '';
     const readingMeta = isReading
       ? (books.length ? books.map(b => `📖 ${b.title}`).join('  ·  ') : '点击管理书单')
-      : metaLine;
+      : baseMeta;
+
+    let dotsHTML, barHTML;
+    if (freq.type === 'monthly') {
+      const thisMonth = TODAY.slice(0, 7);
+      const filledMonth = history.filter(d => d.startsWith(thisMonth)).length;
+      const target = freq.count;
+      const pct = Math.min(100, Math.round(filledMonth / target * 100));
+      dotsHTML = `<div style="font-size:10px;color:var(--muted);margin-top:7px">本月进度</div>`;
+      barHTML = `<div class="habit-week-bar-row" style="margin-top:4px">
+        <div class="habit-week-bar-track"><div class="habit-week-bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+        <span class="habit-week-count">${filledMonth}/${target}</span>
+      </div>`;
+    } else {
+      const target = freq.type === 'weekly' ? freq.count : 7;
+      const filledCount = weekDates.filter(d => history.includes(d)).length;
+      const weekDots = weekDates.map(dateStr => {
+        const filled = history.includes(dateStr);
+        const isToday = dateStr === TODAY;
+        if (filled) return `<div class="habit-week-dot filled"></div>`;
+        if (isToday) return `<div class="habit-week-dot today-empty"></div>`;
+        return `<div class="habit-week-dot"></div>`;
+      }).join('');
+      const barPct = Math.min(100, Math.round(filledCount / target * 100));
+      dotsHTML = `<div class="habit-week-day-labels">${dayLabelsHTML}</div>
+        <div class="habit-week-dots">${weekDots}</div>`;
+      barHTML = `<div class="habit-week-bar-row">
+        <div class="habit-week-bar-track"><div class="habit-week-bar-fill" style="width:${barPct}%;background:var(--accent)"></div></div>
+        <span class="habit-week-count">${filledCount}/${target}</span>
+      </div>`;
+    }
+
     return `<div>
       <div class="habit-row" ontouchstart="startHabitLongPress('${key}')" ontouchend="cancelHabitLongPress()" ontouchmove="cancelHabitLongPress()" onmousedown="startHabitLongPress('${key}')" onmouseup="cancelHabitLongPress()" onmouseleave="cancelHabitLongPress()">
         <div class="habit-icon-tile" onclick="openHabitCalendar('${key}')" style="cursor:pointer">${h.icon}</div>
         <div class="habit-info" onclick="${isReading ? `openReadingPage()` : `openHabitCalendar('${key}')`}" style="cursor:pointer">
           <div class="habit-name">${h.name}</div>
-          <div class="habit-meta">${readingMeta}</div>
-          <div class="habit-week-day-labels">${dayLabelsHTML}</div>
-          <div class="habit-week-dots">${weekDots}</div>
-          ${weekBar}
+          <div class="habit-meta">${readingMeta}${metaExtra}</div>
+          ${dotsHTML}
+          ${barHTML}
         </div>
         <button class="habit-check-btn${h.checkedToday?' checked':''}" onclick="event.stopPropagation();toggleHabit('${key}')">
           ${h.checkedToday ? '✓' : ''}
@@ -2853,11 +2897,38 @@ function resetData() {
 // ===== CUSTOM HABITS =====
 let selectedHabitTags = [];
 let selectedHabitIntensity = 1;
+let _habitFreqType = 'weekly';
+let _habitFreqCount = 3;
 
 function selectIntensity(el) {
   document.querySelectorAll('.intensity-btn').forEach(b => b.classList.remove('sel'));
   el.classList.add('sel');
   selectedHabitIntensity = parseFloat(el.dataset.intensity);
+}
+
+function toggleHabitFreqSection() {
+  const btn = document.getElementById('habitFreqToggle');
+  const sec = document.getElementById('habitFreqSection');
+  if (!btn || !sec) return;
+  const open = !btn.classList.contains('on');
+  btn.classList.toggle('on', open);
+  sec.style.display = open ? 'block' : 'none';
+  if (!open) { _habitFreqType = 'weekly'; _habitFreqCount = 3; }
+}
+
+function selectFreqType(el) {
+  el.closest('#habitFreqSection').querySelectorAll('[data-freq-type]').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  _habitFreqType = el.dataset.freqType;
+  const max = _habitFreqType === 'weekly' ? 7 : 31;
+  _habitFreqCount = Math.min(_habitFreqCount, max);
+  document.getElementById('freqCountDisplay').textContent = _habitFreqCount;
+}
+
+function adjustFreqCount(delta) {
+  const max = _habitFreqType === 'weekly' ? 7 : 31;
+  _habitFreqCount = Math.max(1, Math.min(max, _habitFreqCount + delta));
+  document.getElementById('freqCountDisplay').textContent = _habitFreqCount;
 }
 
 function openHabitSheet() {
@@ -2870,6 +2941,13 @@ function openHabitSheet() {
   document.querySelectorAll('.intensity-btn').forEach(b => {
     b.classList.toggle('sel', parseFloat(b.dataset.intensity) === 1);
   });
+  const freqBtn = document.getElementById('habitFreqToggle');
+  const freqSec = document.getElementById('habitFreqSection');
+  if (freqBtn) freqBtn.classList.remove('on');
+  if (freqSec) freqSec.style.display = 'none';
+  _habitFreqType = 'weekly'; _habitFreqCount = 3;
+  document.getElementById('freqCountDisplay').textContent = 3;
+  document.querySelectorAll('[data-freq-type]').forEach(b => b.classList.toggle('sel', b.dataset.freqType === 'weekly'));
   toggleSheet('habitSheet', 'habitOverlay', true);
 }
 
@@ -2896,10 +2974,12 @@ function saveCustomHabit() {
   const key = 'custom_' + Date.now();
   const merged = mergeTagEffects(selectedHabitTags);
   const fxDesc = desc || Object.entries(merged).map(([a,v])=>`${a}+${v}`).join(' · ');
+  const freqOn = document.getElementById('habitFreqToggle')?.classList.contains('on');
   state.habits[key] = {
     name, icon, desc: fxDesc,
     checkedToday: false, pendingUndo: false, weekCount: 0, history: [],
     isCustom: true, tags: [...selectedHabitTags],
+    ...(freqOn ? { frequency: { type: _habitFreqType, count: _habitFreqCount } } : {}),
   };
   if (selectedHabitIntensity !== 1) {
     if (!state.habitPointMultipliers) state.habitPointMultipliers = {};
