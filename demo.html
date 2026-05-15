@@ -422,6 +422,12 @@ body {
   color: #3c3c43; transition: all 0.15s; user-select: none;
 }
 .tag-chip.sel { background: var(--accent); border-color: var(--accent); color: white; }
+.tag-chip-add { border-style: dashed; color: #C7C7CC; font-size: 16px; padding: 5px 13px; }
+.tag-chip-input {
+  padding: 6px 10px; border-radius: 20px; border: 1.5px solid var(--accent);
+  background: white; font-size: 13px; font-weight: 500; outline: none;
+  color: var(--text); width: 80px; font-family: inherit;
+}
 .tag-chip-label { font-size: 13px; color: #6c6c70; padding: 12px 16px 4px; }
 .intensity-row { display: flex; gap: 8px; padding: 10px 16px 14px; }
 .intensity-btn {
@@ -910,12 +916,7 @@ body {
       </div>
     </div>
     <div class="section-label">分类标签（可选）</div>
-    <div class="tag-chip-grid" id="todoLabelPicker" style="padding-bottom:4px"></div>
-    <div class="todo-label-add-row">
-      <input type="text" id="newTodoLabelInput" placeholder="新建分类标签，回车添加"
-             onkeydown="if(event.key==='Enter')addCustomTodoLabel()">
-      <button class="todo-label-add-btn" onclick="addCustomTodoLabel()">添加</button>
-    </div>
+    <div class="tag-chip-grid" id="todoLabelPicker"></div>
 
     <div class="section-label">细分事项（可选）</div>
     <div class="card">
@@ -2873,7 +2874,7 @@ function renderTodoLabelPicker() {
     return `<div class="tag-chip ${sel ? 'sel' : ''}" onclick="selectTodoLabel('${lb.replace(/'/g,"\\'")}')">
       ${lb}
     </div>`;
-  }).join('');
+  }).join('') + `<div class="tag-chip tag-chip-add" onclick="showLabelInput()">＋</div>`;
 }
 
 function selectTodoLabel(label) {
@@ -2881,15 +2882,32 @@ function selectTodoLabel(label) {
   renderTodoLabelPicker();
 }
 
-function addCustomTodoLabel() {
-  const input = document.getElementById('newTodoLabelInput');
-  const val = input?.value.trim();
-  if (!val) return;
-  if (state.todoLabels.includes(val)) { selectTodoLabel(val); input.value = ''; return; }
-  state.todoLabels.push(val);
+function showLabelInput() {
+  const el = document.getElementById('todoLabelPicker');
+  if (!el) return;
+  const addChip = el.querySelector('.tag-chip-add');
+  if (!addChip) return;
+  const input = document.createElement('input');
+  input.className = 'tag-chip-input';
+  input.placeholder = '新标签';
+  input.maxLength = 10;
+  input.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmNewLabel(input.value); }
+    if (e.key === 'Escape') renderTodoLabelPicker();
+  };
+  input.onblur = () => {
+    if (input.value.trim()) confirmNewLabel(input.value);
+    else renderTodoLabelPicker();
+  };
+  addChip.replaceWith(input);
+  input.focus();
+}
+
+function confirmNewLabel(val) {
+  val = val.trim();
+  if (!val) { renderTodoLabelPicker(); return; }
+  if (!state.todoLabels.includes(val)) { state.todoLabels.push(val); save(); }
   selectedTodoLabel = val;
-  save();
-  input.value = '';
   renderTodoLabelPicker();
 }
 
