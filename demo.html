@@ -2967,6 +2967,7 @@ function recurTag(r) {
 }
 
 function todoCategory(deadline) {
+  if (!deadline) return 'none';
   const d = new Date(deadline + 'T00:00:00');
   const now  = new Date(TODAY + 'T00:00:00');
   const dow  = now.getDay();
@@ -2984,6 +2985,7 @@ const CATEGORY_META = {
   week:   { label: '本周事项',  color: 'var(--warning)' },
   month:  { label: '本月事项',  color: 'var(--accent)' },
   future: { label: '未来事项',  color: 'var(--muted)' },
+  none:   { label: '待定事项',  color: '#C7C7CC' },
 };
 
 let _newTodoSubs = [];
@@ -3065,10 +3067,10 @@ function closeTodoAddSheet() { document.getElementById('page-todo-add').classLis
 function addTodo() {
   const text = document.getElementById('todoText').value.trim();
   const date = document.getElementById('todoDate').value;
-  if (!text || !date) { showToast('请填写内容和截止日期'); return; }
+  if (!text) { showToast('请填写待办内容'); return; }
   const recurrence = getRecurrence();
   const time = document.getElementById('todoTime').value || null;
-  const entry = { id: Date.now(), text, deadline: date, deadlineTime: time, done: false, recurrence, label: selectedTodoLabel };
+  const entry = { id: Date.now(), text, deadline: date || null, deadlineTime: time, done: false, recurrence, label: selectedTodoLabel };
   if (_isGroupTodo) {
     entry.isGroup = true;
     if (_groupSubs.length) entry.subtasks = [..._groupSubs];
@@ -3162,7 +3164,7 @@ function renderTodoDetail() {
     <div class="card">
       <div class="form-row">
         <span class="form-label">日期</span>
-        <input type="date" value="${t.deadline}"
+        <input type="date" value="${t.deadline || ''}"
                style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent"
                onchange="saveTodoDeadline(${t.id},this.value)">
       </div>
@@ -3248,11 +3250,11 @@ function renderTodos() {
   const active = state.todos.filter(t => !t.done);
   const done   = state.todos.filter(t => t.done);
 
-  const buckets = { today: [], week: [], month: [], future: [] };
+  const buckets = { today: [], week: [], month: [], future: [], none: [] };
   active.forEach(t => buckets[todoCategory(t.deadline)].push(t));
 
   let html = '';
-  ['today','week','month','future'].forEach(cat => {
+  ['today','week','month','future','none'].forEach(cat => {
     const items = buckets[cat];
     if (!items.length) return;
     const meta = CATEGORY_META[cat];
@@ -3278,8 +3280,10 @@ function openDoneTodosSheet() {
 function closeDoneTodosSheet() { toggleSheet('doneTodosSheet', 'doneTodosOverlay', false); }
 
 function todoItemHTML(t) {
-  const isOverdue = !t.done && t.deadline < TODAY;
-  const dlLabel   = t.deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3') + (t.deadlineTime ? ' ' + t.deadlineTime : '');
+  const isOverdue = !t.done && t.deadline && t.deadline < TODAY;
+  const dlLabel   = t.deadline
+    ? t.deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3') + (t.deadlineTime ? ' ' + t.deadlineTime : '')
+    : '';
   const labelTag  = t.label ? (() => { const c = labelColor(t.label); return `<span class="todo-label-tag" style="background:${c.bg};color:${c.text}">${t.label}</span>`; })() : '';
   const subs = t.subtasks || [];
   let badge = '';
