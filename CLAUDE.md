@@ -110,5 +110,6 @@ Single file, all HTML/CSS/JS inline. Navigation via `switchPage(name)` toggling 
 - **Large files (>300 lines):** always `grep -n` to find line numbers before reading. Use `Read` with `offset`+`limit`. Never read the whole file to find one function.
 - **Edits:** keep `old_string`+`new_string` combined under ~150 lines to avoid context bloat. Split if needed.
 - **Error handling:** see `.claude/rules/error-handling.md` — guard clauses, `showToast` for validation, `confirm()` for destructive actions, no `try/catch` outside `load()`.
+- **Optional sections:** see `.claude/rules/optional-sections.md` — always use `.toggle-switch` + `.recur-check-row` pattern; toggle class is `.on`; collapsing clears inputs.
 - **No comments** unless the why is non-obvious. No docstrings.
 - **Dates:** always use `localDateStr(d)` — never `d.toISOString().slice(0,10)`.

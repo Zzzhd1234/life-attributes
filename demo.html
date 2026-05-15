@@ -902,23 +902,22 @@ body {
                onkeydown="if(event.key==='Enter')addTodo()">
       </div>
     </div>
+    <div class="section-label">截止日期</div>
     <div class="card">
-      <div class="settings-row" onclick="toggleDeadlineSection()" style="cursor:pointer">
-        <span class="settings-label" style="font-size:15px;color:var(--text)">截止日期</span>
-        <span id="deadlineSummary" style="font-size:14px;color:var(--muted)">可选 ›</span>
+      <div class="recur-check-row" style="border-top:none">
+        <label>设置截止日期</label>
+        <button class="toggle-switch" id="deadlineToggle" onclick="toggleDeadlineSection()"></button>
       </div>
       <div id="deadlineSection" style="display:none">
         <div class="settings-row" style="border-top:0.5px solid var(--border)">
           <span class="settings-label">日期</span>
           <input type="date" id="todoDate"
-                 style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent"
-                 onchange="updateDeadlineSummary()">
+                 style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
         </div>
         <div class="settings-row">
           <span class="settings-label">具体时间（可选）</span>
           <input type="time" id="todoTime"
-                 style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent"
-                 onchange="updateDeadlineSummary()">
+                 style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
         </div>
       </div>
     </div>
@@ -3055,26 +3054,16 @@ function renderGroupSubList() {
 }
 
 function toggleDeadlineSection() {
+  const btn = document.getElementById('deadlineToggle');
   const sec = document.getElementById('deadlineSection');
-  if (!sec) return;
-  const open = sec.style.display === 'none';
+  if (!btn || !sec) return;
+  const open = !btn.classList.contains('on');
+  btn.classList.toggle('on', open);
   sec.style.display = open ? 'block' : 'none';
   if (!open) {
     document.getElementById('todoDate').value = '';
     document.getElementById('todoTime').value = '';
-    const dm = document.getElementById('deadlineSummary');
-    if (dm) { dm.textContent = '可选 ›'; dm.style.color = 'var(--muted)'; }
   }
-}
-function updateDeadlineSummary() {
-  const date = document.getElementById('todoDate').value;
-  const time = document.getElementById('todoTime').value;
-  const dm = document.getElementById('deadlineSummary');
-  if (!dm) return;
-  if (!date) { dm.textContent = '可选 ›'; dm.style.color = 'var(--muted)'; return; }
-  const dlStr = date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3');
-  dm.textContent = dlStr + (time ? ' ' + time : '') + ' ›';
-  dm.style.color = 'var(--accent)';
 }
 function openTodoAddSheet() {
   document.getElementById('todoText').value = '';
@@ -3082,8 +3071,8 @@ function openTodoAddSheet() {
   document.getElementById('todoTime').value = '';
   const ds = document.getElementById('deadlineSection');
   if (ds) ds.style.display = 'none';
-  const dm = document.getElementById('deadlineSummary');
-  if (dm) { dm.textContent = '可选 ›'; dm.style.color = 'var(--muted)'; }
+  const dt = document.getElementById('deadlineToggle');
+  if (dt) dt.classList.remove('on');
   document.getElementById('newTodoSubInput').value = '';
   _newTodoSubs = []; _isGroupTodo = false; _groupSubs = [];
   renderNewTodoSubList(); renderGroupSubList();
