@@ -4490,14 +4490,13 @@ function hideContextMenu() {
 
 let _todoLongPressTimer = null;
 function startTodoLongPress(e, id) {
-  e.preventDefault();
   _todoLongPressTimer = setTimeout(() => {
     _longPressTriggered = true;
     const t = state.todos.find(t => t.id === id);
     if (!t) return;
     const el = e.target.closest('.todo-item');
     showContextMenu([
-      { label: '复制文字', icon: '📋', action: () => { navigator.clipboard?.writeText(t.text).then(() => showToast('已复制')); } },
+      { label: '复制任务', icon: '📋', action: () => duplicateTodo(id) },
       { label: t.pinned ? '取消置顶' : '置顶', icon: t.pinned ? '📌' : '⬆️', action: () => pinTodo(id) },
       { sep: true },
       { label: '编辑', icon: '✏️', action: () => openTodoDetail(id) },
@@ -4507,6 +4506,23 @@ function startTodoLongPress(e, id) {
 function cancelTodoLongPress() {
   clearTimeout(_todoLongPressTimer);
   _todoLongPressTimer = null;
+}
+
+function duplicateTodo(id) {
+  const t = state.todos.find(t => t.id === id);
+  if (!t) return;
+  const newTodo = {
+    ...t,
+    id: Date.now(),
+    done: false,
+    completedAt: null,
+    pinned: false,
+    subtasks: (t.subtasks || []).map(s => ({ ...s, id: Date.now() + Math.random(), done: false })),
+  };
+  const idx = state.todos.indexOf(t);
+  state.todos.splice(idx + 1, 0, newTodo);
+  save(); renderTodos();
+  showToast('任务已复制');
 }
 
 let _bookLongPressTimer = null;
