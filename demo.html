@@ -154,8 +154,13 @@ body {
 .habit-info { flex: 1; min-width: 0; }
 .habit-name { font-size: 16px; font-weight: 600; }
 .habit-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.habit-week-segs { display: flex; gap: 4px; margin-top: 6px; }
-.habit-week-seg { flex: 1; height: 4px; border-radius: 2px; }
+.habit-week-dots { display: flex; gap: 5px; margin-top: 8px; }
+.habit-week-dot { width: 8px; height: 8px; border-radius: 50%; background: #E5E5EA; flex-shrink: 0; }
+.habit-week-dot.filled { background: var(--accent); }
+.habit-week-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.habit-week-bar-track { flex: 1; height: 5px; background: #E5E5EA; border-radius: 3px; overflow: hidden; }
+.habit-week-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.habit-week-count { font-size: 11px; color: var(--muted); font-weight: 600; flex-shrink: 0; min-width: 24px; text-align: right; }
 .habit-check-btn {
   width: 36px; height: 36px; border-radius: 18px;
   border: 2px solid #C7C7CC; background: #fff;
@@ -342,12 +347,13 @@ body {
 .habit-day-dot.today { box-shadow: 0 0 0 2px var(--accent); background: #E5E5EA; }
 .habit-day-dot.today.done { box-shadow: 0 0 0 2px var(--accent); background: var(--accent); }
 .ability-dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
-.ability-dl-cell { background: white; padding: 18px 16px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.ability-dl-icon { font-size: 26px; margin-bottom: 10px; }
-.ability-dl-val { font-size: 32px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.ability-dl-bar { height: 6px; background: #E5E5EA; border-radius: 3px; overflow: hidden; margin: 8px 0 6px; }
-.ability-dl-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
-.ability-dl-name { font-size: 12px; color: var(--muted); font-weight: 500; }
+.ability-dl-cell { background: white; padding: 16px 14px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ability-dl-icon { font-size: 22px; margin-bottom: 6px; }
+.ability-dl-val { font-size: 28px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ability-dl-pill { height: 26px; background: #E5E5EA; border-radius: 13px; overflow: hidden; margin: 10px 0 5px; }
+.ability-dl-fill { height: 100%; border-radius: 13px; transition: width 0.4s; }
+.ability-dl-sublabel { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+.ability-dl-name { font-size: 12px; color: var(--muted); font-weight: 600; }
 
 /* ===== BUTTONS ===== */
 .btn-primary {
@@ -1861,7 +1867,8 @@ function abilityBarsHTML() {
     return `<div class="ability-dl-cell" onclick="openAbilityLog('${key}')">
       <div class="ability-dl-icon">${icon}</div>
       <div class="ability-dl-val" style="color:${color}">${Number(val).toFixed(1)}</div>
-      <div class="ability-dl-bar"><div class="ability-dl-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="ability-dl-pill"><div class="ability-dl-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="ability-dl-sublabel">${Number(val).toFixed(1)} / 100</div>
       <div class="ability-dl-name">${name}</div>
     </div>`;
   }).join('');
@@ -1971,9 +1978,15 @@ function renderHabits() {
 
   const el = document.getElementById('habitList');
   el.innerHTML = entries.map(([key, h]) => {
-    const weekSegs = Array.from({length: 7}, (_, j) =>
-      `<div class="habit-week-seg" style="background:${j < (h.weekCount||0) ? 'var(--accent)' : '#E5E5EA'}"></div>`
+    const wc = h.weekCount || 0;
+    const weekDots = Array.from({length: 7}, (_, j) =>
+      `<div class="habit-week-dot${j < wc ? ' filled' : ''}"></div>`
     ).join('');
+    const barPct = Math.round(wc / 7 * 100);
+    const weekBar = `<div class="habit-week-bar-row">
+      <div class="habit-week-bar-track"><div class="habit-week-bar-fill" style="width:${barPct}%;background:var(--accent)"></div></div>
+      <span class="habit-week-count">${wc}/7</span>
+    </div>`;
     const tagBadges = h.isCustom && h.tags?.length
       ? h.tags.map(t => `<span class="habit-tag-badge">${HABIT_TAGS[t]?.name || t}</span>`).join('')
       : '';
@@ -1989,7 +2002,8 @@ function renderHabits() {
         <div class="habit-info" onclick="${isReading ? `openReadingPage()` : `openHabitCalendar('${key}')`}" style="cursor:pointer">
           <div class="habit-name">${h.name}</div>
           <div class="habit-meta">${readingMeta}</div>
-          <div class="habit-week-segs">${weekSegs}</div>
+          <div class="habit-week-dots">${weekDots}</div>
+          ${weekBar}
         </div>
         <button class="habit-check-btn${h.checkedToday?' checked':''}" onclick="event.stopPropagation();toggleHabit('${key}')">
           ${h.checkedToday ? '✓' : ''}
