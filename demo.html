@@ -468,6 +468,26 @@ body {
   border: 1px solid #C7C7CC; border-radius: 8px; padding: 6px 10px;
   font-size: 14px; outline: none; background: white; color: var(--text); flex: 1;
 }
+.tx-type-seg {
+  display: flex; border-radius: 8px; border: 1px solid #C7C7CC;
+  overflow: hidden; flex-shrink: 0;
+}
+.tx-type-btn {
+  flex: 1; padding: 7px 14px; border: none; background: white;
+  font-size: 13px; font-weight: 500; cursor: pointer; color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+.tx-type-btn + .tx-type-btn { border-left: 1px solid #C7C7CC; }
+.tx-type-btn.active[data-type="expense"] { background: var(--danger); color: white; border-color: var(--danger); }
+.tx-type-btn.active[data-type="income"]  { background: var(--success); color: white; border-color: var(--success); }
+.recur-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; border-top: 0.5px solid var(--border);
+  font-size: 15px; cursor: pointer; color: var(--text); transition: background 0.1s;
+}
+.recur-option.sel { color: var(--accent); font-weight: 500; }
+.recur-option-check { color: var(--accent); font-size: 17px; opacity: 0; transition: opacity 0.1s; }
+.recur-option.sel .recur-option-check { opacity: 1; }
 .day-picker { display: flex; gap: 6px; padding: 0 16px 12px; flex-wrap: wrap; }
 .day-btn {
   width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #C7C7CC;
@@ -960,14 +980,17 @@ body {
         <button class="toggle-switch" id="recurToggle" onclick="toggleRecurCheck()"></button>
       </div>
       <div id="recurOptions" style="display:none">
-        <div class="recur-row" style="padding:10px 16px 8px;border-top:0.5px solid var(--border)">
-          <label style="font-size:14px;color:#3c3c43">方式</label>
-          <select class="recur-select" id="todoRecur" onchange="updateDayPicker()" style="max-width:200px">
-            <option value="daily">每天</option>
-            <option value="weekly">每周（同一天）</option>
-            <option value="monthly">每月（同一日期）</option>
-            <option value="custom">自选每周哪几天</option>
-          </select>
+        <div class="recur-option sel" data-val="daily" onclick="selectRecur('daily')">
+          每天<span class="recur-option-check">✓</span>
+        </div>
+        <div class="recur-option" data-val="weekly" onclick="selectRecur('weekly')">
+          每周（同一天）<span class="recur-option-check">✓</span>
+        </div>
+        <div class="recur-option" data-val="monthly" onclick="selectRecur('monthly')">
+          每月（同一日期）<span class="recur-option-check">✓</span>
+        </div>
+        <div class="recur-option" data-val="custom" onclick="selectRecur('custom')">
+          自选每周哪几天<span class="recur-option-check">✓</span>
         </div>
         <div class="day-picker" id="dayPicker" style="display:none">
           <button class="day-btn" data-day="1" onclick="toggleDay(1)">一</button>
@@ -1363,10 +1386,10 @@ body {
         <option value="工资">工资</option>
         <option value="医疗">医疗</option>
       </select>
-      <select id="txType">
-        <option value="expense">支出</option>
-        <option value="income">收入</option>
-      </select>
+      <div class="tx-type-seg">
+        <button class="tx-type-btn active" data-type="expense" onclick="setTxType('expense',this)">支出</button>
+        <button class="tx-type-btn" data-type="income" onclick="setTxType('income',this)">收入</button>
+      </div>
       <button onclick="addTransaction()">+</button>
     </div>
     <div id="txList"></div>
@@ -2329,10 +2352,16 @@ function addCardioLog() {
 }
 
 // ===== BOOKKEEPING =====
+let _txType = 'expense';
+function setTxType(type, el) {
+  _txType = type;
+  el.closest('.tx-type-seg').querySelectorAll('.tx-type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
 function addTransaction() {
   const desc   = document.getElementById('txDesc').value.trim();
   const amount = parseFloat(document.getElementById('txAmount').value);
-  const type   = document.getElementById('txType').value;
+  const type   = _txType;
   const cat    = document.getElementById('txCat').value;
   if (!desc || isNaN(amount) || amount <= 0) { showToast('请填写完整信息'); return; }
   state.transactions.unshift({ id: Date.now(), desc, amount, type, cat, date: TODAY });
@@ -2924,9 +2953,15 @@ function toggleRecurCheck() {
   document.getElementById('recurOptions').style.display = recurEnabled ? 'block' : 'none';
   if (!recurEnabled) { selectedDays = []; updateDayPicker(); }
 }
+let _selectedRecur = 'daily';
+function selectRecur(val) {
+  _selectedRecur = val;
+  document.querySelectorAll('.recur-option').forEach(el =>
+    el.classList.toggle('sel', el.dataset.val === val));
+  updateDayPicker();
+}
 function updateDayPicker() {
-  const val = document.getElementById('todoRecur')?.value;
-  const show = recurEnabled && val === 'custom';
+  const show = recurEnabled && _selectedRecur === 'custom';
   document.getElementById('dayPicker').style.display = show ? 'flex' : 'none';
   if (!show) {
     selectedDays = [];
@@ -2941,9 +2976,8 @@ function toggleDay(d) {
 }
 function getRecurrence() {
   if (!recurEnabled) return null;
-  const val = document.getElementById('todoRecur').value;
-  if (val === 'custom') return selectedDays.length ? { type: 'custom', days: [...selectedDays] } : null;
-  return val;
+  if (_selectedRecur === 'custom') return selectedDays.length ? { type: 'custom', days: [...selectedDays] } : null;
+  return _selectedRecur;
 }
 
 function nextRecurDate(fromDate, recurrence) {
@@ -3079,6 +3113,8 @@ function openTodoAddSheet() {
   const gt = document.getElementById('groupToggle'); if (gt) gt.classList.remove('on');
   const gs = document.getElementById('groupSubSection'); if (gs) gs.style.display = 'none';
   if (recurEnabled) toggleRecurCheck();
+  _selectedRecur = 'daily';
+  selectRecur('daily');
   selectedTodoLabel = null;
   renderTodoLabelPicker();
   document.getElementById('page-todo-add').classList.add('open');
