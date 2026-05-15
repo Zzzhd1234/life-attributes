@@ -891,11 +891,18 @@ body {
   <div class="section-label">组事项</div>
   <div class="card">
     <div class="recur-check-row" style="border-top:none">
-      <label>开启组事项</label>
+      <label>开启组事项模式</label>
       <button class="toggle-switch" id="groupToggle" onclick="toggleGroupMode()"></button>
     </div>
-    <div id="groupModeHint" style="display:none;padding:4px 16px 10px;font-size:12px;color:var(--muted);border-top:0.5px solid var(--border)">
-      组事项为多个子事项的集合，子事项全部完成后自动标记完成
+    <div id="groupSubSection" style="display:none">
+      <div style="padding:6px 16px 4px;font-size:12px;color:var(--muted);border-top:0.5px solid var(--border)">子事项全部完成后自动标记完成</div>
+      <div id="groupSubList"></div>
+      <div class="subtask-add-row" style="padding:6px 16px 8px;border-top:none">
+        <input type="text" id="groupSubInput" placeholder="添加子事项，回车确认"
+               style="flex:1;border:none;outline:none;font-size:14px;background:transparent"
+               onkeydown="if(event.key==='Enter'){addGroupSub();event.preventDefault()}">
+        <button class="subtask-add-btn" onclick="addGroupSub()">+</button>
+      </div>
     </div>
   </div>
 
@@ -938,6 +945,45 @@ body {
     <button class="sheet-close" onclick="closeTodoDetail()">✕</button>
   </div>
   <div id="todoDetailContent"></div>
+</div>
+
+<!-- ===== READING TRACKER SHEET ===== -->
+<div class="sheet-overlay" id="readingTrackerOverlay" onclick="closeReadingTracker()"></div>
+<div class="settings-sheet" id="readingTrackerSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">📚 阅读记录</div>
+    <button class="sheet-close" onclick="closeReadingTracker()">✕</button>
+  </div>
+  <div class="section-label">当前书籍</div>
+  <div class="card">
+    <div class="settings-row">
+      <input id="readingTitle" type="text" placeholder="书名"
+             style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+    </div>
+  </div>
+  <div class="section-label">阅读进度</div>
+  <div class="card">
+    <div class="settings-row">
+      <span class="settings-label">当前页</span>
+      <input id="readingCurrent" type="number" min="0" placeholder="0"
+             style="width:80px;border:1px solid #c7c7cc;border-radius:8px;padding:5px 8px;font-size:15px;text-align:right;outline:none">
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">总页数</span>
+      <input id="readingTotal" type="number" min="1" placeholder="0"
+             style="width:80px;border:1px solid #c7c7cc;border-radius:8px;padding:5px 8px;font-size:15px;text-align:right;outline:none">
+    </div>
+    <div style="padding:12px 16px 8px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px">
+        <span>进度</span><span id="readingPct">0%</span>
+      </div>
+      <div style="height:8px;background:#F0EEF8;border-radius:4px;overflow:hidden">
+        <div id="readingBar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.3s"></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-top:4px" onclick="saveReadingData()">保存</button>
 </div>
 
 <!-- ===== HABIT CALENDAR SHEET ===== -->
@@ -1197,15 +1243,6 @@ body {
 <div id="page-habits" class="page">
   <div class="page-header"><h1>习惯打卡</h1></div>
 
-  <div class="streak-banner">
-    <div class="streak-icon-tile">🔥</div>
-    <div style="flex:1">
-      <div class="streak-days" id="streakDays">0 天</div>
-      <div class="streak-caption" id="streakCaptionEl">戒色连击 · 距下一里程碑 3 天</div>
-    </div>
-    <div class="streak-bonus-pill" id="streakBonusEl">+0.00</div>
-  </div>
-
   <div class="section-label" id="habitsLabel">今日习惯</div>
   <div class="card" id="habitList"></div>
 </div>
@@ -1423,7 +1460,6 @@ const DEFAULTS = {
   abilities: { 颜值:50, 魅力:50, 智商:50, 体质:50, 专注力:50, 认知:50 },
   name: '玩家一', age: 20,
   habits: {
-    nofap:      { name:'戒色',  icon:'🔒', desc:'体质&魅力&专注力',        checkedToday:false, pendingUndo:false, weekCount:0, history:[] },
     reading:    { name:'阅读',  icon:'📚', desc:'认知+0.1 · 专注力+0.1',   checkedToday:false, pendingUndo:false, weekCount:0, history:[] },
     meditation: { name:'冥想',  icon:'🧘', desc:'专注力+0.2 · 智商+0.05',  checkedToday:false, pendingUndo:false, weekCount:0, history:[] },
   },
@@ -1566,7 +1602,6 @@ function calcTodayGrowth() {
   let pts = 0;
   Object.values(state.habits).forEach(h => { if (h.checkedToday) pts += 100; });
   (state.todos || []).forEach(t => { if (t.done && t.completedAt === TODAY) pts += 50; });
-  pts += state.streak * 5;
   return pts;
 }
 function drawRadarChart() {
@@ -1627,7 +1662,11 @@ function updateHeroCard() {
   const el = document.getElementById('heroScore');
   if (el) el.textContent = score;
   const streakEl = document.getElementById('heroStreak');
-  if (streakEl) streakEl.textContent = '连击 ' + state.streak + ' 天 🔥';
+  if (streakEl) {
+    const checkedCount = Object.values(state.habits).filter(h => h.checkedToday).length;
+    const total = Object.keys(state.habits).length;
+    streakEl.textContent = `今日打卡 ${checkedCount} / ${total}`;
+  }
   const listEl = document.getElementById('heroAbilityList');
   if (listEl) {
     const names = {颜值:'颜值',魅力:'魅力',智商:'智商',体质:'体质',专注力:'专注',认知:'认知'};
@@ -1640,20 +1679,7 @@ function updateHeroCard() {
     ).join('');
   }
 }
-function updateStreakBanner() {
-  const bonus = streakBonus(state.streak);
-  const daysEl = document.getElementById('streakDays');
-  if (daysEl) daysEl.textContent = state.streak + ' 天';
-  const bonusEl = document.getElementById('streakBonusEl');
-  if (bonusEl) bonusEl.textContent = bonus > 0 ? '+' + bonus.toFixed(2) : '+0.00';
-  const captionEl = document.getElementById('streakCaptionEl');
-  if (captionEl) {
-    const s = state.streak;
-    const milestones = [3, 7, 14, 21, 30, 60, 100];
-    const next = milestones.find(m => m > s) || (Math.ceil((s+1)/10)*10);
-    captionEl.textContent = `戒色连击 · 距下一里程碑 ${next - s} 天`;
-  }
-}
+function updateStreakBanner() {}
 
 // ===== ABILITIES =====
 function abilityDisplayName(key) {
@@ -1761,7 +1787,6 @@ function mergeTagEffects(tags) {
 
 // ===== HABITS =====
 const HABIT_FX = {
-  nofap:      { 体质:0.1, 魅力:0.1, 专注力:0.05 },
   reading:    { 认知:0.1, 专注力:0.1 },
   meditation: { 专注力:0.2, 智商:0.05 },
 };
@@ -1797,18 +1822,18 @@ function renderHabits() {
       ? h.tags.map(t => `<span class="habit-tag-badge">${HABIT_TAGS[t]?.name || t}</span>`).join('')
       : '';
     const metaLine = tagBadges || h.desc;
-    const delBtn = h.isCustom
-      ? `<button class="habit-del" onclick="deleteCustomHabit('${key}')">×</button>` : '';
+    const isReading = key === 'reading';
+    const readingMeta = isReading && h.book?.title
+      ? `📖 ${h.book.title}${h.book.totalPages ? ` · ${h.book.currentPage||0}/${h.book.totalPages}页` : ''}` : metaLine;
     return `<div>
-      <div class="habit-row">
+      <div class="habit-row" ontouchstart="startHabitLongPress('${key}')" ontouchend="cancelHabitLongPress()" ontouchmove="cancelHabitLongPress()" onmousedown="startHabitLongPress('${key}')" onmouseup="cancelHabitLongPress()" onmouseleave="cancelHabitLongPress()">
         <div class="habit-icon-tile" onclick="openHabitCalendar('${key}')" style="cursor:pointer">${h.icon}</div>
-        <div class="habit-info">
+        <div class="habit-info" onclick="${isReading ? `openReadingTracker()` : `openHabitCalendar('${key}')`}" style="cursor:pointer">
           <div class="habit-name">${h.name}</div>
-          <div class="habit-meta">${metaLine}</div>
+          <div class="habit-meta">${readingMeta}</div>
           <div class="habit-week-segs">${weekSegs}</div>
         </div>
-        ${delBtn}
-        <button class="habit-check-btn${h.checkedToday?' checked':''}" onclick="toggleHabit('${key}')">
+        <button class="habit-check-btn${h.checkedToday?' checked':''}" onclick="event.stopPropagation();toggleHabit('${key}')">
           ${h.checkedToday ? '✓' : ''}
         </button>
       </div>
@@ -1828,15 +1853,8 @@ function toggleHabit(key) {
     if (!h.history.includes(TODAY)) h.history.push(TODAY);
     const src = '打卡：' + h.name;
     Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, d, src));
-    if (key === 'nofap') {
-      state.streak++;
-      state.streakCheckedToday = true;
-      state.streakPendingUndo = true;
-      const b = streakBonus(state.streak);
-      if (b > 0) { nudge('体质', b, src); nudge('魅力', b, src); nudge('专注力', b * 0.5, src); }
-    }
     clearTimeout(undoTimers[key]);
-    undoTimers[key] = setTimeout(() => { h.pendingUndo = false; if(key==='nofap') state.streakPendingUndo=false; save(); renderHabits(); }, 3500);
+    undoTimers[key] = setTimeout(() => { h.pendingUndo = false; save(); renderHabits(); }, 3500);
     const fxParts = Object.entries(habitFX(key)).map(([a,d]) => `${abilityDisplayName(a)}+${d}`).join(' · ');
     showToast(`${h.name} 打卡 · ${fxParts}`);
   } else if (h.pendingUndo) {
@@ -1847,13 +1865,6 @@ function toggleHabit(key) {
     clearTimeout(undoTimers[key]);
     const undoSrc = '撤销打卡：' + h.name;
     Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, -d, undoSrc));
-    if (key === 'nofap') {
-      const b = streakBonus(state.streak);
-      state.streak = Math.max(0, state.streak - 1);
-      state.streakCheckedToday = false;
-      state.streakPendingUndo = false;
-      if (b > 0) { nudge('体质', -b, undoSrc); nudge('魅力', -b, undoSrc); nudge('专注力', -b * 0.5, undoSrc); }
-    }
     showToast(`已撤销 ${h.name}`);
   }
   save(); renderHabits(); renderAbilities();
@@ -2670,9 +2681,20 @@ function saveCustomHabit() {
   showToast(`习惯「${name}」已添加${intensityLabel ? '（' + intensityLabel + '）' : ''}`);
 }
 function deleteCustomHabit(key) {
-  if (!state.habits[key]?.isCustom) return;
   delete state.habits[key];
   save(); renderHabits(); showToast('习惯已删除');
+}
+let _habitLongPressTimer = null;
+function startHabitLongPress(key) {
+  _habitLongPressTimer = setTimeout(() => {
+    const h = state.habits[key];
+    if (!h) return;
+    if (confirm(`删除习惯「${h.name}」？`)) deleteCustomHabit(key);
+  }, 600);
+}
+function cancelHabitLongPress() {
+  clearTimeout(_habitLongPressTimer);
+  _habitLongPressTimer = null;
 }
 
 // ===== DEV SETTINGS =====
@@ -2937,8 +2959,33 @@ function toggleGroupMode() {
   _isGroupTodo = !_isGroupTodo;
   const btn = document.getElementById('groupToggle');
   if (btn) btn.classList.toggle('active', _isGroupTodo);
-  const hint = document.getElementById('groupModeHint');
-  if (hint) hint.style.display = _isGroupTodo ? 'block' : 'none';
+  const sec = document.getElementById('groupSubSection');
+  if (sec) sec.style.display = _isGroupTodo ? 'block' : 'none';
+  if (_isGroupTodo) setTimeout(() => document.getElementById('groupSubInput')?.focus(), 50);
+}
+let _groupSubs = [];
+function addGroupSub() {
+  const input = document.getElementById('groupSubInput');
+  const text = input?.value.trim();
+  if (!text) return;
+  _groupSubs.push({ id: Date.now(), text, done: false });
+  input.value = '';
+  renderGroupSubList();
+  input.focus();
+}
+function removeGroupSub(id) {
+  _groupSubs = _groupSubs.filter(s => s.id !== id);
+  renderGroupSubList();
+}
+function renderGroupSubList() {
+  const el = document.getElementById('groupSubList');
+  if (!el) return;
+  el.innerHTML = _groupSubs.map(s =>
+    `<div class="subtask-item" style="padding:6px 16px">
+      <div class="subtask-text">${s.text}</div>
+      <button class="exlog-del" onclick="removeGroupSub(${s.id})">×</button>
+    </div>`
+  ).join('');
 }
 
 function openTodoAddSheet() {
@@ -2946,10 +2993,10 @@ function openTodoAddSheet() {
   document.getElementById('todoDate').value = TODAY;
   document.getElementById('todoTime').value = '';
   document.getElementById('newTodoSubInput').value = '';
-  _newTodoSubs = []; _isGroupTodo = false;
-  renderNewTodoSubList();
+  _newTodoSubs = []; _isGroupTodo = false; _groupSubs = [];
+  renderNewTodoSubList(); renderGroupSubList();
   const gt = document.getElementById('groupToggle'); if (gt) gt.classList.remove('active');
-  const gh = document.getElementById('groupModeHint'); if (gh) gh.style.display = 'none';
+  const gs = document.getElementById('groupSubSection'); if (gs) gs.style.display = 'none';
   if (recurEnabled) toggleRecurCheck();
   selectedTodoLabel = null;
   renderTodoLabelPicker();
@@ -2965,8 +3012,12 @@ function addTodo() {
   const recurrence = getRecurrence();
   const time = document.getElementById('todoTime').value || null;
   const entry = { id: Date.now(), text, deadline: date, deadlineTime: time, done: false, recurrence, label: selectedTodoLabel };
-  if (_newTodoSubs.length) entry.subtasks = [..._newTodoSubs];
-  if (_isGroupTodo) entry.isGroup = true;
+  if (_isGroupTodo) {
+    entry.isGroup = true;
+    if (_groupSubs.length) entry.subtasks = [..._groupSubs];
+  } else if (_newTodoSubs.length) {
+    entry.subtasks = [..._newTodoSubs];
+  }
   state.todos.push(entry);
   closeTodoAddSheet();
   save(); renderTodos();
@@ -3020,7 +3071,17 @@ function renderTodoDetail() {
   const doneCount = subs.filter(s => s.done).length;
   const subTitle = subs.length ? `细分事项（${doneCount}/${subs.length} 已完成）` : '细分事项';
   const dlStr = t.deadline.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3');
-  document.getElementById('todoDetailContent').innerHTML = `
+  const groupSection = t.isGroup ? `
+    <div class="section-label" style="color:var(--accent)">子事项（${subs.filter(s=>s.done).length}/${subs.length} 完成）</div>
+    <div class="card">
+      ${subtaskRows}
+      <div class="subtask-add-row">
+        <input type="text" id="newSubtaskInput" placeholder="添加子事项"
+               onkeydown="if(event.key==='Enter')addSubtask(${t.id})">
+        <button class="subtask-add-btn" onclick="addSubtask(${t.id})">+</button>
+      </div>
+    </div>` : '';
+  document.getElementById('todoDetailContent').innerHTML = groupSection + `
     <div class="section-label">截止日期</div>
     <div class="card">
       <div class="form-row">
@@ -3039,7 +3100,7 @@ function renderTodoDetail() {
       <textarea class="todo-detail-notes" placeholder="添加备注内容..."
                 oninput="saveTodoNotes(${t.id},this.value)">${t.details || ''}</textarea>
     </div>
-    <div class="section-label">${subTitle}</div>
+    ${!t.isGroup ? `<div class="section-label">${subTitle}</div>
     <div class="card">
       ${subtaskRows}
       <div class="subtask-add-row">
@@ -3047,7 +3108,7 @@ function renderTodoDetail() {
                onkeydown="if(event.key==='Enter')addSubtask(${t.id})">
         <button class="subtask-add-btn" onclick="addSubtask(${t.id})">+</button>
       </div>
-    </div>
+    </div>` : ''}
     <div style="height:8px"></div>
   `;
 }
@@ -3152,6 +3213,39 @@ function todoItemHTML(t) {
 let habitCalKey = null;
 let habitCalYear = new Date().getFullYear();
 let habitCalMonth = new Date().getMonth();
+
+function openReadingTracker() {
+  const book = state.habits.reading?.book || {};
+  const cur = document.getElementById('readingCurrent');
+  const tot = document.getElementById('readingTotal');
+  const tit = document.getElementById('readingTitle');
+  if (tit) tit.value = book.title || '';
+  if (cur) cur.value = book.currentPage || '';
+  if (tot) tot.value = book.totalPages || '';
+  updateReadingBar();
+  document.getElementById('readingCurrent')?.addEventListener('input', updateReadingBar);
+  document.getElementById('readingTotal')?.addEventListener('input', updateReadingBar);
+  toggleSheet('readingTrackerSheet', 'readingTrackerOverlay', true);
+}
+function updateReadingBar() {
+  const cur = parseInt(document.getElementById('readingCurrent')?.value) || 0;
+  const tot = parseInt(document.getElementById('readingTotal')?.value) || 0;
+  const pct = tot > 0 ? Math.min(100, Math.round(cur / tot * 100)) : 0;
+  const bar = document.getElementById('readingBar');
+  const pctEl = document.getElementById('readingPct');
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+function saveReadingData() {
+  if (!state.habits.reading) { showToast('阅读习惯不存在'); return; }
+  const title = document.getElementById('readingTitle')?.value.trim() || '';
+  const currentPage = parseInt(document.getElementById('readingCurrent')?.value) || 0;
+  const totalPages = parseInt(document.getElementById('readingTotal')?.value) || 0;
+  state.habits.reading.book = { title, currentPage, totalPages };
+  save(); renderHabits(); closeReadingTracker();
+  showToast(title ? `《${title}》已保存` : '进度已保存');
+}
+function closeReadingTracker() { toggleSheet('readingTrackerSheet', 'readingTrackerOverlay', false); }
 
 function openHabitCalendar(key) {
   habitCalKey = key;
