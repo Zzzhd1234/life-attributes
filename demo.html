@@ -743,6 +743,17 @@ body {
   <div class="card" id="profileReminderList"></div>
 </div>
 
+<!-- ===== DONE TODOS SHEET ===== -->
+<div class="sheet-overlay" id="doneTodosOverlay" onclick="closeDoneTodosSheet()"></div>
+<div class="settings-sheet" id="doneTodosSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">已完成</div>
+    <button class="sheet-close" onclick="closeDoneTodosSheet()">✕</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;padding:0 16px 24px" id="doneTodosList"></div>
+</div>
+
 <!-- ===== ABILITY SHEET ===== -->
 <div class="sheet-overlay" id="abilitySheetOverlay" onclick="closeAbilitySheet()"></div>
 <div class="settings-sheet" id="abilitySheet">
@@ -2892,13 +2903,20 @@ function renderTodos() {
     html += `<div class="todo-section-title" style="color:${meta.color}">${meta.label}</div>`;
     items.forEach(t => { html += todoItemHTML(t); });
   });
-  if (done.length) {
-    html += `<div class="todo-section-title" style="color:#c7c7cc">已完成</div>`;
-    done.forEach(t => { html += todoItemHTML(t); });
-  }
   if (!active.length && !done.length) html = '<div class="todo-empty">暂无待办事项</div>';
+  if (done.length) html += `<div class="habit-add-row" style="color:var(--muted);font-weight:500" onclick="openDoneTodosSheet()">已完成 ${done.length} 项 ›</div>`;
   el.innerHTML = html;
 }
+
+function openDoneTodosSheet() {
+  const el = document.getElementById('doneTodosList');
+  if (!el) return;
+  const done = state.todos.filter(t => t.done).sort((a,b) => (b.completedAt||'') > (a.completedAt||'') ? 1 : -1);
+  if (!done.length) { el.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0">暂无已完成事项</div>'; }
+  else el.innerHTML = done.map(t => todoItemHTML(t)).join('');
+  toggleSheet('doneTodosSheet', 'doneTodosOverlay', true);
+}
+function closeDoneTodosSheet() { toggleSheet('doneTodosSheet', 'doneTodosOverlay', false); }
 
 function todoItemHTML(t) {
   const isOverdue = !t.done && t.deadline < TODAY;
