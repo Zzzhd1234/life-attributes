@@ -395,6 +395,32 @@ body {
   font-size: 12px; font-weight: 600; padding: 3px 8px;
   border-radius: 20px; flex-shrink: 0;
 }
+.freq-picker-wrap {
+  position: relative; height: 132px; overflow: hidden;
+  border-top: 0.5px solid var(--border);
+}
+.freq-picker-selection {
+  position: absolute; left: 0; right: 0; top: 44px; height: 44px;
+  border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border);
+  pointer-events: none; z-index: 1;
+}
+.freq-picker-fade-top, .freq-picker-fade-bot {
+  position: absolute; left: 0; right: 0; height: 55px; pointer-events: none; z-index: 2;
+}
+.freq-picker-fade-top { top: 0; background: linear-gradient(to bottom, white 30%, transparent); }
+.freq-picker-fade-bot { bottom: 0; background: linear-gradient(to top, white 30%, transparent); }
+.freq-picker {
+  height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 44px 0;
+}
+.freq-picker::-webkit-scrollbar { display: none; }
+.freq-picker-item {
+  height: 44px; scroll-snap-align: center;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #b0b0b8; user-select: none;
+  transition: color 0.1s, font-size 0.1s, font-weight 0.1s;
+}
+.freq-picker-item.sel { color: var(--text); font-weight: 700; font-size: 17px; }
 .btn-export {
   background: white; color: var(--accent); border: none; border-radius: 12px;
   padding: 14px; font-size: 16px; font-weight: 500;
@@ -1392,20 +1418,11 @@ body {
       <button class="toggle-switch" id="habitFreqToggle" onclick="toggleHabitFreqSection()"></button>
     </div>
     <div id="habitFreqSection" style="display:none">
-      <div class="settings-row" style="border-top:0.5px solid var(--border)">
-        <span class="settings-label">周期</span>
-        <div style="display:flex;gap:8px">
-          <div class="intensity-btn sel" data-freq-type="weekly" onclick="selectFreqType(this)">每周</div>
-          <div class="intensity-btn" data-freq-type="monthly" onclick="selectFreqType(this)">每月</div>
-        </div>
-      </div>
-      <div class="settings-row" style="border-top:0.5px solid var(--border)">
-        <span class="settings-label">次数</span>
-        <div style="display:flex;align-items:center;gap:14px">
-          <button onclick="adjustFreqCount(-1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)">－</button>
-          <span id="freqCountDisplay" style="font-size:18px;font-weight:700;min-width:20px;text-align:center">3</span>
-          <button onclick="adjustFreqCount(1)" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)">＋</button>
-        </div>
+      <div class="freq-picker-wrap">
+        <div class="freq-picker-selection"></div>
+        <div class="freq-picker-fade-top"></div>
+        <div class="freq-picker-fade-bot"></div>
+        <div class="freq-picker" id="freqPicker"></div>
       </div>
     </div>
   </div>
@@ -2906,6 +2923,32 @@ function selectIntensity(el) {
   selectedHabitIntensity = parseFloat(el.dataset.intensity);
 }
 
+const FREQ_OPTIONS = [
+  { label: '每天', type: 'daily', count: 1 },
+  ...Array.from({length: 7},  (_, i) => ({ label: `每周 ${i+1} 次`, type: 'weekly',  count: i+1 })),
+  ...Array.from({length: 31}, (_, i) => ({ label: `每月 ${i+1} 次`, type: 'monthly', count: i+1 })),
+];
+const FREQ_ITEM_H = 44;
+let _freqScrollTimer = null;
+
+function initFreqPicker(defaultIdx) {
+  const picker = document.getElementById('freqPicker');
+  if (!picker) return;
+  picker.innerHTML = FREQ_OPTIONS.map((o, i) =>
+    `<div class="freq-picker-item${i === defaultIdx ? ' sel' : ''}">${o.label}</div>`
+  ).join('');
+  picker.scrollTop = defaultIdx * FREQ_ITEM_H;
+  picker.onscroll = () => {
+    clearTimeout(_freqScrollTimer);
+    _freqScrollTimer = setTimeout(() => {
+      const idx = Math.max(0, Math.min(FREQ_OPTIONS.length - 1, Math.round(picker.scrollTop / FREQ_ITEM_H)));
+      picker.querySelectorAll('.freq-picker-item').forEach((el, i) => el.classList.toggle('sel', i === idx));
+      _habitFreqType = FREQ_OPTIONS[idx].type;
+      _habitFreqCount = FREQ_OPTIONS[idx].count;
+    }, 80);
+  };
+}
+
 function toggleHabitFreqSection() {
   const btn = document.getElementById('habitFreqToggle');
   const sec = document.getElementById('habitFreqSection');
@@ -2913,22 +2956,13 @@ function toggleHabitFreqSection() {
   const open = !btn.classList.contains('on');
   btn.classList.toggle('on', open);
   sec.style.display = open ? 'block' : 'none';
-  if (!open) { _habitFreqType = 'weekly'; _habitFreqCount = 3; }
-}
-
-function selectFreqType(el) {
-  el.closest('#habitFreqSection').querySelectorAll('[data-freq-type]').forEach(b => b.classList.remove('sel'));
-  el.classList.add('sel');
-  _habitFreqType = el.dataset.freqType;
-  const max = _habitFreqType === 'weekly' ? 7 : 31;
-  _habitFreqCount = Math.min(_habitFreqCount, max);
-  document.getElementById('freqCountDisplay').textContent = _habitFreqCount;
-}
-
-function adjustFreqCount(delta) {
-  const max = _habitFreqType === 'weekly' ? 7 : 31;
-  _habitFreqCount = Math.max(1, Math.min(max, _habitFreqCount + delta));
-  document.getElementById('freqCountDisplay').textContent = _habitFreqCount;
+  if (open) {
+    const defaultIdx = 3; // 每周3次
+    _habitFreqType = 'weekly'; _habitFreqCount = 3;
+    setTimeout(() => initFreqPicker(defaultIdx), 50);
+  } else {
+    _habitFreqType = 'weekly'; _habitFreqCount = 3;
+  }
 }
 
 function openHabitSheet() {
@@ -2946,8 +2980,6 @@ function openHabitSheet() {
   if (freqBtn) freqBtn.classList.remove('on');
   if (freqSec) freqSec.style.display = 'none';
   _habitFreqType = 'weekly'; _habitFreqCount = 3;
-  document.getElementById('freqCountDisplay').textContent = 3;
-  document.querySelectorAll('[data-freq-type]').forEach(b => b.classList.toggle('sel', b.dataset.freqType === 'weekly'));
   toggleSheet('habitSheet', 'habitOverlay', true);
 }
 
