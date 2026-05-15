@@ -2997,7 +2997,7 @@ function renderNewTodoSubList() {
 function toggleGroupMode() {
   _isGroupTodo = !_isGroupTodo;
   const btn = document.getElementById('groupToggle');
-  if (btn) btn.classList.toggle('active', _isGroupTodo);
+  if (btn) btn.classList.toggle('on', _isGroupTodo);
   const sec = document.getElementById('groupSubSection');
   if (sec) sec.style.display = _isGroupTodo ? 'block' : 'none';
   if (_isGroupTodo) setTimeout(() => document.getElementById('groupSubInput')?.focus(), 50);
@@ -3034,7 +3034,7 @@ function openTodoAddSheet() {
   document.getElementById('newTodoSubInput').value = '';
   _newTodoSubs = []; _isGroupTodo = false; _groupSubs = [];
   renderNewTodoSubList(); renderGroupSubList();
-  const gt = document.getElementById('groupToggle'); if (gt) gt.classList.remove('active');
+  const gt = document.getElementById('groupToggle'); if (gt) gt.classList.remove('on');
   const gs = document.getElementById('groupSubSection'); if (gs) gs.style.display = 'none';
   if (recurEnabled) toggleRecurCheck();
   selectedTodoLabel = null;
