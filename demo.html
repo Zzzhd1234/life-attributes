@@ -189,13 +189,27 @@ body {
 /* ===== SLEEP CARD ===== */
 .sleep-empty-state { padding: 28px 16px 16px; display:flex; flex-direction:column; align-items:center; gap:10px; }
 .sleep-empty-hint { font-size:13px; color:var(--muted); }
-.sleep-record { padding: 14px 16px; cursor: pointer; }
-.sleep-record-time { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; letter-spacing: -0.3px; }
-.sleep-record-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-.sleep-rating-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
-.sleep-rating-pill.excellent, .sleep-rating-pill.good { background: rgba(52,199,89,0.12); color: #34C759; }
-.sleep-rating-pill.ok  { background: rgba(255,149,0,0.12); color: var(--warning); }
-.sleep-rating-pill.bad { background: rgba(255,59,48,0.12);  color: var(--danger); }
+.sleep-record { padding: 16px 16px 14px; cursor: pointer; }
+.sleep-record-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.sleep-moon-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#6B5CE7,#9B8BF7); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.sleep-record-title { font-size:15px; font-weight:600; color:var(--text); }
+.sleep-record-date { font-size:12px; color:var(--muted); margin-top:1px; }
+.sleep-stats-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--border); border-radius:10px; overflow:hidden; margin-bottom:12px; }
+.sleep-stat-cell { background:var(--bg); padding:10px 10px 8px; display:flex; flex-direction:column; gap:2px; }
+.sleep-stat-value { font-size:20px; font-weight:700; color:var(--text); letter-spacing:-0.5px; line-height:1; }
+.sleep-stat-unit { font-size:11px; font-weight:600; color:var(--text); opacity:0.5; }
+.sleep-stat-label { font-size:11px; color:var(--muted); margin-top:1px; }
+.sleep-arc-row { display:flex; align-items:center; gap:12px; }
+.sleep-arc-wrap { position:relative; width:64px; height:36px; flex-shrink:0; }
+.sleep-arc-track { fill:none; stroke:#E5E5EA; stroke-width:5; stroke-linecap:round; }
+.sleep-arc-fill { fill:none; stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset 0.6s; }
+.sleep-arc-pct { position:absolute; bottom:0; left:0; right:0; text-align:center; font-size:12px; font-weight:700; color:var(--text); }
+.sleep-rating-row { flex:1; display:flex; flex-direction:column; gap:4px; }
+.sleep-rating-pill { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; padding:3px 9px; border-radius:10px; }
+.sleep-rating-pill.excellent,.sleep-rating-pill.good { background:rgba(52,199,89,0.12); color:#34C759; }
+.sleep-rating-pill.ok  { background:rgba(255,149,0,0.12); color:var(--warning); }
+.sleep-rating-pill.bad { background:rgba(255,59,48,0.12);  color:var(--danger); }
+.sleep-effect-text { font-size:11px; color:var(--muted); }
 .sleep-time-input {
   border: none; background: transparent; font-size: 17px; font-weight: 600;
   color: var(--text); padding: 0; outline: none; width: 100%;
@@ -1016,23 +1030,17 @@ body {
                onkeydown="if(event.key==='Enter')addTodo()">
       </div>
     </div>
-    <div class="section-label">截止日期</div>
+    <div class="section-label">截止日期（可选）</div>
     <div class="card">
-      <div class="recur-check-row" style="border-top:none">
-        <label>设置截止日期</label>
-        <button class="toggle-switch" id="deadlineToggle" onclick="toggleDeadlineSection()"></button>
+      <div class="settings-row" style="border-top:none">
+        <span class="settings-label">日期</span>
+        <input type="date" id="todoDate"
+               style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
       </div>
-      <div id="deadlineSection" style="display:none">
-        <div class="settings-row" style="border-top:0.5px solid var(--border)">
-          <span class="settings-label">日期</span>
-          <input type="date" id="todoDate"
-                 style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
-        </div>
-        <div class="settings-row">
-          <span class="settings-label">具体时间（可选）</span>
-          <input type="time" id="todoTime"
-                 style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
-        </div>
+      <div class="settings-row">
+        <span class="settings-label">具体时间</span>
+        <input type="time" id="todoTime"
+               style="border:none;outline:none;font-size:15px;color:var(--text);background:transparent">
       </div>
     </div>
     <div class="section-label">分类标签（可选）</div>
@@ -2194,14 +2202,65 @@ function updateSleepDisplay() {
   if (!last) { el.innerHTML = '<div class="habit-add-row" style="border-top:none" onclick="openSleepSheet()">＋ 添加今日睡眠</div>'; return; }
   const bedT  = last.bedTime  || '—';
   const wakeT = last.wakeTime || '—';
-  const durStr = last.durH != null ? last.durH.toFixed(1) + ' 小时' : '';
+  const durH  = last.durH ?? 0;
+  const durHInt = Math.floor(durH);
+  const durM  = Math.round((durH - durHInt) * 60);
+  const cls   = last.cls || 'good';
   const effectStr = last.effect > 0 ? `全属性 +${last.effect}` : last.effect < 0 ? `全属性 ${last.effect}` : '无变化';
+  const pct = Math.min(100, Math.round(durH / 8 * 100));
+  const arcColor = cls === 'excellent' || cls === 'good' ? '#34C759' : cls === 'ok' ? '#FF9500' : '#FF3B30';
+  const r = 26, cx = 32, cy = 36;
+  const startAngle = -180, endAngle = 0;
+  const toRad = a => a * Math.PI / 180;
+  const sx = cx + r * Math.cos(toRad(startAngle));
+  const sy = cy + r * Math.sin(toRad(startAngle));
+  const ex = cx + r * Math.cos(toRad(endAngle));
+  const ey = cy + r * Math.sin(toRad(endAngle));
+  const fillEnd = startAngle + (endAngle - startAngle) * pct / 100;
+  const fex = cx + r * Math.cos(toRad(fillEnd));
+  const fey = cy + r * Math.sin(toRad(fillEnd));
+  const lg = fillEnd > startAngle + 180 ? 1 : 0;
   el.innerHTML = `<div class="sleep-record" onclick="openSleepSheet()">
-    <div class="sleep-record-time">${bedT} — ${wakeT}</div>
-    <div class="sleep-record-meta">
-      <span>${durStr}</span>
-      <span class="sleep-rating-pill ${last.cls||'good'}">${last.rating}</span>
-      <span>${effectStr}</span>
+    <div class="sleep-record-header">
+      <div class="sleep-moon-icon">🌙</div>
+      <div>
+        <div class="sleep-record-title">${bedT} — ${wakeT}</div>
+        <div class="sleep-record-date">今日睡眠</div>
+      </div>
+    </div>
+    <div class="sleep-stats-grid">
+      <div class="sleep-stat-cell">
+        <div style="display:flex;align-items:baseline;gap:2px">
+          <span class="sleep-stat-value">${durHInt}</span><span class="sleep-stat-unit">h</span>
+          <span class="sleep-stat-value" style="margin-left:2px">${durM}</span><span class="sleep-stat-unit">m</span>
+        </div>
+        <div class="sleep-stat-label">睡眠时长</div>
+      </div>
+      <div class="sleep-stat-cell">
+        <div style="display:flex;align-items:baseline;gap:2px">
+          <span class="sleep-stat-value">${bedT}</span>
+        </div>
+        <div class="sleep-stat-label">入睡时间</div>
+      </div>
+      <div class="sleep-stat-cell">
+        <div style="display:flex;align-items:baseline;gap:2px">
+          <span class="sleep-stat-value">${wakeT}</span>
+        </div>
+        <div class="sleep-stat-label">起床时间</div>
+      </div>
+    </div>
+    <div class="sleep-arc-row">
+      <div class="sleep-arc-wrap">
+        <svg width="64" height="36" viewBox="0 0 64 36">
+          <path class="sleep-arc-track" d="M ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey}"/>
+          <path class="sleep-arc-fill" stroke="${arcColor}" d="M ${sx} ${sy} A ${r} ${r} 0 ${lg} 1 ${fex} ${fey}"/>
+        </svg>
+        <div class="sleep-arc-pct">${pct}%</div>
+      </div>
+      <div class="sleep-rating-row">
+        <span class="sleep-rating-pill ${cls}">${last.rating}</span>
+        <div class="sleep-effect-text">${effectStr}</div>
+      </div>
     </div>
   </div>`;
 }
@@ -3401,26 +3460,10 @@ function renderGroupSubList() {
   ).join('');
 }
 
-function toggleDeadlineSection() {
-  const btn = document.getElementById('deadlineToggle');
-  const sec = document.getElementById('deadlineSection');
-  if (!btn || !sec) return;
-  const open = !btn.classList.contains('on');
-  btn.classList.toggle('on', open);
-  sec.style.display = open ? 'block' : 'none';
-  if (!open) {
-    document.getElementById('todoDate').value = '';
-    document.getElementById('todoTime').value = '';
-  }
-}
 function openTodoAddSheet() {
   document.getElementById('todoText').value = '';
   document.getElementById('todoDate').value = '';
   document.getElementById('todoTime').value = '';
-  const ds = document.getElementById('deadlineSection');
-  if (ds) ds.style.display = 'none';
-  const dt = document.getElementById('deadlineToggle');
-  if (dt) dt.classList.remove('on');
   document.getElementById('newTodoSubInput').value = '';
   _newTodoSubs = []; _isGroupTodo = false; _groupSubs = [];
   renderNewTodoSubList(); renderGroupSubList();
