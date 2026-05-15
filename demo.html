@@ -3434,10 +3434,16 @@ function renderTodos() {
   const active = state.todos.filter(t => !t.done);
   const done   = state.todos.filter(t => t.done);
 
+  const pinned = active.filter(t => t.pinned);
+  const unpinned = active.filter(t => !t.pinned);
   const buckets = { today: [], week: [], month: [], future: [], none: [] };
-  active.forEach(t => buckets[todoCategory(t.deadline)].push(t));
+  unpinned.forEach(t => buckets[todoCategory(t.deadline)].push(t));
 
   let html = '';
+  if (pinned.length) {
+    html += `<div class="todo-section-title" style="color:var(--accent)">📌 置顶</div>`;
+    pinned.forEach(t => { html += todoItemHTML(t); });
+  }
   ['today','week','month','future','none'].forEach(cat => {
     const items = buckets[cat];
     if (!items.length) return;
@@ -3479,12 +3485,13 @@ function todoItemHTML(t) {
     badge = `<span class="subtask-badge">📝 有备注</span>`;
   }
   const groupTag = t.isGroup ? `<span class="todo-group-tag">组</span>` : '';
+  const pinTag = t.pinned ? `<span style="font-size:12px;margin-left:4px;opacity:0.7">📌</span>` : '';
   return `<div class="todo-item${t.isGroup?' is-group':''}"
     ontouchstart="startTodoLongPress(event,${t.id})" ontouchend="cancelTodoLongPress()" ontouchmove="cancelTodoLongPress()"
     onmousedown="startTodoLongPress(event,${t.id})" onmouseup="cancelTodoLongPress()" onmouseleave="cancelTodoLongPress()">
     <div class="todo-check ${t.done?'done':''}" onclick="if(_longPressTriggered){_longPressTriggered=false;return;}toggleTodo(${t.id})">${t.done?'✓':''}</div>
     <div class="todo-body" onclick="if(_longPressTriggered){_longPressTriggered=false;return;}openTodoDetail(${t.id})">
-      <div class="todo-text ${t.done?'done':''}">${t.text}${groupTag}${recurTag(t.recurrence)}${labelTag}</div>
+      <div class="todo-text ${t.done?'done':''}">${t.text}${pinTag}${groupTag}${recurTag(t.recurrence)}${labelTag}</div>
       <div class="todo-deadline ${isOverdue?'overdue':''}">截止 ${dlLabel}${isOverdue?' · 已逾期':''}</div>
       ${badge}
     </div>
@@ -4303,7 +4310,7 @@ function startTodoLongPress(e, id) {
     const el = e.target.closest('.todo-item');
     showContextMenu([
       { label: '复制文字', icon: '📋', action: () => { navigator.clipboard?.writeText(t.text).then(() => showToast('已复制')); } },
-      { label: '置顶', icon: '⬆️', action: () => pinTodo(id) },
+      { label: t.pinned ? '取消置顶' : '置顶', icon: t.pinned ? '📌' : '⬆️', action: () => pinTodo(id) },
       { sep: true },
       { label: '编辑', icon: '✏️', action: () => openTodoDetail(id) },
     ], el);
@@ -4314,12 +4321,18 @@ function cancelTodoLongPress() {
   _todoLongPressTimer = null;
 }
 function pinTodo(id) {
-  const idx = state.todos.findIndex(t => t.id === id);
-  if (idx <= 0) { showToast('已在最前'); return; }
-  const [t] = state.todos.splice(idx, 1);
-  state.todos.unshift(t);
-  save(); renderTodos();
-  showToast('已置顶');
+  const t = state.todos.find(t => t.id === id);
+  if (!t) return;
+  if (t.pinned) {
+    t.pinned = false;
+    save(); renderTodos(); showToast('已取消置顶');
+  } else {
+    t.pinned = true;
+    const idx = state.todos.indexOf(t);
+    state.todos.splice(idx, 1);
+    state.todos.unshift(t);
+    save(); renderTodos(); showToast('已置顶');
+  }
 }
 
 function showToast(msg) {
