@@ -494,12 +494,17 @@
     .es-close { background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit; }
     .es-body { overflow-y:auto;padding:16px 20px 48px;flex:1; }
     .es-loading { text-align:center;padding:48px 20px;color:rgba(255,255,255,.4);font-size:.9rem; }
-    .es-card { background:rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;margin-bottom:12px; }
-    .es-word { font-size:1.05rem;font-weight:700;color:#1ed760;margin-bottom:6px; }
+    .es-card { background:rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;margin-bottom:12px;cursor:pointer;border:1.5px solid transparent;transition:background .15s,border-color .15s; }
+    .es-card.es-on { background:rgba(30,215,96,.1);border-color:rgba(30,215,96,.45); }
+    .es-card-top { display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px; }
+    .es-word { font-size:1.05rem;font-weight:700;color:#1ed760; }
+    .es-check { font-size:.9rem;font-weight:700;color:#1ed760;opacity:0;transition:opacity .15s;flex-shrink:0;margin-top:3px; }
+    .es-card.es-on .es-check { opacity:1; }
     .es-meaning { font-size:.88rem;color:rgba(255,255,255,.85);line-height:1.5; }
     .es-def { font-size:.82rem;color:rgba(255,255,255,.42);font-style:italic;margin-top:3px; }
     .es-example { font-size:.82rem;color:rgba(255,255,255,.48);border-left:2px solid #1ed760;padding-left:8px;margin-top:8px;line-height:1.5; }
-    .es-import-btn { width:100%;background:#1ed760;color:#000;border:none;border-radius:500px;padding:14px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px; }
+    .es-import-btn { width:100%;background:#1ed760;color:#000;border:none;border-radius:500px;padding:14px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;transition:opacity .15s; }
+    .es-import-btn:disabled { opacity:.35;cursor:default; }
     .lp-chat-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font-size: .82rem; font-weight: 700; color: rgba(255,255,255,.65); letter-spacing: .04em; text-transform: uppercase; }
     .lp-chat-msgs { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
     .lp-chat-input-row { display: flex; gap: 8px; }
@@ -2140,22 +2145,44 @@ ${markedPhrases.map((p, i) => `${i+1}. ${p}`).join("\n")}`;
   }
 }
 
+let _selectedExplain = new Set();
+
 function renderExplainResults() {
+  _selectedExplain = new Set();
   const body = document.getElementById("es-body");
-  body.innerHTML = explainedResults.map(r => `
-    <div class="es-card">
-      <div class="es-word">${escHtml(r.phrase)}</div>
+  body.innerHTML = explainedResults.map((r, i) => `
+    <div class="es-card" id="es-card-${i}" onclick="toggleExplainCard(${i})">
+      <div class="es-card-top">
+        <div class="es-word">${escHtml(r.phrase)}</div>
+        <div class="es-check">✓</div>
+      </div>
       <div class="es-meaning">${escHtml(r.meaning || "")}</div>
       ${r.definition ? `<div class="es-def">${escHtml(r.definition)}</div>` : ""}
       ${r.example ? `<div class="es-example">${escHtml(r.example)}</div>` : ""}
     </div>
-  `).join("") + `<button class="es-import-btn" id="es-import-btn" onclick="importExplainedPhrases()">全部加入短语库</button>`;
+  `).join("") + `<button class="es-import-btn" id="es-import-btn" onclick="importExplainedPhrases()" disabled>加入短语库</button>`;
+}
+
+function toggleExplainCard(idx) {
+  if (_selectedExplain.has(idx)) {
+    _selectedExplain.delete(idx);
+  } else {
+    _selectedExplain.add(idx);
+  }
+  document.getElementById(`es-card-${idx}`)?.classList.toggle("es-on", _selectedExplain.has(idx));
+  const btn = document.getElementById("es-import-btn");
+  if (!btn) return;
+  const n = _selectedExplain.size;
+  btn.textContent = n > 0 ? `加入短语库（${n} 项）` : "加入短语库";
+  btn.disabled = n === 0;
 }
 
 function importExplainedPhrases() {
+  if (_selectedExplain.size === 0) return;
   let added = 0, skipped = 0;
-  explainedResults.forEach(p => {
-    if (!p.phrase || !p.meaning) { skipped++; return; }
+  _selectedExplain.forEach(i => {
+    const p = explainedResults[i];
+    if (!p?.phrase || !p?.meaning) { skipped++; return; }
     const exists = data.phrases.some(x => x.phrase.toLowerCase() === p.phrase.toLowerCase());
     if (exists) { skipped++; return; }
     const exampleSource = currentLyricsTrack
