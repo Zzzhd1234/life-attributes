@@ -3345,8 +3345,13 @@ function renderReminders() {
     const locationStr = r.location ? `<div class="reminder-time" style="margin-top:1px">📍 ${r.location}</div>` : '';
     const recurLabels = {daily:'每天',weekly:'每周',monthly:'每月',yearly:'每年',custom:'自选'};
     const recurStr = r.recurrence ? `<span style="font-size:11px;color:var(--accent);margin-left:6px">↻ ${recurLabels[r.recurrence]||''}</span>` : '';
+    const reminderDate = r.datetime.slice(0, 10);
+    const tomorrow = localDateStr(new Date(Date.now() + 86400000));
+    const canCheck = r.done || reminderDate <= tomorrow;
     return `<div class="reminder-item${r.done?' reminder-done':''}" onclick="openReminderAddSheet(${r.id})">
-      <button class="reminder-check${r.done?' done':''}" onclick="event.stopPropagation();toggleReminderDone(${r.id})">${r.done?'✓':''}</button>
+      ${canCheck
+        ? `<button class="reminder-check${r.done?' done':''}" onclick="event.stopPropagation();toggleReminderDone(${r.id})">${r.done?'✓':''}</button>`
+        : `<div style="width:26px;height:26px;flex-shrink:0"></div>`}
       <div class="reminder-info">
         <div class="reminder-title">${r.title}${recurStr}</div>
         <div class="reminder-time ${timeClass}">${timeStr}${r.note ? ' · ' + r.note : ''}</div>
