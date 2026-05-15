@@ -410,7 +410,7 @@ body {
 .freq-picker-fade-top { top: 0; background: linear-gradient(to bottom, white 30%, transparent); }
 .freq-picker-fade-bot { bottom: 0; background: linear-gradient(to top, white 30%, transparent); }
 .freq-picker {
-  height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
+  flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 44px 0;
 }
 .freq-picker::-webkit-scrollbar { display: none; }
@@ -1422,7 +1422,10 @@ body {
         <div class="freq-picker-selection"></div>
         <div class="freq-picker-fade-top"></div>
         <div class="freq-picker-fade-bot"></div>
-        <div class="freq-picker" id="freqPicker"></div>
+        <div style="display:flex;height:100%">
+          <div class="freq-picker" id="freqPickerPeriod"></div>
+          <div class="freq-picker" id="freqPickerCount"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -2923,28 +2926,50 @@ function selectIntensity(el) {
   selectedHabitIntensity = parseFloat(el.dataset.intensity);
 }
 
-const FREQ_OPTIONS = [
-  { label: '每天', type: 'daily', count: 1 },
-  ...Array.from({length: 7},  (_, i) => ({ label: `每周 ${i+1} 次`, type: 'weekly',  count: i+1 })),
-  ...Array.from({length: 31}, (_, i) => ({ label: `每月 ${i+1} 次`, type: 'monthly', count: i+1 })),
-];
 const FREQ_ITEM_H = 44;
-let _freqScrollTimer = null;
+let _freqPeriodTimer = null;
+let _freqCountTimer = null;
 
-function initFreqPicker(defaultIdx) {
-  const picker = document.getElementById('freqPicker');
+function initFreqPeriodPicker() {
+  const picker = document.getElementById('freqPickerPeriod');
   if (!picker) return;
-  picker.innerHTML = FREQ_OPTIONS.map((o, i) =>
-    `<div class="freq-picker-item${i === defaultIdx ? ' sel' : ''}">${o.label}</div>`
+  const opts = ['每周', '每月'];
+  const selIdx = _habitFreqType === 'monthly' ? 1 : 0;
+  picker.innerHTML = opts.map((o, i) =>
+    `<div class="freq-picker-item${i === selIdx ? ' sel' : ''}">${o}</div>`
   ).join('');
-  picker.scrollTop = defaultIdx * FREQ_ITEM_H;
+  picker.scrollTop = selIdx * FREQ_ITEM_H;
   picker.onscroll = () => {
-    clearTimeout(_freqScrollTimer);
-    _freqScrollTimer = setTimeout(() => {
-      const idx = Math.max(0, Math.min(FREQ_OPTIONS.length - 1, Math.round(picker.scrollTop / FREQ_ITEM_H)));
+    clearTimeout(_freqPeriodTimer);
+    _freqPeriodTimer = setTimeout(() => {
+      const idx = Math.max(0, Math.min(1, Math.round(picker.scrollTop / FREQ_ITEM_H)));
       picker.querySelectorAll('.freq-picker-item').forEach((el, i) => el.classList.toggle('sel', i === idx));
-      _habitFreqType = FREQ_OPTIONS[idx].type;
-      _habitFreqCount = FREQ_OPTIONS[idx].count;
+      const newType = idx === 0 ? 'weekly' : 'monthly';
+      if (newType !== _habitFreqType) {
+        _habitFreqType = newType;
+        _habitFreqCount = Math.min(_habitFreqCount, _habitFreqType === 'weekly' ? 7 : 31);
+        initFreqCountPicker();
+      }
+    }, 80);
+  };
+}
+
+function initFreqCountPicker() {
+  const picker = document.getElementById('freqPickerCount');
+  if (!picker) return;
+  const max = _habitFreqType === 'weekly' ? 7 : 31;
+  const selIdx = Math.min(_habitFreqCount, max) - 1;
+  picker.innerHTML = Array.from({length: max}, (_, i) =>
+    `<div class="freq-picker-item${i === selIdx ? ' sel' : ''}">${i + 1} 次</div>`
+  ).join('');
+  picker.scrollTop = selIdx * FREQ_ITEM_H;
+  picker.onscroll = () => {
+    clearTimeout(_freqCountTimer);
+    _freqCountTimer = setTimeout(() => {
+      const max = _habitFreqType === 'weekly' ? 7 : 31;
+      const idx = Math.max(0, Math.min(max - 1, Math.round(picker.scrollTop / FREQ_ITEM_H)));
+      picker.querySelectorAll('.freq-picker-item').forEach((el, i) => el.classList.toggle('sel', i === idx));
+      _habitFreqCount = idx + 1;
     }, 80);
   };
 }
@@ -2957,9 +2982,8 @@ function toggleHabitFreqSection() {
   btn.classList.toggle('on', open);
   sec.style.display = open ? 'block' : 'none';
   if (open) {
-    const defaultIdx = 3; // 每周3次
     _habitFreqType = 'weekly'; _habitFreqCount = 3;
-    setTimeout(() => initFreqPicker(defaultIdx), 50);
+    setTimeout(() => { initFreqPeriodPicker(); initFreqCountPicker(); }, 50);
   } else {
     _habitFreqType = 'weekly'; _habitFreqCount = 3;
   }
