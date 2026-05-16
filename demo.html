@@ -77,6 +77,7 @@ body {
 .profile-banner-greeting { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
 .profile-banner-name { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* ===== HEADER ===== */
 .page-header {
@@ -501,6 +502,36 @@ body {
 .reading-book-badge {
   font-size: 12px; font-weight: 600; padding: 3px 8px;
   border-radius: 20px; flex-shrink: 0;
+}
+.book-search-results {
+  max-height: 220px; overflow-y: auto; background: var(--card);
+  border-radius: 10px; margin: 0 16px 8px; border: 0.5px solid var(--border); display: none;
+}
+.book-search-item {
+  display: flex; gap: 10px; padding: 10px 12px;
+  border-bottom: 0.5px solid var(--border); cursor: pointer; align-items: flex-start;
+}
+.book-search-item:last-child { border-bottom: none; }
+.book-search-item:active { background: var(--bg); }
+.book-search-thumb {
+  width: 36px; height: 50px; object-fit: cover; border-radius: 4px;
+  flex-shrink: 0; background: var(--bg);
+}
+.book-search-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-search-author { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.book-search-pages { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.book-cover-preview {
+  display: none; flex-direction: row; gap: 12px; padding: 12px 16px 14px;
+  align-items: flex-start; border-top: 0.5px solid var(--border);
+}
+.book-desc-text {
+  font-size: 12px; color: var(--muted); line-height: 1.55;
+  overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+}
+.book-cover-thumb {
+  width: 52px; height: 72px; object-fit: cover; border-radius: 5px;
+  flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 .freq-picker-wrap {
   position: relative; height: 132px; overflow: hidden;
@@ -1275,13 +1306,23 @@ body {
     <div class="sheet-title" id="readingEditSheetTitle">添加书籍</div>
     <button class="sheet-close" onclick="closeReadingEdit()">✕</button>
   </div>
-  <div class="section-label">书名</div>
+  <div class="section-label">搜索书名</div>
   <div class="card">
-    <div class="settings-row">
-      <input id="readingEditTitle" type="text" placeholder="请输入书名"
+    <div class="settings-row" style="gap:8px">
+      <input id="readingEditTitle" type="text" placeholder="输入书名自动搜索…"
+             oninput="onBookTitleInput()"
              style="flex:1;border:none;outline:none;font-size:16px;color:var(--text);background:transparent">
+      <span id="bookSearchSpinner" style="display:none;font-size:13px;color:var(--muted);animation:spin 0.8s linear infinite">⟳</span>
+    </div>
+    <div class="book-cover-preview" id="bookCoverPreview">
+      <img id="bookCoverImg" class="book-cover-thumb" src="" alt="" style="display:none">
+      <div style="flex:1;min-width:0">
+        <div id="bookAuthorText" style="font-size:12px;color:var(--muted);margin-bottom:6px"></div>
+        <div id="bookDescText" class="book-desc-text"></div>
+      </div>
     </div>
   </div>
+  <div class="book-search-results" id="bookSearchResults"></div>
   <div class="section-label">阅读进度</div>
   <div class="card">
     <div class="settings-row">
@@ -4383,9 +4424,11 @@ function renderReadingBooks() {
       onclick="if(_longPressTriggered){_longPressTriggered=false;return;}openReadingEdit(${b.id})"
       ontouchstart="startBookLongPress(event,${b.id})" ontouchend="cancelBookLongPress()" ontouchmove="cancelBookLongPress()"
       onmousedown="startBookLongPress(event,${b.id})" onmouseup="cancelBookLongPress()" onmouseleave="cancelBookLongPress()">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        ${b.cover ? `<img src="${b.cover}" style="width:42px;height:58px;object-fit:cover;border-radius:5px;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.15)" onerror="this.style.display='none'">` : ''}
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.title || '未命名'}</div>
+          ${b.author ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.author}</div>` : ''}
           <button onclick="event.stopPropagation();openReadingProgress(${b.id})"
                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                   onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()"
@@ -4414,6 +4457,24 @@ function openReadingEdit(id) {
   document.getElementById('readingEditTitle').value   = book?.title || '';
   document.getElementById('readingEditCurrent').value = book?.currentPage || '';
   document.getElementById('readingEditTotal').value   = book?.totalPages || '';
+  _selectedBookCover = book?.cover || '';
+  _selectedBookDesc  = book?.description || '';
+  // Restore cover preview if editing a book that has cover
+  const preview = document.getElementById('bookCoverPreview');
+  const coverImg = document.getElementById('bookCoverImg');
+  const descEl   = document.getElementById('bookDescText');
+  const authEl   = document.getElementById('bookAuthorText');
+  if (preview) {
+    if (book?.cover || book?.description) {
+      if (coverImg) { coverImg.src = book.cover || ''; coverImg.style.display = book.cover ? 'block' : 'none'; }
+      if (descEl) descEl.textContent = book.description || '';
+      if (authEl) authEl.textContent = book.author || '';
+      preview.style.display = 'flex';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+  hideBookResults();
   updateReadingEditBar();
   toggleSheet('readingEditSheet', 'readingEditOverlay', true);
 }
@@ -4463,6 +4524,83 @@ function updateReadingEditBar() {
   if (bar)   bar.style.width = pct + '%';
   if (pctEl) pctEl.textContent = pct + '%';
 }
+let _selectedBookCover = '', _selectedBookDesc = '', _selectedBookAuthor = '';
+let _bookSearchTimer = null, _bookSearchResults = [];
+
+function onBookTitleInput() {
+  clearTimeout(_bookSearchTimer);
+  const q = document.getElementById('readingEditTitle')?.value.trim();
+  if (!q || q.length < 2) { hideBookResults(); return; }
+  _bookSearchTimer = setTimeout(() => searchBooksAPI(q), 600);
+}
+async function searchBooksAPI(query) {
+  const spinner = document.getElementById('bookSearchSpinner');
+  if (spinner) spinner.style.display = 'inline-block';
+  try {
+    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=6&printType=books`);
+    const data = await r.json();
+    _bookSearchResults = (data.items || []).map(item => {
+      const v = item.volumeInfo || {};
+      return {
+        title: v.title || '',
+        author: (v.authors || []).join(', '),
+        pageCount: v.pageCount || 0,
+        description: (v.description || '').slice(0, 400),
+        cover: (v.imageLinks?.thumbnail || '').replace('http://', 'https://')
+      };
+    });
+    renderBookSearchResults();
+  } catch { /* network error, silently ignore */ }
+  if (spinner) spinner.style.display = 'none';
+}
+function renderBookSearchResults() {
+  const el = document.getElementById('bookSearchResults');
+  if (!el) return;
+  if (!_bookSearchResults.length) {
+    el.innerHTML = '<div style="padding:14px 16px;text-align:center;color:var(--muted);font-size:13px">没有找到相关书籍</div>';
+    el.style.display = 'block'; return;
+  }
+  el.innerHTML = _bookSearchResults.map((b, i) => `
+    <div class="book-search-item" onclick="selectBookResult(${i})">
+      ${b.cover
+        ? `<img class="book-search-thumb" src="${b.cover}" onerror="this.style.visibility='hidden'">`
+        : `<div class="book-search-thumb"></div>`}
+      <div class="book-search-info">
+        <div class="book-search-title">${b.title}</div>
+        ${b.author ? `<div class="book-search-author">${b.author}</div>` : ''}
+        ${b.pageCount ? `<div class="book-search-pages">${b.pageCount} 页</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+  el.style.display = 'block';
+}
+function selectBookResult(i) {
+  const b = _bookSearchResults[i];
+  if (!b) return;
+  document.getElementById('readingEditTitle').value = b.title;
+  if (b.pageCount) document.getElementById('readingEditTotal').value = b.pageCount;
+  _selectedBookCover  = b.cover || '';
+  _selectedBookDesc   = b.description || '';
+  _selectedBookAuthor = b.author || '';
+  const preview = document.getElementById('bookCoverPreview');
+  const coverImg = document.getElementById('bookCoverImg');
+  const descEl   = document.getElementById('bookDescText');
+  const authEl   = document.getElementById('bookAuthorText');
+  if (preview) {
+    if (b.cover) { coverImg.src = b.cover; coverImg.style.display = 'block'; }
+    else coverImg.style.display = 'none';
+    if (descEl) descEl.textContent = b.description || '';
+    if (authEl) authEl.textContent = b.author || '';
+    preview.style.display = (b.cover || b.description) ? 'flex' : 'none';
+  }
+  hideBookResults();
+  updateReadingEditBar();
+}
+function hideBookResults() {
+  const el = document.getElementById('bookSearchResults');
+  if (el) el.style.display = 'none';
+}
+
 function saveBook() {
   if (!state.habits.reading) { showToast('阅读习惯不存在'); return; }
   const title = document.getElementById('readingEditTitle')?.value.trim();
@@ -4472,9 +4610,18 @@ function saveBook() {
   if (!state.habits.reading.books) state.habits.reading.books = [];
   if (_editingBookId) {
     const b = state.habits.reading.books.find(b => b.id == _editingBookId);
-    if (b) { b.title = title; b.currentPage = currentPage; b.totalPages = totalPages; }
+    if (b) {
+      b.title = title; b.currentPage = currentPage; b.totalPages = totalPages;
+      if (_selectedBookCover)  b.cover = _selectedBookCover;
+      if (_selectedBookDesc)   b.description = _selectedBookDesc;
+      if (_selectedBookAuthor) b.author = _selectedBookAuthor;
+    }
   } else {
-    state.habits.reading.books.push({ id: Date.now(), title, currentPage, totalPages });
+    const entry = { id: Date.now(), title, currentPage, totalPages };
+    if (_selectedBookCover)  entry.cover = _selectedBookCover;
+    if (_selectedBookDesc)   entry.description = _selectedBookDesc;
+    if (_selectedBookAuthor) entry.author = _selectedBookAuthor;
+    state.habits.reading.books.push(entry);
   }
   save(); renderReadingBooks(); renderHabits(); closeReadingEdit();
   showToast(_editingBookId ? `《${title}》已更新` : `《${title}》已添加`);
