@@ -2627,6 +2627,8 @@ function recalcWeeklyTotals() {
     const prevCE = cardioEffect(state.weekCardioApplied);
     nudge('体质', -prevCE.body); nudge('魅力', -prevCE.charm);
   }
+  // Remove all previous exercise changelog entries so delete = true undo
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !e.source?.includes('/周'));
   const weekStart = getWeekStart(TODAY);
   const weekLogs = (state.exerciseLogs || []).filter(l => l.date >= weekStart);
   state.weekStrength = new Set(weekLogs.filter(l => l.type === 'strength').map(l => l.date)).size;
