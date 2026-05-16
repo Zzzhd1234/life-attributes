@@ -103,7 +103,35 @@ Always guard: `if (navigator.vibrate) navigator.vibrate(...)` — not supported 
 
 ---
 
-## 7. Reorder drag implementation pattern
+## 7. Stale `startX` bug — swipe-back fires during drag
+
+**Root cause**: A drag handle calls `stopPropagation()` on its `touchstart`, so the page-level swipe-back `touchstart` handler never fires. `startX` stays stale from the previous touch. The first `touchmove` event fires before `dy` grows large enough to fail the `Math.abs(dx) > Math.abs(dy) * 1.5` guard, so `dragging` is set to `true` based on a stale `dx`. The subsequent `touchend` then calls `close()`.
+
+**Fix**: In every page-level swipe-back handler, check the drag state variable and bail out early:
+
+```js
+// In initSwipeBack, gate all three handlers:
+page.addEventListener('touchstart', e => {
+  if (_subDrag) return;           // ← drag in progress — skip
+  startX = ...; startY = ...; dragging = false;
+}, { passive: true });
+
+page.addEventListener('touchmove', e => {
+  if (_subDrag) { dragging = false; return; }  // ← reset stale dragging flag
+  ...
+}, { passive: false });
+
+page.addEventListener('touchend', e => {
+  if (_subDrag) { dragging = false; return; }  // ← prevent accidental close
+  ...
+});
+```
+
+**Rule**: Any page that has BOTH a swipe-to-close gesture AND draggable children must gate the swipe handlers on the drag state variable being null.
+
+---
+
+## 8. Reorder drag implementation pattern
 
 See `_startSubDrag()` in demo.html for the reference implementation:
 - `data-sub-id` on each draggable row

@@ -5559,11 +5559,13 @@ if ('serviceWorker' in navigator) {
     if (!page) return;
     let startX = 0, startY = 0, dragging = false;
     page.addEventListener('touchstart', e => {
+      if (_subDrag) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       dragging = false;
     }, { passive: true });
     page.addEventListener('touchmove', e => {
+      if (_subDrag) { dragging = false; return; }
       const dx = e.touches[0].clientX - startX;
       const dy = e.touches[0].clientY - startY;
       if (!dragging && dx > 12 && Math.abs(dx) > Math.abs(dy) * 1.5) dragging = true;
@@ -5574,6 +5576,7 @@ if ('serviceWorker' in navigator) {
       page.style.transform = `translateX(calc(-50% + ${clamped}px))`;
     }, { passive: false });
     page.addEventListener('touchend', e => {
+      if (_subDrag) { dragging = false; return; }
       if (!dragging) { page.style.transition = ''; page.style.transform = ''; return; }
       const dx = e.changedTouches[0].clientX - startX;
       page.style.transition = '';
