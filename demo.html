@@ -258,6 +258,18 @@ body {
 .history-item:last-child { border-bottom:none; }
 .history-item-title { font-size:14px; font-weight:600; }
 .history-item-meta { font-size:12px; color:var(--muted); }
+/* Exercise history redesign */
+.ex-date-header { display:flex; align-items:center; justify-content:space-between; padding:14px 0 8px; border-bottom:0.5px solid var(--border); }
+.ex-date-header:first-child { padding-top:4px; }
+.ex-date-label { font-size:12px; font-weight:700; color:var(--text); }
+.ex-date-sub { font-size:11px; color:var(--muted); margin-top:1px; }
+.ex-date-summary { font-size:11px; color:var(--muted); font-weight:600; }
+.ex-history-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:0.5px solid var(--border); }
+.ex-history-row:last-child { border-bottom:none; }
+.ex-history-icon { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.ex-history-body { flex:1; min-width:0; }
+.ex-history-name { font-size:14px; font-weight:600; }
+.ex-history-detail { font-size:12px; color:var(--muted); margin-top:2px; }
 .exlog-list { margin-top:8px; }
 .exlog-row { display:flex; align-items:center; justify-content:space-between;
   padding:5px 0; font-size:12px; border-bottom:0.5px solid var(--border); }
@@ -1471,7 +1483,7 @@ body {
     <div class="sheet-title">运动历史</div>
     <button class="sheet-close" onclick="closeExerciseHistory()">✕</button>
   </div>
-  <div style="overflow-y:auto;flex:1;padding:0 20px 24px" id="exerciseHistoryList"></div>
+  <div style="overflow-y:auto;flex:1;padding:0 16px 24px" id="exerciseHistoryList"></div>
 </div>
 
 <div class="sheet-overlay" id="habitOverlay" onclick="closeHabitSheet()"></div>
@@ -2509,23 +2521,43 @@ function openExerciseHistory() {
   const list = document.getElementById('exerciseHistoryList');
   if (!list) return;
   const logs = [...(state.exerciseLogs || [])].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
-  if (!logs.length) { list.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0">暂无历史记录</div>'; }
-  else {
+  if (!logs.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:24px 0;text-align:center">暂无历史记录</div>';
+  } else {
     const byDate = {};
     logs.forEach(l => { (byDate[l.date] = byDate[l.date] || []).push(l); });
-    list.innerHTML = Object.entries(byDate).map(([date, items]) =>
-      `<div class="history-date-group">${date}</div>` +
-      items.map(l => {
+    const dayNames = ['日','一','二','三','四','五','六'];
+    list.innerHTML = Object.entries(byDate).map(([date, items]) => {
+      const d = new Date(date + 'T00:00:00');
+      const isToday = date === TODAY;
+      const isTmr = date === localDateStr(new Date(Date.now() - 86400000));
+      const dayLabel = isToday ? '今天' : isTmr ? '昨天' : `周${dayNames[d.getDay()]}`;
+      const dateStr = `${d.getMonth()+1}月${d.getDate()}日`;
+      const total = items.reduce((s,l) => s + (l.type==='cardio' ? (l.duration||0) : 0), 0);
+      const summary = total ? `${total} min` : `${items.length} 项`;
+      const rows = items.map(l => {
         const isStr = l.type === 'strength';
+        const icon = isStr ? '💪' : '🏃';
+        const iconBg = isStr ? 'rgba(88,86,214,0.12)' : 'rgba(52,199,89,0.12)';
+        const name = isStr ? l.name : l.activity;
         const detail = isStr
-          ? (Array.isArray(l.sets) ? l.sets.map((s,i)=>`第${i+1}组 ${s.reps}次${s.weight?' '+s.weight+'kg':''}`).join(' · ') : `${l.sets}组×${l.reps}次${l.weight?' · '+l.weight+'kg':''}`)
-          : `${l.duration}min${l.distance?' · '+l.distance+'km':''}`;
-        return `<div class="history-item">
-          <div class="history-item-title">${isStr ? l.name : l.activity}</div>
-          <div class="history-item-meta">${isStr?'力量':'有氧'} · ${detail}</div>
+          ? (Array.isArray(l.sets)
+              ? l.sets.map((s,i)=>`${i+1}组 ${s.reps}次${s.weight?' · '+s.weight+'kg':''}`).join('  ')
+              : `${l.sets}组 × ${l.reps}次${l.weight ? ' · '+l.weight+'kg' : ''}`)
+          : `${l.duration} min${l.distance ? ' · '+l.distance+' km' : ''}`;
+        return `<div class="ex-history-row">
+          <div class="ex-history-icon" style="background:${iconBg}">${icon}</div>
+          <div class="ex-history-body">
+            <div class="ex-history-name">${name}</div>
+            <div class="ex-history-detail">${isStr?'力量':'有氧'} · ${detail}</div>
+          </div>
         </div>`;
-      }).join('')
-    ).join('');
+      }).join('');
+      return `<div class="ex-date-header">
+        <div><div class="ex-date-label">${dayLabel}</div><div class="ex-date-sub">${dateStr}</div></div>
+        <div class="ex-date-summary">${summary}</div>
+      </div>${rows}`;
+    }).join('');
   }
   toggleSheet('exerciseHistorySheet', 'exerciseHistoryOverlay', true);
 }
