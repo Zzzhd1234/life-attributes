@@ -522,7 +522,7 @@
     .lp-lyrics-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
     .lp-lyrics-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.85); }
     .lp-lyrics-hint { font-size: .72rem; color: rgba(255,255,255,.45); }
-    .lp-lyrics-body { padding: 14px 20px 56px; user-select: text; -webkit-user-select: text; -webkit-touch-callout: none; max-height: 56vh; overflow-y: auto; }
+    .lp-lyrics-body { padding: 14px 20px 56px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; max-height: 56vh; overflow-y: auto; }
     .lp-lyrics-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 72px; background: linear-gradient(transparent, rgba(108,99,255,.22)); pointer-events: none; z-index: 1; }
     .lp-lyric-line { font-size: 1.5rem; font-weight: 800; color: rgba(255,255,255,.42); line-height: 1.3; padding: 6px 0; cursor: text; transition: color .18s; letter-spacing: -.01em; }
     .lp-lyric-line:hover { color: #fff; }
@@ -1962,34 +1962,65 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tt && tt.style.display !== "none" && !tt.contains(e.target)) hideMarkTooltip();
   });
 
-  // Mobile (iOS): touchend on lyrics-view — capture selection then clear it immediately
-  // so Safari never sees a live selection and cannot show its native menu.
   const _lv = document.getElementById("lyrics-view");
   if (_lv) {
-    _lv.addEventListener("touchend", () => {
-      const sel = window.getSelection();
-      const view = document.getElementById("lyrics-view");
-      if (!view || !sel || sel.isCollapsed) return;
-      const text = sel.toString().trim();
-      if (!text || text.length < 2 || text.length > 80) return;
-      let inView = false;
-      try { inView = view.contains(sel.getRangeAt(0).commonAncestorContainer); } catch {}
-      if (!inView) return;
-      let rect;
-      try { rect = sel.getRangeAt(0).getBoundingClientRect(); } catch { return; }
-      currentSelection = text;
-      sel.removeAllRanges(); // kill native iOS menu before it renders
-      _showMarkTooltip(text, rect);
-    }, { passive: true });
+    if (navigator.maxTouchPoints > 0) {
+      // Mobile: no native selection UI — detect tapped word via caretRangeFromPoint
+      let _tapX = 0, _tapY = 0, _tapT = 0;
+      _lv.addEventListener('touchstart', e => {
+        _tapX = e.touches[0].clientX;
+        _tapY = e.touches[0].clientY;
+        _tapT = Date.now();
+      }, { passive: true });
 
-    // Prevent iOS contextmenu callout on long-press within lyrics
-    _lv.addEventListener('contextmenu', e => e.preventDefault(), { capture: true, passive: false });
+      _lv.addEventListener('touchend', e => {
+        const dur = Date.now() - _tapT;
+        const x = e.changedTouches[0].clientX;
+        const y = e.changedTouches[0].clientY;
+        // Ignore if too long (scroll attempt) or moved too far
+        if (dur > 500 || Math.hypot(x - _tapX, y - _tapY) > 18) return;
+        // If tap landed on an already-marked phrase, let its onclick handle it
+        const tgt = document.elementFromPoint(x, y);
+        if (tgt && (tgt.tagName === 'MARK' || tgt.closest?.('mark'))) return;
+        // Find the character position at tap point
+        const range = document.caretRangeFromPoint
+          ? document.caretRangeFromPoint(x, y)
+          : (() => {
+              const pos = document.caretPositionFromPoint?.(x, y);
+              if (!pos) return null;
+              const r = document.createRange();
+              r.setStart(pos.offsetNode, pos.offset);
+              r.collapse(true);
+              return r;
+            })();
+        if (!range) return;
+        const node = range.startContainer;
+        if (!node || node.nodeType !== Node.TEXT_NODE || !_lv.contains(node)) return;
+        // Expand to word boundaries
+        const txt = node.textContent;
+        let s = range.startOffset, e2 = s;
+        while (s > 0 && /[^\s,!?.;:"'()]/.test(txt[s - 1])) s--;
+        while (e2 < txt.length && /[^\s,!?.;:"'()]/.test(txt[e2])) e2++;
+        const word = txt.slice(s, e2).trim();
+        if (!word || word.length < 2) return;
+        const wr = document.createRange();
+        wr.setStart(node, s);
+        wr.setEnd(node, e2);
+        currentSelection = word;
+        _showMarkTooltip(word, wr.getBoundingClientRect());
+      }, { passive: true });
+
+    } else {
+      // Desktop: re-enable text selection and use selectionchange
+      _lv.style.userSelect = 'text';
+      _lv.style.webkitUserSelect = 'text';
+    }
   }
 
   // Desktop: selectionchange for mouse-driven selection
   let _selTimer = null;
   document.addEventListener("selectionchange", () => {
-    if (navigator.maxTouchPoints > 0) return; // handled by touchend on mobile
+    if (navigator.maxTouchPoints > 0) return;
     clearTimeout(_selTimer);
     _selTimer = setTimeout(() => {
       const sel = window.getSelection();
@@ -3093,7 +3124,7 @@ _addSwipeBack(
     if (_fromArtist) backToArtist();
     else document.getElementById("page-lyrics").classList.remove("active");
   },
-  false
+  true   // edge-only: swipe from left 44 px to avoid conflicting with word taps
 );
 </script>
 </body>
