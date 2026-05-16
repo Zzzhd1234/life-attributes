@@ -433,6 +433,13 @@ body {
 .video-sub-card:last-child { border-bottom: none; }
 .video-sub-header { display: flex; align-items: flex-start; gap: 10px; }
 .video-sub-icon { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; margin-top: 1px; }
+.sub-drag-handle {
+  color: #C7C7CC; font-size: 14px; padding: 2px 6px 2px 4px;
+  flex-shrink: 0; line-height: 1; cursor: grab;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  touch-action: none;
+}
+.sub-dragging { opacity: 0.25 !important; }
 .video-sub-title { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
 .video-sub-dur { font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
 .video-sub-bar-wrap { display: flex; align-items: center; gap: 8px; margin: 5px 0 0 40px; }
@@ -4029,6 +4036,64 @@ function openTodoDetail(id) {
   renderTodoDetail();
   document.getElementById('page-todo-detail').classList.add('open');
 }
+let _subDrag = null;
+function _startSubDrag(e, todoId, subId) {
+  e.preventDefault();
+  e.stopPropagation();
+  const item = e.currentTarget.closest('[data-sub-id]');
+  if (!item) return;
+  const touch = e.touches[0];
+  const rect = item.getBoundingClientRect();
+  if (navigator.vibrate) navigator.vibrate(10);
+  const ghost = item.cloneNode(true);
+  Object.assign(ghost.style, {
+    position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+    width: rect.width + 'px', zIndex: '9999', pointerEvents: 'none',
+    boxShadow: '0 10px 32px rgba(0,0,0,0.18)', borderRadius: '10px',
+    background: 'white', transform: 'scale(1.025)', opacity: '0.97'
+  });
+  document.body.appendChild(ghost);
+  item.classList.add('sub-dragging');
+  const offsetY = touch.clientY - rect.top;
+  const list = item.parentElement;
+  _subDrag = { todoId, subId, item, ghost, list, offsetY };
+  const onMove = (ev) => {
+    ev.preventDefault();
+    ghost.style.top = (ev.touches[0].clientY - offsetY) + 'px';
+  };
+  const onEnd = (ev) => {
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onEnd);
+    document.removeEventListener('touchcancel', onEnd);
+    if (!_subDrag) return;
+    const { item: el, ghost: g, list: ls, offsetY: oy } = _subDrag;
+    _subDrag = null;
+    const ct = ev.changedTouches?.[0];
+    const ghostTop = ct ? ct.clientY - oy : parseFloat(g.style.top);
+    const ghostCenter = ghostTop + g.offsetHeight / 2;
+    g.remove();
+    el.classList.remove('sub-dragging');
+    const t = state.todos.find(t => t.id === todoId);
+    if (!t?.subtasks || t.subtasks.length < 2) return;
+    const allItems = [...ls.querySelectorAll('[data-sub-id]')];
+    const others = allItems.filter(x => x !== el);
+    let insertBefore = others.length;
+    for (let i = 0; i < others.length; i++) {
+      const r = others[i].getBoundingClientRect();
+      if (ghostCenter < r.top + r.height / 2) { insertBefore = i; break; }
+    }
+    const oldIdx = t.subtasks.findIndex(s => s.id === subId);
+    if (oldIdx === -1) return;
+    const [moved] = t.subtasks.splice(oldIdx, 1);
+    t.subtasks.splice(insertBefore, 0, moved);
+    if (navigator.vibrate) navigator.vibrate([4, 4, 4]);
+    save(); renderTodoDetail(); renderTodos();
+  };
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend', onEnd, { once: true });
+  document.addEventListener('touchcancel', onEnd, { once: true });
+}
+
 function closeTodoDetail() {
   currentTodoDetailId = null;
   document.getElementById('page-todo-detail').classList.remove('open');
@@ -4049,11 +4114,12 @@ function renderTodoDetail() {
     if (s.type === 'video') {
       const pct = s.duration > 0 ? Math.min(100, Math.round((s.progress||0) / s.duration * 100)) : 0;
       const domain = s.url ? (() => { try { return new URL(s.url).hostname; } catch { return s.url.slice(0,30); } })() : '';
-      return `<div class="video-sub-card">
+      return `<div class="video-sub-card" data-sub-id="${s.id}">
         <div class="video-sub-header">
           <div class="video-sub-icon">▶</div>
           <div class="video-sub-title">${s.title}</div>
           <div class="video-sub-dur">${pct}%</div>
+          <div class="sub-drag-handle" ontouchstart="_startSubDrag(event,${t.id},${s.id})">≡</div>
           <button class="todo-del" onclick="deleteSubtask(${t.id},${s.id})">×</button>
         </div>
         <div class="video-sub-bar-wrap">
@@ -4069,9 +4135,10 @@ function renderTodoDetail() {
         ${domain ? `<a class="video-sub-link" href="${s.url}" target="_blank">🔗 ${domain}</a>` : ''}
       </div>`;
     }
-    return `<div class="subtask-item">
+    return `<div class="subtask-item" data-sub-id="${s.id}">
       <div class="todo-check ${s.done?'done':''}" onclick="toggleSubtask(${t.id},${s.id})">${s.done?'✓':''}</div>
       <div class="subtask-text ${s.done?'done':''}" id="sub-text-${s.id}" onclick="editSubtask(${t.id},${s.id})">${s.text}</div>
+      <div class="sub-drag-handle" ontouchstart="_startSubDrag(event,${t.id},${s.id})">≡</div>
       <button class="todo-del" onclick="deleteSubtask(${t.id},${s.id})">×</button>
     </div>`;
   }).join('');
