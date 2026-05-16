@@ -1041,6 +1041,7 @@ body {
   <div class="section-label">数据管理</div>
   <button class="btn-export" onclick="exportData()">📤 导出 JSON 备份</button>
   <button class="btn-export" onclick="importData()">📥 从备份恢复数据</button>
+  <button class="btn-destructive" onclick="clearAbilityChangelog()">🧹 清除能力值变化记录</button>
   <button class="btn-destructive" onclick="resetData()">🗑 重置所有数据</button>
 
   <div class="section-label">开发者功能</div>
@@ -3186,6 +3187,12 @@ function importData() {
   input.click();
 }
 
+function clearAbilityChangelog() {
+  if (!confirm('清除所有能力值变化记录？当前能力值不受影响，仅清除历史展示数据。')) return;
+  state.abilityChangelog = [];
+  save();
+  showToast('变化记录已清除');
+}
 function resetData() {
   if (!confirm('确认重置所有数据？此操作不可撤销。')) return;
   localStorage.removeItem(STORAGE_KEY);
