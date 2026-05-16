@@ -1909,6 +1909,11 @@ function load() {
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
 let state = load();
+// Clean up changelog entries written by old buggy delete/resave paths
+if (state.abilityChangelog?.some(e => e.source === '删除睡眠' || e.source === '睡眠更新')) {
+  state.abilityChangelog = state.abilityChangelog.filter(e => e.source !== '删除睡眠' && e.source !== '睡眠更新');
+  save();
+}
 let undoTimers = {};
 let reportMonth = new Date();
 
