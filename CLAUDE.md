@@ -8,8 +8,8 @@ Three standalone, client-side single-page applications — no build step, no pac
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `demo.html` | Life Attributes — iOS-style habit/todo/calendar gamification app | ~3000 |
-| `speakup.html` | SpeakUp — English learning: flashcards, lyrics study, AI phrase extraction | ~2500 |
+| `demo.html` | Life Attributes — iOS-style habit/todo/calendar gamification app | ~5600 |
+| `speakup.html` | SpeakUp — English learning: flashcards, lyrics study, AI phrase extraction | ~3100 |
 | `web.html` | Earlier Adventure Dashboard prototype (not actively developed) | — |
 
 Deployed via Netlify from the `Zzzhd1234/life-attributes` GitHub repo. Push to `main` → auto-deploy. `netlify.toml` rewrites `/` → `/demo.html` (status 200). **Do not create an `index.html`** — it will shadow the redirect and serve stale content to the phone.
@@ -49,12 +49,14 @@ Single file, iOS-inspired mobile-first UI (`max-width: 390px`). Navigation via `
   ```
   abilities: {颜值,魅力,智商,体质,专注力,认知}  // each 0–100
   habits: { key: {name,icon,desc,checkedToday,history[],weekCount,...} }
-  todos: [{id,text,deadline,deadlineTime,recurrence,label,done,subtasks[],completedAt}]
+  todos: [{id,text,deadline,deadlineTime,recurrence,label,done,subtasks[],completedAt,isGroup}]
   reminders: [{id,title,datetime,endTime,location,remind,note,done}]
   timeLogs: [{id,title,date,startTime,endTime,note}]
   transactions: [{id,date,type,amount,note}]
-  sleepHistory, wealth, streak, ...
+  sleepHistory, wealth, streak, avatarSeed, avatarStyle, ...
   ```
+- **Subtask shape:** text subtask `{id,text,done}`, video subtask `{id,type:'video',title,duration,progress,url}`
+- **Reading books shape:** stored on `state.habits.reading.books[]` as `{id,title,currentPage,totalPages,cover?,description?,author?}`
 - **Date handling:** always use `localDateStr(d)` (not `d.toISOString().slice(0,10)`) — `toISOString()` returns UTC and causes off-by-one errors in UTC+ timezones. `TODAY` is set via `localDateStr(new Date())`.
 
 **Key subsystems:**
@@ -63,17 +65,21 @@ Single file, iOS-inspired mobile-first UI (`max-width: 390px`). Navigation via `
 |-----------|--------------|
 | Habits | `toggleHabit(key)` — checks in, updates `history[]`, applies ability nudges via `habitFX()` |
 | Todos | `addTodo()`, `toggleTodo(id)`, `renderTodos()` — supports recurrence, subtasks, labels |
+| Group todos | `isGroup:true` todos have mixed subtasks (text + video). `_checkGroupCompletion(t)` — video done when `progress >= duration`. Subtask drag-to-reorder via `_startSubDrag()` with `data-sub-id` on each row. |
 | Recurring todos | `nextRecurDate(fromDate, recurrence)` — computes next occurrence. `load()` resets done recurring todos on new day (no entity spawning). |
 | Calendar | `renderCalendarPage()`, `openDayDetail(dateStr)` — aggregates all data types per day |
 | Today view | `renderCalTodayTodos()` — shows todos + timeLogs + reminders for a given day. `calTodayOffset` (−1/0/1) controls yesterday/today/tomorrow. Swipe handled by `initTodaySwipe()` / `slideTodayTo()`. |
 | Reminders | `saveReminder()`, `openReminderAddSheet(id?)` — handles both create and edit. `scheduleOneReminder()`, `checkAndNotify()` use browser Notification API. |
 | Time logs | `openTimeLogSheet(dateStr)`, `addTimeLog()` — start/end time entries |
 | Report | `renderReport()` — monthly ability/habit/finance summary |
-| Settings | `openSettings()` — name, age, avatar color, font size, accent color, data export/reset |
+| Settings | `openSettings()` — name, age, avatar, font size, accent color, data export/reset |
 | Ability scoring | `nudge(attr, delta)`, `habitFX(key)`, `mergeTagEffects(tags)` — tags map to ability deltas |
-| Avatar | `drawAvatar()` — pixel-art canvas render using `state.avatarColor` |
+| Avatar | `drawAvatar()` — DiceBear API (`dylan` style). `state.avatarSeed` picks the character from `DYLAN_SEEDS[]`. `state.avatarColor` sets the accent ring color. `renderAvatarPicker()` / `selectAvatarSeed(seed)` for the picker sheet. |
+| Reading books | `renderReadingBooks()`, `saveBook()`, `openReadingProgress(id)`. Adding a book auto-searches Open Library API (`searchBooksAPI(query)`) by title to fill cover/author/pages. `openReadingEdit(id)` is both add and edit. |
 
 **Sheet/modal pattern:** All modal panels use `toggleSheet(sheetId, overlayId, open)` — adds/removes `.open` class.
+
+**Full-page slides:** `page-todo-add`, `page-todo-detail`, `page-reading` are `.todo-fullpage` elements that slide in via `transform: translateX`. `initSwipeBack()` adds swipe-right-to-close on all three.
 
 **PWA:** `sw.js` registers a network-first service worker caching `demo.html` and `manifest.json`. Bump `CACHE` version string in `sw.js` whenever `demo.html` changes significantly, to force reinstall on devices.
 
@@ -111,5 +117,7 @@ Single file, all HTML/CSS/JS inline. Navigation via `switchPage(name)` toggling 
 - **Edits:** keep `old_string`+`new_string` combined under ~150 lines to avoid context bloat. Split if needed.
 - **Error handling:** see `.claude/rules/error-handling.md` — guard clauses, `showToast` for validation, `confirm()` for destructive actions, no `try/catch` outside `load()`.
 - **Optional sections:** see `.claude/rules/optional-sections.md` — always use `.toggle-switch` + `.recur-check-row` pattern; toggle class is `.on`; collapsing clears inputs.
+- **Touch events:** see `.claude/rules/touch-events.md` — never `e.preventDefault()` on container touchstart; use `touch-action:none` on drag handles; gate swipe-back handlers on drag state variable; no `willChange:transform` inside composited pages (causes GPU layer conflict with `position:fixed` ghost).
+- **No auto-focus:** never call `.focus()` or `.select()` on sheet open or after adding items. Users tap to focus.
 - **No comments** unless the why is non-obvious. No docstrings.
 - **Dates:** always use `localDateStr(d)` — never `d.toISOString().slice(0,10)`.
