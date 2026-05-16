@@ -959,7 +959,10 @@ body {
   </div>
 
   <div class="card" style="margin-top:16px">
-    <div style="padding:12px 16px 0;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase">近期提醒</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0">
+      <span style="font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase">近期提醒</span>
+      <button onclick="openReminderAddSheet()" style="background:none;border:none;color:var(--accent);font-size:22px;line-height:1;cursor:pointer;padding:0;font-weight:300">+</button>
+    </div>
     <div id="profileReminderList"></div>
   </div>
 </div>
@@ -4494,8 +4497,7 @@ function closeDayDetail() { toggleSheet('dayDetailSheet', 'dayDetailOverlay', fa
 function renderReminders() {
   const now = Date.now();
   const sorted = [...state.reminders].sort((a, b) => a.datetime.localeCompare(b.datetime));
-  const emptyHtml = '<div class="reminder-empty">暂无提醒事项</div>' +
-    '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
+  const emptyHtml = '<div class="reminder-empty">暂无提醒事项</div>';
   const listHtml = sorted.map(r => {
     const dtMs = new Date(r.datetime.replace(' ', 'T')).getTime();
     const diffMs = dtMs - now;
@@ -4534,7 +4536,7 @@ function renderReminders() {
       </div>
       <button class="reminder-del" onclick="event.stopPropagation();deleteReminder(${r.id})">×</button>
     </div>`;
-  }).join('') + '<div class="reminder-add-row" onclick="openReminderAddSheet()">＋ 添加提醒</div>';
+  }).join('');
   const html = sorted.length ? listHtml : emptyHtml;
   ['reminderList', 'profileReminderList'].forEach(id => {
     const el = document.getElementById(id);
