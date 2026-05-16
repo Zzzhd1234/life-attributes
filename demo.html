@@ -949,10 +949,12 @@ body {
     </div>
   </div>
 
-  <div class="section-label">近期待办</div>
+  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;padding-right:20px">
+    <span>近期待办</span>
+    <button onclick="openTodoAddSheet()" style="background:none;border:none;color:var(--accent);font-size:22px;line-height:1;cursor:pointer;padding:0;font-weight:300">+</button>
+  </div>
   <div class="card">
     <div id="todoList"></div>
-    <div class="habit-add-row" onclick="openTodoAddSheet()">＋ 添加待办</div>
     <div id="doneTodosRow"></div>
   </div>
 
