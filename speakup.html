@@ -473,8 +473,8 @@
     .lp-lyrics-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
     .lp-lyrics-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.85); }
     .lp-lyrics-hint { font-size: .72rem; color: rgba(255,255,255,.45); }
-    .lp-lyrics-body { padding: 14px 20px 28px; user-select: text; -webkit-user-select: text; -webkit-touch-callout: none; position: relative; }
-    .lp-lyrics-body::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(transparent, rgba(108,99,255,.22)); pointer-events: none; }
+    .lp-lyrics-body { padding: 14px 20px 56px; user-select: text; -webkit-user-select: text; -webkit-touch-callout: none; max-height: 42vh; overflow-y: auto; }
+    .lp-lyrics-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 72px; background: linear-gradient(transparent, rgba(108,99,255,.22)); pointer-events: none; z-index: 1; }
     .lp-lyric-line { font-size: 1.5rem; font-weight: 800; color: rgba(255,255,255,.42); line-height: 1.3; padding: 6px 0; cursor: text; transition: color .18s; letter-spacing: -.01em; }
     .lp-lyric-line:hover { color: #fff; }
     .lp-lyric-gap { height: 22px; }
@@ -624,7 +624,6 @@
   <div id="artist-list-view">
     <div class="sec-header"><div class="sec-title">艺人语料库</div></div>
     <div class="cards-grid" id="artist-cards"></div>
-    <div id="ql-container"></div>
   </div>
   <div id="artist-detail-view" style="display:none">
     <button onclick="closeArtist()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:.9rem;margin-bottom:20px;padding:0;display:flex;align-items:center;gap:6px">← 返回艺人库</button>
@@ -685,6 +684,7 @@
         <span class="lp-lyrics-hint">划选词语 → 标记</span>
       </div>
       <div id="lyrics-view" class="lp-lyrics-body"></div>
+      <div class="lp-lyrics-fade" aria-hidden="true"></div>
     </div>
 
     <!-- Bottom toolbar -->
@@ -2362,7 +2362,6 @@ function saveSong() {
   });
   setSavedSongs(songs);
   renderLyricsStrip();
-  renderSongLibrary();
   const btn = document.getElementById("save-song-btn");
   btn.textContent = "✓ 已保存";
   btn.disabled = true;
@@ -2416,11 +2415,21 @@ const ARTISTS = [
 ];
 
 // ─── ARTISTS PAGE ─────────────────────────────────────────────────────────────
+function _artistSongs(artistName) {
+  const aLow = artistName.toLowerCase().trim();
+  return getSavedSongs().filter(s => {
+    const sLow = (s.artist || "").toLowerCase().trim();
+    return sLow === aLow || sLow.includes(aLow) || aLow.includes(sLow);
+  });
+}
+
 function renderArtistList() {
   document.getElementById("artist-list-view").style.display = "block";
   document.getElementById("artist-detail-view").style.display = "none";
 
-  document.getElementById("artist-cards").innerHTML = ARTISTS.map(a => `
+  document.getElementById("artist-cards").innerHTML = ARTISTS.map(a => {
+    const sc = _artistSongs(a.name).length;
+    return `
     <div class="artist-card" style="--artist-color:${a.color}" onclick="openArtist('${a.id}')">
       <div class="artist-avatar">${a.avatar}</div>
       <div class="artist-name">${a.name}</div>
@@ -2429,46 +2438,24 @@ function renderArtistList() {
       <div class="artist-stats">
         <div class="artist-stat"><span>${a.phrases.length}</span> 条语料</div>
         <div class="artist-stat"><span>${a.tags.length}</span> 标签</div>
+        ${sc ? `<div class="artist-stat" style="color:#1ed760"><span>${sc}</span> 首歌</div>` : ""}
       </div>
-    </div>
-  `).join("");
-
-  renderSongLibrary();
-}
-
-function renderSongLibrary() {
-  const songs = getSavedSongs();
-  const container = document.getElementById("ql-container");
-  if (!container) return;
-
-  const inner = songs.length
-    ? songs.map(s => `
-        <div class="ql-card" onclick="openSavedSong(${s.id})">
-          <div class="ql-icon">🎵</div>
-          <div class="ql-info">
-            <div class="ql-song-title">${escHtml(s.title)}</div>
-            <div class="ql-song-meta">${escHtml(s.artist || "未知艺人")} · ${s.lines.filter(l => l.trim()).length} 行歌词</div>
-          </div>
-          <button class="ql-del" onclick="event.stopPropagation();deleteSavedSong(${s.id})" title="删除">×</button>
-        </div>
-      `).join("")
-    : `<div class="ql-empty">还没有保存的歌曲<br>在歌词页面搜索并点击「＋ 保存」</div>`;
-
-  container.innerHTML = `
-    <div class="ql-section">
-      <div class="ql-header">
-        <span class="ql-title">曲库</span>
-        <span class="ql-count">${songs.length} 首</span>
-      </div>
-      ${inner}
     </div>`;
+  }).join("");
 }
 
 function deleteSavedSong(id) {
   if (!confirm("删除此歌曲？")) return;
   setSavedSongs(getSavedSongs().filter(s => s.id !== id));
-  renderSongLibrary();
   renderLyricsStrip();
+  // refresh current view
+  const detailVisible = document.getElementById("artist-detail-view")?.style.display !== "none";
+  if (detailVisible) {
+    const artistId = document.getElementById("artist-detail")?.dataset.artistId;
+    if (artistId) openArtist(artistId);
+  } else {
+    renderArtistList();
+  }
 }
 
 function openArtist(id) {
@@ -2505,7 +2492,27 @@ function openArtist(id) {
     </div>`;
   }).join("");
 
-  document.getElementById("artist-detail").innerHTML = `
+  const artistSongs = _artistSongs(a.name);
+  const songsHtml = artistSongs.length ? `
+    <div class="ql-section" style="margin-bottom:24px">
+      <div class="ql-header">
+        <span class="ql-title">曲库</span>
+        <span class="ql-count">${artistSongs.length} 首</span>
+      </div>
+      ${artistSongs.map(s => `
+        <div class="ql-card" onclick="openSavedSong(${s.id})">
+          <div class="ql-icon">🎵</div>
+          <div class="ql-info">
+            <div class="ql-song-title">${escHtml(s.title)}</div>
+            <div class="ql-song-meta">${s.lines.filter(l => l.trim()).length} 行歌词</div>
+          </div>
+          <button class="ql-del" onclick="event.stopPropagation();deleteSavedSong(${s.id})" title="删除">×</button>
+        </div>`).join("")}
+    </div>` : "";
+
+  const detailEl = document.getElementById("artist-detail");
+  detailEl.dataset.artistId = id;
+  detailEl.innerHTML = `
     <div class="artist-hero">
       <div class="artist-hero-avatar" style="font-size:2.2rem">${a.avatar}</div>
       <div class="artist-hero-info">
@@ -2515,6 +2522,7 @@ function openArtist(id) {
         <div class="artist-tag-row">${tags}</div>
       </div>
     </div>
+    ${songsHtml}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <div class="sec-title">${a.phrases.length} 条语料</div>
       <button class="btn btn-outline" onclick="addAllToLibrary('${id}')" style="font-size:.85rem;padding:7px 16px">全部加入短语库</button>
