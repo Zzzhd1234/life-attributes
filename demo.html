@@ -439,7 +439,6 @@ body {
   -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
   touch-action: none;
 }
-.sub-dragging { opacity: 0.25 !important; }
 .video-sub-title { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
 .video-sub-dur { font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
 .video-sub-bar-wrap { display: flex; align-items: center; gap: 8px; margin: 5px 0 0 40px; }
@@ -4044,51 +4043,84 @@ function _startSubDrag(e, todoId, subId) {
   if (!item) return;
   const touch = e.touches[0];
   const rect = item.getBoundingClientRect();
+  const itemH = rect.height;
   if (navigator.vibrate) navigator.vibrate(10);
+
+  // Ghost: lifted card following finger
   const ghost = item.cloneNode(true);
   Object.assign(ghost.style, {
     position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
     width: rect.width + 'px', zIndex: '9999', pointerEvents: 'none',
-    boxShadow: '0 10px 32px rgba(0,0,0,0.18)', borderRadius: '10px',
-    background: 'white', transform: 'scale(1.025)', opacity: '0.97'
+    boxShadow: '0 16px 48px rgba(0,0,0,0.24)', borderRadius: '12px',
+    background: 'white', transform: 'scale(1.04)', opacity: '0.97',
+    transition: 'box-shadow 0.15s, transform 0.15s'
   });
   document.body.appendChild(ghost);
-  item.classList.add('sub-dragging');
-  const offsetY = touch.clientY - rect.top;
+
+  // Original becomes invisible placeholder (still occupies space)
+  item.style.opacity = '0';
+  item.style.pointerEvents = 'none';
+
   const list = item.parentElement;
-  _subDrag = { todoId, subId, item, ghost, list, offsetY };
+  const allItems = [...list.querySelectorAll('[data-sub-id]')];
+  const origPivot = allItems.indexOf(item);
+  const others = allItems.filter(x => x !== item);
+
+  // Enable smooth transitions on sibling items
+  const EASE = 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  others.forEach(el => { el.style.transition = EASE; el.style.willChange = 'transform'; });
+
+  // Capture natural (pre-transform) midpoints once
+  const naturalMids = others.map(el => {
+    const r = el.getBoundingClientRect();
+    return r.top + r.height / 2;
+  });
+
+  const offsetY = touch.clientY - rect.top;
+  let insertBefore = origPivot;
+  _subDrag = { todoId, subId };
+
+  const applyTransforms = (ib) => {
+    others.forEach((el, i) => {
+      let ty = 0;
+      if (ib <= origPivot && i >= ib && i < origPivot) ty = itemH;   // siblings slide down
+      else if (ib > origPivot && i >= origPivot && i < ib) ty = -itemH; // siblings slide up
+      el.style.transform = ty ? `translateY(${ty}px)` : '';
+    });
+  };
+
   const onMove = (ev) => {
     ev.preventDefault();
-    ghost.style.top = (ev.touches[0].clientY - offsetY) + 'px';
+    const t = ev.touches[0];
+    ghost.style.top = (t.clientY - offsetY) + 'px';
+    const ghostMid = t.clientY - offsetY + itemH / 2;
+    let newIB = others.length;
+    for (let i = 0; i < others.length; i++) {
+      if (ghostMid < naturalMids[i]) { newIB = i; break; }
+    }
+    if (newIB !== insertBefore) { insertBefore = newIB; applyTransforms(insertBefore); }
   };
+
   const onEnd = (ev) => {
     document.removeEventListener('touchmove', onMove);
     document.removeEventListener('touchend', onEnd);
     document.removeEventListener('touchcancel', onEnd);
     if (!_subDrag) return;
-    const { item: el, ghost: g, list: ls, offsetY: oy } = _subDrag;
     _subDrag = null;
-    const ct = ev.changedTouches?.[0];
-    const ghostTop = ct ? ct.clientY - oy : parseFloat(g.style.top);
-    const ghostCenter = ghostTop + g.offsetHeight / 2;
-    g.remove();
-    el.classList.remove('sub-dragging');
-    const t = state.todos.find(t => t.id === todoId);
-    if (!t?.subtasks || t.subtasks.length < 2) return;
-    const allItems = [...ls.querySelectorAll('[data-sub-id]')];
-    const others = allItems.filter(x => x !== el);
-    let insertBefore = others.length;
-    for (let i = 0; i < others.length; i++) {
-      const r = others[i].getBoundingClientRect();
-      if (ghostCenter < r.top + r.height / 2) { insertBefore = i; break; }
-    }
-    const oldIdx = t.subtasks.findIndex(s => s.id === subId);
-    if (oldIdx === -1) return;
-    const [moved] = t.subtasks.splice(oldIdx, 1);
-    t.subtasks.splice(insertBefore, 0, moved);
+    ghost.remove();
+    item.style.opacity = '';
+    item.style.pointerEvents = '';
+    others.forEach(el => { el.style.transition = ''; el.style.transform = ''; el.style.willChange = ''; });
+    const tt = state.todos.find(t => t.id === todoId);
+    if (!tt?.subtasks || tt.subtasks.length < 2) return;
+    const oldIdx = tt.subtasks.findIndex(s => s.id === subId);
+    if (oldIdx < 0) return;
+    const [moved] = tt.subtasks.splice(oldIdx, 1);
+    tt.subtasks.splice(insertBefore, 0, moved);
     if (navigator.vibrate) navigator.vibrate([4, 4, 4]);
     save(); renderTodoDetail(); renderTodos();
   };
+
   document.addEventListener('touchmove', onMove, { passive: false });
   document.addEventListener('touchend', onEnd, { once: true });
   document.addEventListener('touchcancel', onEnd, { once: true });
