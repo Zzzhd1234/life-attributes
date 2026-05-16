@@ -4788,6 +4788,7 @@ function startTodoLongPress(e, id) {
     showContextMenu([
       { label: '复制任务', icon: '📋', action: () => duplicateTodo(id) },
       { label: t.pinned ? '取消置顶' : '置顶', icon: t.pinned ? '📌' : '⬆️', action: () => pinTodo(id) },
+      { label: t.isGroup ? '转为普通事项' : '转为组事项', icon: '🗂️', action: () => convertToGroup(id) },
       { sep: true },
       { label: '编辑', icon: '✏️', action: () => openTodoDetail(id) },
     ], el);
@@ -4796,6 +4797,14 @@ function startTodoLongPress(e, id) {
 function cancelTodoLongPress() {
   clearTimeout(_todoLongPressTimer);
   _todoLongPressTimer = null;
+}
+function convertToGroup(id) {
+  const t = state.todos.find(t => t.id === id);
+  if (!t) return;
+  t.isGroup = !t.isGroup;
+  if (t.isGroup && !t.subtasks) t.subtasks = [];
+  save(); renderTodos();
+  showToast(t.isGroup ? '已转为组事项' : '已转为普通事项');
 }
 
 function duplicateTodo(id) {
@@ -4912,6 +4921,7 @@ if ('serviceWorker' in navigator) {
 
 requestNotifPermission().then(checkAndNotify);
 initTodaySwipe();
+document.addEventListener('contextmenu', e => e.preventDefault());
 </script>
 </body>
 </html>
