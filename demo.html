@@ -2097,6 +2097,15 @@ function openAbilityLog(key) {
   if (titleEl) titleEl.textContent = name + ' · 变化记录';
   const listEl = document.getElementById('abilityLogList');
   if (!listEl) return;
+  // Remove changelog entries for sleep records that no longer exist in history
+  const sleepDates = new Set((state.sleepHistory || []).map(r => (r.date || '').slice(0, 10)));
+  const before = (state.abilityChangelog || []).length;
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e => {
+    if (e.source === '删除睡眠' || e.source === '睡眠更新') return false;
+    if (e.source?.startsWith('睡眠记录') && !sleepDates.has(e.date)) return false;
+    return true;
+  });
+  if (state.abilityChangelog.length !== before) save();
   const logs = [...(state.abilityChangelog || [])].filter(e => e.attr === key).reverse();
   if (!logs.length) { listEl.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0">暂无变化记录（未来的打卡/运动/睡眠将自动记录）</div>'; }
   else {
