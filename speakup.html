@@ -473,7 +473,7 @@
     .lp-lyrics-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
     .lp-lyrics-label { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.85); }
     .lp-lyrics-hint { font-size: .72rem; color: rgba(255,255,255,.45); }
-    .lp-lyrics-body { padding: 14px 20px 56px; user-select: text; -webkit-user-select: text; -webkit-touch-callout: none; max-height: 42vh; overflow-y: auto; }
+    .lp-lyrics-body { padding: 14px 20px 56px; user-select: text; -webkit-user-select: text; -webkit-touch-callout: none; max-height: 56vh; overflow-y: auto; }
     .lp-lyrics-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 72px; background: linear-gradient(transparent, rgba(108,99,255,.22)); pointer-events: none; z-index: 1; }
     .lp-lyric-line { font-size: 1.5rem; font-weight: 800; color: rgba(255,255,255,.42); line-height: 1.3; padding: 6px 0; cursor: text; transition: color .18s; letter-spacing: -.01em; }
     .lp-lyric-line:hover { color: #fff; }
@@ -646,7 +646,7 @@
 <!-- LYRICS -->
 <div class="page" id="page-lyrics">
   <!-- Search bar -->
-  <div class="lp-search-section">
+  <div class="lp-search-section" id="lp-search-section">
     <div class="lp-page-title">🎵 歌词学习</div>
     <div class="lp-search-row">
       <input type="text" id="lyrics-artist" class="lp-search-input" placeholder="歌手名（如 Taylor Swift）" />
@@ -1070,6 +1070,10 @@ function switchPage(name) {
   if (name === "flashcard") initFlash();
   if (name === "home") renderHome();
   if (name === "artists") renderArtistList();
+  if (name === "lyrics") {
+    document.getElementById("lp-search-section").style.display = "";
+    renderLyricsStrip();
+  }
 }
 
 // ─── HOME ────────────────────────────────────────────────────────────────────
@@ -2380,6 +2384,8 @@ function openSavedSong(id) {
   document.getElementById("lyrics-chat-section").style.display = "none";
   renderLyricsView();
   switchPage("lyrics");
+  document.getElementById("lp-search-section").style.display = "none";
+  document.getElementById("lp-saved-strip").style.display = "none";
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
