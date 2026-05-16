@@ -3035,11 +3035,20 @@ renderTips();
 function _addSwipeBack(el, onBack, edgeOnly) {
   if (!el) return;
   let sx = 0, sy = 0, on = false;
+
+  function _cancel() {
+    if (!on) return;
+    on = false;
+    el.style.transition = '';
+    el.style.transform = '';
+  }
+
   el.addEventListener('touchstart', e => {
     sx = e.touches[0].clientX;
     sy = e.touches[0].clientY;
     on = !edgeOnly || sx < 44;
   }, { passive: true });
+
   el.addEventListener('touchmove', e => {
     if (!on) return;
     const dx = e.touches[0].clientX - sx;
@@ -3047,19 +3056,30 @@ function _addSwipeBack(el, onBack, edgeOnly) {
     if (dx < 6 || Math.abs(dy) > Math.abs(dx) * 0.8) { on = false; el.style.transform = ''; return; }
     e.preventDefault();
     el.style.transition = 'none';
-    // Slight rubber-band resistance near edges
-    const drag = Math.max(0, dx);
-    el.style.transform = `translateX(${drag}px)`;
+    el.style.transform = `translateX(${Math.max(0, dx)}px)`;
   }, { passive: false });
+
   el.addEventListener('touchend', e => {
     if (!on) return;
     const dx = e.changedTouches[0].clientX - sx;
     on = false;
-    // Let CSS transition spring it back or out
-    el.style.transition = '';
-    el.style.transform = '';
-    if (dx > 80) setTimeout(onBack, 60);
+    if (dx > 80) {
+      // Slide fully off to the right, then fire callback
+      el.style.transition = 'transform .22s cubic-bezier(.32,0,.28,1)';
+      el.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        el.style.transition = '';
+        el.style.transform = '';
+        onBack();
+      }, 230);
+    } else {
+      // Spring back to resting position
+      el.style.transition = '';
+      el.style.transform = '';
+    }
   });
+
+  el.addEventListener('touchcancel', _cancel);
 }
 
 _addSwipeBack(
