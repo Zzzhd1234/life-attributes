@@ -2273,32 +2273,26 @@ function renderHabits() {
           ${h.checkedToday ? '✓' : ''}
         </button>
       </div>
-      ${h.pendingUndo ? `<div class="habit-undo-bar">⏎ 再次点击可撤销本次打卡</div>` : ''}
+      ${h.checkedToday ? `<div class="habit-undo-bar">再次点击可撤销今日打卡</div>` : ''}
     </div>`;
   }).join('') + `<div class="habit-add-row" onclick="openHabitSheet()">＋ 添加习惯</div>`;
 }
 
 function toggleHabit(key) {
   const h = state.habits[key];
-  if (h.checkedToday && !h.pendingUndo) return;
   if (!h.checkedToday) {
     h.checkedToday = true;
-    h.pendingUndo = true;
     h.weekCount = Math.min(7, (h.weekCount || 0) + 1);
     if (!h.history) h.history = [];
     if (!h.history.includes(TODAY)) h.history.push(TODAY);
     const src = '打卡：' + h.name;
     Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, d, src));
-    clearTimeout(undoTimers[key]);
-    undoTimers[key] = setTimeout(() => { h.pendingUndo = false; save(); renderHabits(); }, 3500);
     const fxParts = Object.entries(habitFX(key)).map(([a,d]) => `${abilityDisplayName(a)}+${d}`).join(' · ');
     showToast(`${h.name} 打卡 · ${fxParts}`);
-  } else if (h.pendingUndo) {
+  } else {
     h.checkedToday = false;
-    h.pendingUndo = false;
     h.weekCount = Math.max(0, (h.weekCount || 0) - 1);
     if (h.history) h.history = h.history.filter(d => d !== TODAY);
-    clearTimeout(undoTimers[key]);
     const src = '打卡：' + h.name;
     Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, -d));
     state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source === src));
@@ -4178,6 +4172,21 @@ function openHabitCalendar(key) {
 }
 function closeHabitCalendar() { toggleSheet('habitCalSheet', 'habitCalOverlay', false); }
 
+function deleteHabitCheckIn(dateStr) {
+  const key = habitCalKey;
+  const h = state.habits[key];
+  if (!h) return;
+  if (!confirm(`撤销 ${dateStr} 的打卡记录？`)) return;
+  h.history = (h.history || []).filter(d => d !== dateStr);
+  h.weekCount = Math.max(0, (h.weekCount || 0) - 1);
+  if (dateStr === TODAY) { h.checkedToday = false; h.pendingUndo = false; clearTimeout(undoTimers[key]); }
+  const src = '打卡：' + h.name;
+  Object.entries(habitFX(key)).forEach(([a, d]) => nudge(a, -d));
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === dateStr && e.source === src));
+  save(); renderHabits(); renderAbilities(); renderHabitCalContent();
+  showToast(`已撤销 ${h.name} ${dateStr} 打卡`);
+}
+
 function changeHabitCalMonth(delta) {
   habitCalMonth += delta;
   if (habitCalMonth > 11) { habitCalMonth = 0; habitCalYear++; }
@@ -4202,7 +4211,7 @@ function renderHabitCalContent() {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isChecked = history.includes(dateStr);
     const isToday = dateStr === TODAY;
-    cells += `<div class="habit-cal-day${isChecked?' checked':''}${isToday?' today':''}">${d}</div>`;
+    cells += `<div class="habit-cal-day${isChecked?' checked':''}${isToday?' today':''}"${isChecked ? ` onclick="deleteHabitCheckIn('${dateStr}')" title="点击撤销打卡"` : ''}>${d}</div>`;
   }
   document.getElementById('habitCalContent').innerHTML = `
     <div class="habit-cal-header">
