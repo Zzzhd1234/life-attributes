@@ -4387,6 +4387,8 @@ function renderReadingBooks() {
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.title || '未命名'}</div>
           <button onclick="event.stopPropagation();openReadingProgress(${b.id})"
+                  ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+                  onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()"
                   style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px 10px;font-size:12px;color:var(--muted);cursor:pointer">
             <span style="font-size:10px">📖</span> ${pageText}
           </button>
