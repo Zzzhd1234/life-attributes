@@ -678,6 +678,12 @@
 
   <!-- Song + lyrics (shown after load) -->
   <div id="lp-player" style="display:none;background:#121212">
+    <!-- Back button (shown only when opened from artist page) -->
+    <div id="lp-back-bar" style="display:none;padding:14px 20px 0">
+      <button onclick="backToArtist()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:.88rem;cursor:pointer;padding:0;display:flex;align-items:center;gap:6px;font-family:inherit">
+        ← 艺人库
+      </button>
+    </div>
     <!-- Song header -->
     <div class="lp-song-header">
       <div class="lp-song-meta">
@@ -1099,6 +1105,8 @@ function switchPage(name) {
   if (name === "artists") renderArtistList();
   if (name === "lyrics") {
     document.getElementById("lp-search-section").style.display = "";
+    document.getElementById("lp-back-bar").style.display = "none";
+    _fromArtist = false;
     renderLyricsStrip();
   }
 }
@@ -2428,9 +2436,12 @@ function saveSong() {
   setTimeout(() => { btn.textContent = "＋ 保存歌曲"; btn.disabled = false; }, 2000);
 }
 
-function openSavedSong(id) {
+let _fromArtist = false;
+
+function openSavedSong(id, fromArtist) {
   const song = getSavedSongs().find(s => s.id === id);
   if (!song) return;
+  _fromArtist = !!fromArtist;
   currentLyricsTrack = { title: song.title, artist: song.artist };
   lyricsLines = song.lines;
   markedPhrases = song.markedPhrases ? [...song.markedPhrases] : [];
@@ -2442,7 +2453,15 @@ function openSavedSong(id) {
   switchPage("lyrics");
   document.getElementById("lp-search-section").style.display = "none";
   document.getElementById("lp-saved-strip").style.display = "none";
+  document.getElementById("lp-back-bar").style.display = _fromArtist ? "block" : "none";
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function backToArtist() {
+  _fromArtist = false;
+  document.getElementById("lp-back-bar").style.display = "none";
+  document.getElementById("lp-search-section").style.display = "";
+  switchPage("artists");
 }
 
 // ─── ARTISTS DATA ────────────────────────────────────────────────────────────
@@ -2560,7 +2579,7 @@ function openArtist(id) {
         <span class="ql-count">${artistSongs.length} 首</span>
       </div>
       ${artistSongs.map(s => `
-        <div class="ql-card" onclick="openSavedSong(${s.id})">
+        <div class="ql-card" onclick="openSavedSong(${s.id}, true)">
           <div class="ql-icon">🎵</div>
           <div class="ql-info">
             <div class="ql-song-title">${escHtml(s.title)}</div>
@@ -2883,13 +2902,8 @@ _addSwipeBack(
 
 _addSwipeBack(
   document.getElementById("page-lyrics"),
-  () => {
-    if (document.getElementById("lp-search-section")?.style.display === "none") {
-      switchPage("artists");
-      document.getElementById("lp-search-section").style.display = "";
-    }
-  },
-  true
+  () => { if (_fromArtist) backToArtist(); },
+  false
 );
 </script>
 </body>
