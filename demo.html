@@ -417,6 +417,11 @@ body {
 .fi-card-num { font-size: 30px; font-weight: 800; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; margin-top: 6px; }
 .fi-card-unit { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .fi-card-icon { margin-top: auto; padding-top: 10px; align-self: flex-end; }
+.avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 16px 16px 32px; }
+.avatar-option { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+.avatar-option img { width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid transparent; transition: border-color 0.2s, transform 0.15s; }
+.avatar-option.selected img { border-color: var(--accent); transform: scale(1.06); }
+.avatar-option-label { font-size: 10px; color: var(--muted); text-align: center; }
 .fi-card-icon-pill { display: flex; align-items: center; justify-content: center; border-radius: 100px; padding: 7px 10px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .trend-chart { display: flex; align-items: flex-end; gap: 12px; height: 120px; padding: 16px; }
 .habit-dl-row { padding: 12px 16px 10px; border-bottom: 0.5px solid var(--border); }
@@ -951,7 +956,10 @@ body {
 <div id="page-profile" class="page active">
   <div class="profile-banner" id="profileBanner">
     <button class="profile-banner-gear" onclick="openSettings()">⚙️</button>
-    <img id="avatarImg" style="width:64px;height:64px;display:block;border-radius:50%;flex-shrink:0" alt="avatar">
+    <button onclick="openAvatarPicker()" style="background:none;border:none;padding:0;cursor:pointer;flex-shrink:0;position:relative">
+      <img id="avatarImg" style="width:64px;height:64px;display:block;border-radius:50%" alt="avatar">
+      <span style="position:absolute;bottom:0;right:0;width:20px;height:20px;background:var(--accent);border-radius:50%;border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">✎</span>
+    </button>
     <div class="profile-banner-name-zone">
       <div class="profile-banner-greeting" id="greetingText">晚上好</div>
       <div class="profile-banner-name" id="displayName">玩家一</div>
@@ -1038,6 +1046,16 @@ body {
 </div>
 
 <!-- ===== SETTINGS SHEET ===== -->
+<div class="sheet-overlay" id="avatarPickerOverlay" onclick="closeAvatarPicker()"></div>
+<div class="settings-sheet" id="avatarPickerSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">选择头像风格</div>
+    <button class="sheet-close" onclick="closeAvatarPicker()">✕</button>
+  </div>
+  <div class="avatar-picker-grid" id="avatarPickerGrid"></div>
+</div>
+
 <div class="sheet-overlay" id="sheetOverlay" onclick="closeSettings()"></div>
 <div class="settings-sheet" id="settingsSheet">
   <div class="sheet-handle"></div>
@@ -1846,6 +1864,7 @@ const DEFAULTS = {
   habitPointMultipliers: {},
   fontSize: 16,
   accentColor: '#5856D6',
+  avatarStyle: 'dylan',
   todoLabels: ['工作', '学习', '生活', '健康'],
 };
 
@@ -1957,8 +1976,9 @@ function drawAvatar() {
   const color = state.avatarColor || '#6B5CE7';
   const bg = color.replace('#', '');
   const seed = encodeURIComponent(state.name || '玩家');
+  const style = state.avatarStyle || 'dylan';
   if (img) {
-    img.src = `https://api.dicebear.com/9.x/dylan/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64`;
+    img.src = `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64`;
     img.style.boxShadow = `0 0 0 3px ${color}, 0 4px 16px rgba(0,0,0,0.12)`;
   }
 }
@@ -2237,14 +2257,13 @@ function renderHabits() {
       ? (books.length ? books.map(b => `📖 ${b.title}`).join('  ·  ') : '点击管理书单')
       : baseMeta;
 
-    let dotsHTML, barHTML;
+    let dotsHTML;
     if (freq.type === 'monthly') {
       const thisMonth = TODAY.slice(0, 7);
       const filledMonth = history.filter(d => d.startsWith(thisMonth)).length;
       const target = freq.count;
       const pct = Math.min(100, Math.round(filledMonth / target * 100));
-      dotsHTML = `<div style="font-size:10px;color:var(--muted);margin-top:7px">本月进度</div>`;
-      barHTML = `<div class="habit-week-bar-row" style="margin-top:4px">
+      dotsHTML = `<div class="habit-week-bar-row" style="margin-top:7px">
         <div class="habit-week-bar-track"><div class="habit-week-bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
         <span class="habit-week-count">${filledMonth}/${target}</span>
       </div>`;
@@ -2258,13 +2277,8 @@ function renderHabits() {
         if (isToday) return `<div class="habit-week-dot today-empty"></div>`;
         return `<div class="habit-week-dot"></div>`;
       }).join('');
-      const barPct = Math.min(100, Math.round(filledCount / target * 100));
       dotsHTML = `<div class="habit-week-day-labels">${dayLabelsHTML}</div>
-        <div class="habit-week-dots">${weekDots}</div>`;
-      barHTML = `<div class="habit-week-bar-row">
-        <div class="habit-week-bar-track"><div class="habit-week-bar-fill" style="width:${barPct}%;background:var(--accent)"></div></div>
-        <span class="habit-week-count">${filledCount}/${target}</span>
-      </div>`;
+        <div class="habit-week-dots">${weekDots}<span class="habit-week-count" style="margin-left:auto">${filledCount}/${target}</span></div>`;
     }
 
     return `<div>
@@ -2274,7 +2288,6 @@ function renderHabits() {
           <div class="habit-name">${h.name}</div>
           <div class="habit-meta">${readingMeta}${metaExtra}</div>
           ${dotsHTML}
-          ${barHTML}
         </div>
         <button class="habit-check-btn${h.checkedToday?' checked':''}" onclick="event.stopPropagation();toggleHabit('${key}')">
           ${h.checkedToday ? '✓' : ''}
@@ -3213,6 +3226,41 @@ function setAvatarColor(color) {
   drawAvatar();
   save(); renderColorSwatches();
   showToast('主题色已更新');
+}
+
+// ===== AVATAR PICKER =====
+const AVATAR_STYLES = [
+  { key: 'dylan',      label: '卡通' },
+  { key: 'pixel-art',  label: '像素' },
+  { key: 'adventurer', label: '冒险者' },
+  { key: 'bottts',     label: '机器人' },
+  { key: 'lorelei',    label: '极简' },
+];
+
+function openAvatarPicker() {
+  renderAvatarPicker();
+  toggleSheet('avatarPickerSheet', 'avatarPickerOverlay', true);
+}
+function closeAvatarPicker() {
+  toggleSheet('avatarPickerSheet', 'avatarPickerOverlay', false);
+}
+function renderAvatarPicker() {
+  const bg   = (state.avatarColor || '#6B5CE7').replace('#', '');
+  const seed = encodeURIComponent(state.name || '玩家');
+  const cur  = state.avatarStyle || 'dylan';
+  document.getElementById('avatarPickerGrid').innerHTML = AVATAR_STYLES.map(s => `
+    <div class="avatar-option ${s.key === cur ? 'selected' : ''}" onclick="selectAvatarStyle('${s.key}')">
+      <img src="https://api.dicebear.com/9.x/${s.key}/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64" alt="${s.label}">
+      <div class="avatar-option-label">${s.label}</div>
+    </div>
+  `).join('');
+}
+function selectAvatarStyle(style) {
+  state.avatarStyle = style;
+  save();
+  drawAvatar();
+  renderAvatarPicker();
+  showToast('头像已更新');
 }
 
 function openSettings() {
