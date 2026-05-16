@@ -417,7 +417,7 @@ body {
 .fi-card-num { font-size: 30px; font-weight: 800; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; margin-top: 6px; }
 .fi-card-unit { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .fi-card-icon { margin-top: auto; padding-top: 10px; align-self: flex-end; }
-.avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px 8px; padding: 16px 16px 32px; }
+.avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px 10px; padding: 16px 16px 32px; }
 .sub-type-tabs { display: flex; border-top: 0.5px solid var(--border); padding: 10px 16px 6px; gap: 8px; }
 .sub-type-tab { flex: 1; padding: 6px 0; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--muted); background: transparent; cursor: pointer; transition: all 0.15s; font-weight: 500; }
 .sub-type-tab.on { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -440,10 +440,9 @@ body {
 .video-sub-link { display: block; font-size: 11px; color: var(--accent); margin: 5px 0 0 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
 .video-sub-prog-input { display: flex; align-items: center; gap: 6px; margin: 6px 0 0 40px; }
 .video-sub-prog-input input { width: 60px; border: 1px solid var(--border); border-radius: 8px; padding: 3px 8px; font-size: 13px; text-align: center; outline: none; color: var(--text); background: transparent; }
-.avatar-option { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
-.avatar-option img { width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid transparent; transition: border-color 0.2s, transform 0.15s; }
-.avatar-option.selected img { border-color: var(--accent); transform: scale(1.06); }
-.avatar-option-label { font-size: 10px; color: var(--muted); text-align: center; }
+.avatar-option { display: flex; justify-content: center; cursor: pointer; }
+.avatar-option img { width: 54px; height: 54px; border-radius: 50%; border: 2.5px solid transparent; transition: border-color 0.2s, transform 0.15s; }
+.avatar-option.selected img { border-color: var(--accent); transform: scale(1.08); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .fi-card-icon-pill { display: flex; align-items: center; justify-content: center; border-radius: 100px; padding: 7px 10px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .trend-chart { display: flex; align-items: flex-end; gap: 12px; height: 120px; padding: 16px; }
 .habit-dl-row { padding: 12px 16px 10px; border-bottom: 0.5px solid var(--border); }
@@ -1912,6 +1911,7 @@ const DEFAULTS = {
   fontSize: 16,
   accentColor: '#5856D6',
   avatarStyle: 'dylan',
+  avatarSeed: null,
   todoLabels: ['工作', '学习', '生活', '健康'],
 };
 
@@ -2022,10 +2022,9 @@ function drawAvatar() {
   const img = document.getElementById('avatarImg');
   const color = state.avatarColor || '#6B5CE7';
   const bg = color.replace('#', '');
-  const seed = encodeURIComponent(state.name || '玩家');
-  const style = state.avatarStyle || 'dylan';
+  const seed = encodeURIComponent(state.avatarSeed || state.name || '玩家');
   if (img) {
-    img.src = `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64`;
+    img.src = `https://api.dicebear.com/9.x/dylan/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64`;
     img.style.boxShadow = `0 0 0 3px ${color}, 0 4px 16px rgba(0,0,0,0.12)`;
   }
 }
@@ -3276,17 +3275,11 @@ function setAvatarColor(color) {
 }
 
 // ===== AVATAR PICKER =====
-const AVATAR_STYLES = [
-  { key: 'dylan',       label: '卡通' },
-  { key: 'adventurer',  label: '冒险者' },
-  { key: 'big-smile',   label: '大笑脸' },
-  { key: 'fun-emoji',   label: '趣味' },
-  { key: 'croodles',    label: '涂鸦' },
-  { key: 'micah',       label: '插画' },
-  { key: 'open-peeps',  label: '人物' },
-  { key: 'pixel-art',   label: '像素' },
-  { key: 'bottts',      label: '机器人' },
-  { key: 'lorelei',     label: '极简' },
+const DYLAN_SEEDS = [
+  'Felix','Luna','Max','Zoe','Kai','Mia',
+  'Leo','Nova','Ash','Sky','Elm','Rue',
+  'Zen','Ivy','Rex','Fay','Jay','Dex',
+  'Pip','Bex'
 ];
 
 function openAvatarPicker() {
@@ -3297,18 +3290,16 @@ function closeAvatarPicker() {
   toggleSheet('avatarPickerSheet', 'avatarPickerOverlay', false);
 }
 function renderAvatarPicker() {
-  const bg   = (state.avatarColor || '#6B5CE7').replace('#', '');
-  const seed = encodeURIComponent(state.name || '玩家');
-  const cur  = state.avatarStyle || 'dylan';
-  document.getElementById('avatarPickerGrid').innerHTML = AVATAR_STYLES.map(s => `
-    <div class="avatar-option ${s.key === cur ? 'selected' : ''}" onclick="selectAvatarStyle('${s.key}')">
-      <img src="https://api.dicebear.com/9.x/${s.key}/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64" alt="${s.label}">
-      <div class="avatar-option-label">${s.label}</div>
+  const bg  = (state.avatarColor || '#6B5CE7').replace('#', '');
+  const cur = state.avatarSeed || state.name || '玩家';
+  document.getElementById('avatarPickerGrid').innerHTML = DYLAN_SEEDS.map(seed => `
+    <div class="avatar-option ${seed === cur ? 'selected' : ''}" onclick="selectAvatarSeed('${seed}')">
+      <img src="https://api.dicebear.com/9.x/dylan/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64" alt="${seed}">
     </div>
   `).join('');
 }
-function selectAvatarStyle(style) {
-  state.avatarStyle = style;
+function selectAvatarSeed(seed) {
+  state.avatarSeed = seed;
   save();
   drawAvatar();
   renderAvatarPicker();
