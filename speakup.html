@@ -294,6 +294,22 @@
     .artist-stat { font-size: .78rem; color: var(--text3); }
     .artist-stat span { color: var(--text); font-weight: 700; }
 
+    /* SONG LIBRARY (曲库) — Spotify-dark section inside artists page */
+    .ql-section { background:#121212;border-radius:16px;padding:20px 20px 12px;margin-top:28px; }
+    .ql-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
+    .ql-title { font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:.01em; }
+    .ql-count { font-size:.8rem;color:rgba(255,255,255,.35); }
+    .ql-card { display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer;transition:background .15s;border-radius:8px;margin:0 -4px; }
+    .ql-card:last-of-type { border-bottom:none; }
+    .ql-card:hover { background:rgba(255,255,255,.06); }
+    .ql-icon { width:44px;height:44px;border-radius:8px;background:rgba(30,215,96,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0; }
+    .ql-info { flex:1;min-width:0; }
+    .ql-song-title { font-weight:600;font-size:.93rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .ql-song-meta { font-size:.76rem;color:rgba(255,255,255,.38);margin-top:3px; }
+    .ql-del { background:none;border:none;color:rgba(255,255,255,.25);font-size:1.1rem;cursor:pointer;padding:6px 8px;line-height:1;flex-shrink:0;transition:color .15s; }
+    .ql-del:hover { color:rgba(255,101,132,.8); }
+    .ql-empty { text-align:center;padding:28px 16px 16px;color:rgba(255,255,255,.28);font-size:.85rem;line-height:1.7; }
+
     /* ARTIST DETAIL */
     .artist-hero {
       display: flex; gap: 20px; align-items: flex-start;
@@ -608,6 +624,7 @@
   <div id="artist-list-view">
     <div class="sec-header"><div class="sec-title">艺人语料库</div></div>
     <div class="cards-grid" id="artist-cards"></div>
+    <div id="ql-container"></div>
   </div>
   <div id="artist-detail-view" style="display:none">
     <button onclick="closeArtist()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:.9rem;margin-bottom:20px;padding:0;display:flex;align-items:center;gap:6px">← 返回艺人库</button>
@@ -2345,6 +2362,7 @@ function saveSong() {
   });
   setSavedSongs(songs);
   renderLyricsStrip();
+  renderSongLibrary();
   const btn = document.getElementById("save-song-btn");
   btn.textContent = "✓ 已保存";
   btn.disabled = true;
@@ -2401,7 +2419,8 @@ const ARTISTS = [
 function renderArtistList() {
   document.getElementById("artist-list-view").style.display = "block";
   document.getElementById("artist-detail-view").style.display = "none";
-  const cards = ARTISTS.map(a => `
+
+  document.getElementById("artist-cards").innerHTML = ARTISTS.map(a => `
     <div class="artist-card" style="--artist-color:${a.color}" onclick="openArtist('${a.id}')">
       <div class="artist-avatar">${a.avatar}</div>
       <div class="artist-name">${a.name}</div>
@@ -2414,34 +2433,42 @@ function renderArtistList() {
     </div>
   `).join("");
 
-  const savedSongs = getSavedSongs();
-  let songsSection = "";
-  if (savedSongs.length) {
-    songsSection = `
-      <div style="margin-top:32px">
-        <div class="sec-title" style="margin-bottom:14px">我的歌曲 <span style="font-size:.85rem;font-weight:400;color:var(--text2)">(${savedSongs.length})</span></div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          ${savedSongs.map(s => `
-            <div class="saved-song-card" onclick="openSavedSong(${s.id})">
-              <div style="font-size:1.5rem">🎵</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:600;font-size:.95rem">${escHtml(s.title)}</div>
-                <div style="color:var(--text2);font-size:.82rem;margin-top:2px">${escHtml(s.artist || "")} · ${s.lines.filter(l=>l.trim()).length} 行歌词</div>
-              </div>
-              <button onclick="event.stopPropagation();deleteSavedSong(${s.id})" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px 8px" title="删除">×</button>
-            </div>
-          `).join("")}
-        </div>
-      </div>`;
-  }
+  renderSongLibrary();
+}
 
-  document.getElementById("artist-cards").innerHTML = cards + songsSection;
+function renderSongLibrary() {
+  const songs = getSavedSongs();
+  const container = document.getElementById("ql-container");
+  if (!container) return;
+
+  const inner = songs.length
+    ? songs.map(s => `
+        <div class="ql-card" onclick="openSavedSong(${s.id})">
+          <div class="ql-icon">🎵</div>
+          <div class="ql-info">
+            <div class="ql-song-title">${escHtml(s.title)}</div>
+            <div class="ql-song-meta">${escHtml(s.artist || "未知艺人")} · ${s.lines.filter(l => l.trim()).length} 行歌词</div>
+          </div>
+          <button class="ql-del" onclick="event.stopPropagation();deleteSavedSong(${s.id})" title="删除">×</button>
+        </div>
+      `).join("")
+    : `<div class="ql-empty">还没有保存的歌曲<br>在歌词页面搜索并点击「＋ 保存」</div>`;
+
+  container.innerHTML = `
+    <div class="ql-section">
+      <div class="ql-header">
+        <span class="ql-title">曲库</span>
+        <span class="ql-count">${songs.length} 首</span>
+      </div>
+      ${inner}
+    </div>`;
 }
 
 function deleteSavedSong(id) {
   if (!confirm("删除此歌曲？")) return;
   setSavedSongs(getSavedSongs().filter(s => s.id !== id));
-  renderArtistList();
+  renderSongLibrary();
+  renderLyricsStrip();
 }
 
 function openArtist(id) {
