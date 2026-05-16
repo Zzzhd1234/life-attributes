@@ -2473,9 +2473,12 @@ function openSleepHistory() {
             <div class="sleep-mini-bar-fill" style="left:${leftPct}%;width:${widthPct}%;background:#6B5CE7"></div>
           </div>
         </div>
-        <div class="sleep-hist-right">
-          <div class="sleep-hist-dur">${durLabel}</div>
-          <span class="sleep-rating-pill ${cls}" style="font-size:10px;padding:1px 6px">${r.rating||''}</span>
+        <div class="sleep-hist-right" style="display:flex;align-items:center;gap:8px">
+          <div>
+            <div class="sleep-hist-dur">${durLabel}</div>
+            <span class="sleep-rating-pill ${cls}" style="font-size:10px;padding:1px 6px">${r.rating||''}</span>
+          </div>
+          <button onclick="deleteSleepRecord('${r.date}')" style="background:none;border:none;color:#C7C7CC;font-size:18px;cursor:pointer;padding:4px;line-height:1">×</button>
         </div>
       </div>`;
     }).join('');
@@ -2483,6 +2486,21 @@ function openSleepHistory() {
   toggleSheet('sleepHistorySheet', 'sleepHistoryOverlay', true);
 }
 function closeSleepHistory() { toggleSheet('sleepHistorySheet', 'sleepHistoryOverlay', false); }
+function deleteSleepRecord(date) {
+  const r = (state.sleepHistory || []).find(h => h.date === date);
+  if (!r) return;
+  if (!confirm(`删除 ${date} 的睡眠记录？`)) return;
+  const effect = r.effect || 0;
+  Object.keys(state.abilities).forEach(k => nudge(k, -effect));
+  nudge('颜值', -effect * 0.5);
+  state.sleepHistory = state.sleepHistory.filter(h => h.date !== date);
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e =>
+    !(e.source?.startsWith('睡眠记录') && e.date === date)
+  );
+  if (date === TODAY) { state.sleepLoggedToday = false; state.sleepTodayEffect = 0; }
+  save(); renderAbilities(); updateSleepDisplay(); openSleepHistory();
+  showToast('记录已删除');
+}
 function openExerciseHistory() {
   const list = document.getElementById('exerciseHistoryList');
   if (!list) return;
