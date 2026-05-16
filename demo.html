@@ -2384,8 +2384,9 @@ function saveSleep() {
   const r = calcSleepData(bedTime, wakeTime);
   if (state.sleepLoggedToday) {
     const old = state.sleepTodayEffect;
-    Object.keys(state.abilities).forEach(k => nudge(k, -old, '睡眠更新'));
-    nudge('颜值', -old * 0.5, '睡眠更新');
+    Object.keys(state.abilities).forEach(k => nudge(k, -old));
+    nudge('颜值', -old * 0.5);
+    state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source?.startsWith('睡眠记录')));
     state.sleepHistory = state.sleepHistory.filter(h => !h.date?.startsWith(TODAY));
   }
   const sleepSrc = `睡眠记录 ${r.rating||''}`.trim();
@@ -2404,7 +2405,7 @@ function deleteSleep() {
   const old = state.sleepTodayEffect;
   Object.keys(state.abilities).forEach(k => nudge(k, -old));
   nudge('颜值', -old * 0.5);
-  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source === '记录睡眠'));
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source?.startsWith('睡眠记录')));
   state.sleepHistory = state.sleepHistory.filter(h => !h.date?.startsWith(TODAY));
   state.sleepLoggedToday = false;
   state.sleepTodayEffect = 0;
