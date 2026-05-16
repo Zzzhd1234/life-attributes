@@ -4023,9 +4023,10 @@ function renderTodoDetail() {
     </div>`;
   const groupSection = t.isGroup ? `
     <div class="section-label" style="color:var(--accent)">${groupSubTitle}</div>
+    ${subs.length ? `<div class="card">${subtaskRows}</div>` : ''}
+    <div class="section-label">添加子事项</div>
     <div class="card">
-      ${subtaskRows}
-      <div class="sub-type-tabs" style="border-top:${subs.length?'0.5px solid var(--border)':'none'}">
+      <div class="sub-type-tabs" style="border-top:none;padding-top:8px">
         <button class="sub-type-tab on" id="detailSubTypeText" onclick="switchDetailSubType('text')">文字</button>
         <button class="sub-type-tab" id="detailSubTypeVideo" onclick="switchDetailSubType('video')">▶ 视频</button>
       </div>
