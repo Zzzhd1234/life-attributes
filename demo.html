@@ -432,7 +432,7 @@ body {
 .video-sub-card { display: flex; flex-direction: column; gap: 0; padding: 10px 16px; border-bottom: 0.5px solid var(--border); }
 .video-sub-card:last-child { border-bottom: none; }
 .video-sub-header { display: flex; align-items: flex-start; gap: 10px; }
-.video-sub-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+.video-sub-icon { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; margin-top: 1px; }
 .video-sub-title { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
 .video-sub-dur { font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
 .video-sub-bar-wrap { display: flex; align-items: center; gap: 8px; margin: 5px 0 0 40px; }
@@ -4530,23 +4530,25 @@ let _bookSearchTimer = null, _bookSearchResults = [];
 function onBookTitleInput() {
   clearTimeout(_bookSearchTimer);
   const q = document.getElementById('readingEditTitle')?.value.trim();
-  if (!q || q.length < 2) { hideBookResults(); return; }
+  if (!q || q.length < 1) { hideBookResults(); return; }
   _bookSearchTimer = setTimeout(() => searchBooksAPI(q), 600);
 }
 async function searchBooksAPI(query) {
   const spinner = document.getElementById('bookSearchSpinner');
   if (spinner) spinner.style.display = 'inline-block';
   try {
-    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=6&printType=books`);
+    const url = `https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&limit=8&fields=title,author_name,number_of_pages_median,cover_i,first_sentence`;
+    const r = await fetch(url);
     const data = await r.json();
-    _bookSearchResults = (data.items || []).map(item => {
-      const v = item.volumeInfo || {};
+    _bookSearchResults = (data.docs || []).map(doc => {
+      const coverId = doc.cover_i;
+      const firstSent = Array.isArray(doc.first_sentence) ? doc.first_sentence[0] : (doc.first_sentence || '');
       return {
-        title: v.title || '',
-        author: (v.authors || []).join(', '),
-        pageCount: v.pageCount || 0,
-        description: (v.description || '').slice(0, 400),
-        cover: (v.imageLinks?.thumbnail || '').replace('http://', 'https://')
+        title: doc.title || '',
+        author: (doc.author_name || []).slice(0, 2).join(', '),
+        pageCount: doc.number_of_pages_median || 0,
+        description: (firstSent || '').slice(0, 300),
+        cover: coverId ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg` : ''
       };
     });
     renderBookSearchResults();
