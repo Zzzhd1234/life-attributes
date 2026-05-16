@@ -348,6 +348,29 @@
     .lyric-line { color: var(--text3); font-size: .83rem; font-style: italic; border-left: 2px solid var(--accent); padding-left: 10px; line-height: 1.6; margin-bottom: 10px; }
     .lyric-source { font-size: .75rem; color: var(--text3); }
     .lyric-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+    .lyric-song-src { display:inline-flex;align-items:center;gap:4px;font-size:.72rem;color:rgba(30,215,96,.75);margin-top:6px; }
+    .lyric-orig { color:rgba(255,255,255,.35);font-size:.8rem;font-style:italic;border-left:2px solid rgba(30,215,96,.4);padding-left:10px;margin:6px 0 4px;line-height:1.5; }
+    .lyric-edit-btn,.lyric-del-btn { background:none;border:none;cursor:pointer;padding:4px 6px;font-size:.85rem;transition:color .15s;line-height:1; }
+    .lyric-edit-btn { color:rgba(255,255,255,.28); }
+    .lyric-edit-btn:hover { color:rgba(108,99,255,.9); }
+    .lyric-del-btn { color:rgba(255,255,255,.28); }
+    .lyric-del-btn:hover { color:rgba(255,101,132,.8); }
+    /* Artist phrase edit sheet */
+    .ape-overlay { position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;opacity:0;pointer-events:none;transition:opacity .28s; }
+    .ape-overlay.open { opacity:1;pointer-events:all; }
+    .ape-sheet { position:fixed;bottom:0;left:0;right:0;max-width:640px;margin:0 auto;background:#1c1c1e;border-radius:20px 20px 0 0;z-index:1101;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,0,.28,1);padding:24px 24px 40px;box-sizing:border-box; }
+    .ape-sheet.open { transform:translateY(0); }
+    .ape-title { font-size:1rem;font-weight:700;color:#fff;margin-bottom:18px; }
+    .ape-field { margin-bottom:13px; }
+    .ape-label { font-size:.72rem;color:rgba(255,255,255,.4);margin-bottom:5px; }
+    .ape-input { width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;color:#fff;font-size:.9rem;font-family:inherit;box-sizing:border-box;outline:none; }
+    .ape-input:focus { border-color:rgba(108,99,255,.6); }
+    textarea.ape-input { resize:vertical;min-height:56px; }
+    /* Marked phrase chips in 曲库 song cards */
+    .ql-marks { padding:10px 0 4px;border-top:1px solid rgba(255,255,255,.06);margin-top:8px;display:flex;flex-wrap:wrap;gap:7px; }
+    .ql-mark-chip { display:flex;align-items:center;gap:6px;background:rgba(255,220,0,.08);border:1px solid rgba(255,220,0,.22);border-radius:20px;padding:4px 8px 4px 12px;font-size:.78rem;color:rgba(255,255,255,.75); }
+    .ql-mark-chip button { background:rgba(30,215,96,.18);border:none;border-radius:12px;color:rgba(30,215,96,.9);font-size:.7rem;padding:2px 8px;cursor:pointer;transition:background .15s; }
+    .ql-mark-chip button:hover { background:rgba(30,215,96,.35); }
 
     /* YOUGLISH BUTTON */
     .yg-btn {
@@ -785,6 +808,17 @@
     <button class="es-close" onclick="closeExplainSheet()">✕</button>
   </div>
   <div class="es-body" id="es-body"></div>
+</div>
+
+<!-- Artist phrase edit sheet -->
+<div class="ape-overlay" id="apeOverlay" onclick="closeApeSheet()"></div>
+<div class="ape-sheet" id="apeSheet">
+  <div class="ape-title" id="apeTitle">编辑语料</div>
+  <div class="ape-field"><div class="ape-label">词汇 / 短语</div><input class="ape-input" id="apePhrase" type="text" placeholder="e.g. YOLO"></div>
+  <div class="ape-field"><div class="ape-label">中文释义</div><textarea class="ape-input" id="apeMeaning" rows="2" placeholder="中文意思…"></textarea></div>
+  <div class="ape-field"><div class="ape-label">例句</div><textarea class="ape-input" id="apeExample" rows="2" placeholder="例句…"></textarea></div>
+  <div class="ape-field"><div class="ape-label">来源</div><input class="ape-input" id="apeSource" type="text" placeholder="歌曲名 / 专辑名"></div>
+  <button class="btn btn-primary" onclick="saveArtistPhraseEdit()" style="width:100%;margin-top:8px;padding:13px">保存</button>
 </div>
 
 <!-- ADD -->
@@ -2470,6 +2504,90 @@ function backToArtist() {
   tabs[order.indexOf("artists")]?.classList.add("active");
 }
 
+// ─── ARTIST PHRASE STORAGE ────────────────────────────────────────────────────
+const ARTIST_PHRASES_KEY = "speakup_artist_phrases";
+
+function getArtistPhrases(artistId) {
+  try {
+    const all = JSON.parse(localStorage.getItem(ARTIST_PHRASES_KEY) || "{}");
+    if (all[artistId]) return all[artistId];
+  } catch {}
+  const a = ARTISTS.find(x => x.id === artistId);
+  return a ? a.phrases.map(p => ({ ...p })) : [];
+}
+
+function saveArtistPhrases(artistId, phrases) {
+  try {
+    const all = JSON.parse(localStorage.getItem(ARTIST_PHRASES_KEY) || "{}");
+    all[artistId] = phrases;
+    localStorage.setItem(ARTIST_PHRASES_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+let _apeArtistId = null, _apeIdx = null;
+
+function openApeSheet(artistId, idx) {
+  const phrases = getArtistPhrases(artistId);
+  const p = idx !== null ? phrases[idx] : { phrase: "", meaning: "", example: "", source: "" };
+  _apeArtistId = artistId;
+  _apeIdx = idx;
+  document.getElementById("apeTitle").textContent = idx !== null ? "编辑语料" : "添加语料";
+  document.getElementById("apePhrase").value = p.phrase || "";
+  document.getElementById("apeMeaning").value = p.meaning || "";
+  document.getElementById("apeExample").value = p.example || "";
+  document.getElementById("apeSource").value = p.source || "";
+  document.getElementById("apeOverlay").classList.add("open");
+  document.getElementById("apeSheet").classList.add("open");
+}
+
+function closeApeSheet() {
+  document.getElementById("apeOverlay").classList.remove("open");
+  document.getElementById("apeSheet").classList.remove("open");
+}
+
+function saveArtistPhraseEdit() {
+  const phrase = document.getElementById("apePhrase").value.trim();
+  const meaning = document.getElementById("apeMeaning").value.trim();
+  if (!phrase) { showToast("请填写词汇"); return; }
+  const phrases = getArtistPhrases(_apeArtistId);
+  const base = {
+    phrase, meaning,
+    example: document.getElementById("apeExample").value.trim(),
+    source: document.getElementById("apeSource").value.trim(),
+  };
+  if (_apeIdx !== null) {
+    base.lyricsSource = phrases[_apeIdx].lyricsSource;
+    base.originalLine = phrases[_apeIdx].originalLine;
+    phrases[_apeIdx] = base;
+  } else {
+    phrases.unshift(base);
+  }
+  saveArtistPhrases(_apeArtistId, phrases);
+  closeApeSheet();
+  openArtist(_apeArtistId);
+  showToast(_apeIdx !== null ? "语料已更新" : "语料已添加");
+}
+
+function deleteArtistPhrase(artistId, idx) {
+  if (!confirm("删除此语料？")) return;
+  const phrases = getArtistPhrases(artistId);
+  phrases.splice(idx, 1);
+  saveArtistPhrases(artistId, phrases);
+  openArtist(artistId);
+  showToast("已删除");
+}
+
+function addPhraseFromSong(artistId, phrase, songTitle, originalLine) {
+  const phrases = getArtistPhrases(artistId);
+  if (phrases.some(p => p.phrase.toLowerCase() === phrase.toLowerCase())) {
+    showToast(`"${phrase}" 已在语料库中`); return;
+  }
+  phrases.push({ phrase, meaning: "", example: "", source: songTitle, lyricsSource: songTitle, originalLine });
+  saveArtistPhrases(artistId, phrases);
+  openArtist(artistId);
+  showToast(`"${phrase}" 已加入语料，可编辑补充释义`);
+}
+
 // ─── ARTISTS DATA ────────────────────────────────────────────────────────────
 const ARTISTS = [
   {
@@ -2522,7 +2640,7 @@ function renderArtistList() {
       <div class="artist-sub">${a.origin} · ${a.style}</div>
       <div class="artist-desc">${a.desc.slice(0,60)}…</div>
       <div class="artist-stats">
-        <div class="artist-stat"><span>${a.phrases.length}</span> 条语料</div>
+        <div class="artist-stat"><span>${getArtistPhrases(a.id).length}</span> 条语料</div>
         <div class="artist-stat"><span>${a.tags.length}</span> 标签</div>
         ${sc ? `<div class="artist-stat" style="color:#1ed760"><span>${sc}</span> 首歌</div>` : ""}
       </div>
@@ -2548,21 +2666,34 @@ function openArtist(id) {
   const a = ARTISTS.find(x => x.id === id);
   if (!a) return;
   document.getElementById("artist-detail-view").classList.add("open");
+  const escAttr = s => String(s || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   const tags = a.tags.map(t => `<span class="artist-tag">${t}</span>`).join("");
-  const cards = a.phrases.map((p, i) => {
+  const phrases = getArtistPhrases(id);
+  const cards = phrases.map((p, i) => {
     const yg = encodeURIComponent(p.phrase);
     const pid = a.id + "_" + i;
     const hasVideo = !!getYTData(pid).id;
-    const escAttr = s => s.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+    const srcBadge = p.lyricsSource
+      ? `<div class="lyric-song-src">🎵 ${escHtml(p.lyricsSource)}</div>`
+      : (p.source ? `<div class="lyric-source">来自：${escHtml(p.source)}</div>` : "");
+    const origLine = p.originalLine
+      ? `<div class="lyric-orig">${escHtml(p.originalLine)}</div>` : "";
+    const exampleBlock = p.example
+      ? `<div class="lyric-line">${escHtml(p.example)}</div>` : "";
     return `<div class="lyric-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div class="lyric-phrase">${p.phrase}</div>
-        <button class="speak-btn" onclick="speakText('${escAttr(p.phrase)}')" title="朗读">🔊</button>
+        <div class="lyric-phrase">${escHtml(p.phrase)}</div>
+        <div style="display:flex;gap:2px;flex-shrink:0">
+          <button class="speak-btn" onclick="speakText('${escAttr(p.phrase)}')" title="朗读">🔊</button>
+          <button class="lyric-edit-btn" onclick="openApeSheet('${id}',${i})" title="编辑">✏️</button>
+          <button class="lyric-del-btn" onclick="deleteArtistPhrase('${id}',${i})" title="删除">🗑</button>
+        </div>
       </div>
-      <div class="lyric-cn">${p.meaning}</div>
-      <div class="lyric-line">${p.example}</div>
+      ${p.meaning ? `<div class="lyric-cn">${escHtml(p.meaning)}</div>` : ""}
+      ${origLine}
+      ${exampleBlock}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px">
-        <div class="lyric-source">来自：${p.source}</div>
+        ${srcBadge}
         <div class="lyric-actions">
           <button class="btn ${hasVideo ? 'btn-primary' : 'btn-outline'}" id="ytbtn-${pid}" onclick="openYT('${pid}','${escAttr(p.phrase)}','${escAttr(p.source)}')" style="font-size:.75rem;padding:4px 12px">
             ${hasVideo ? '▶ 听原声' : '🎵 绑定原声'}
@@ -2584,15 +2715,30 @@ function openArtist(id) {
         <span class="ql-title">曲库</span>
         <span class="ql-count">${artistSongs.length} 首</span>
       </div>
-      ${artistSongs.map(s => `
-        <div class="ql-card" onclick="openSavedSong(${s.id}, true)">
-          <div class="ql-icon">🎵</div>
-          <div class="ql-info">
-            <div class="ql-song-title">${escHtml(s.title)}</div>
-            <div class="ql-song-meta">${s.lines.filter(l => l.trim()).length} 行歌词</div>
+      ${artistSongs.map(s => {
+        const existingPhrases = getArtistPhrases(id).map(p => p.phrase.toLowerCase());
+        const marks = (s.markedPhrases || []).filter(ph => ph.trim());
+        const marksHtml = marks.length ? `<div class="ql-marks">${marks.map(ph => {
+          const origLine = s.lines.find(l => l.toLowerCase().includes(ph.toLowerCase())) || "";
+          const alreadyIn = existingPhrases.includes(ph.toLowerCase());
+          return `<span class="ql-mark-chip"><span>${escHtml(ph)}</span>${alreadyIn
+            ? `<button disabled style="opacity:.4;cursor:default">已添加</button>`
+            : `<button onclick="event.stopPropagation();addPhraseFromSong('${id}','${escAttr(ph)}','${escAttr(s.title)}','${escAttr(origLine)}')">＋ 加入语料</button>`
+          }</span>`;
+        }).join("")}</div>` : "";
+        return `
+        <div class="ql-card" onclick="openSavedSong(${s.id}, true)" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div style="display:flex;align-items:center;gap:14px;width:100%">
+            <div class="ql-icon">🎵</div>
+            <div class="ql-info">
+              <div class="ql-song-title">${escHtml(s.title)}</div>
+              <div class="ql-song-meta">${s.lines.filter(l => l.trim()).length} 行歌词${marks.length ? ` · ${marks.length} 个标记` : ""}</div>
+            </div>
+            <button class="ql-del" onclick="event.stopPropagation();deleteSavedSong(${s.id})" title="删除">×</button>
           </div>
-          <button class="ql-del" onclick="event.stopPropagation();deleteSavedSong(${s.id})" title="删除">×</button>
-        </div>`).join("")}
+          ${marksHtml}
+        </div>`;
+      }).join("")}
     </div>` : "";
 
   const detailEl = document.getElementById("artist-detail");
@@ -2609,8 +2755,11 @@ function openArtist(id) {
     </div>
     ${songsHtml}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-      <div class="sec-title">${a.phrases.length} 条语料</div>
-      <button class="btn btn-outline" onclick="addAllToLibrary('${id}')" style="font-size:.85rem;padding:7px 16px">全部加入短语库</button>
+      <div class="sec-title">${phrases.length} 条语料</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="openApeSheet('${id}',null)" style="font-size:.85rem;padding:7px 14px">＋ 添加语料</button>
+        <button class="btn btn-outline" onclick="addAllToLibrary('${id}')" style="font-size:.85rem;padding:7px 14px">全部加入短语库</button>
+      </div>
     </div>
     <div class="cards-grid">${cards}</div>
   `;
@@ -2629,17 +2778,16 @@ function addToLibrary(phrase, meaning, example, tags) {
 }
 
 function addAllToLibrary(artistId) {
-  const a = ARTISTS.find(x => x.id === artistId);
-  if (!a) return;
+  const phrases = getArtistPhrases(artistId);
   let added = 0, skipped = 0;
-  a.phrases.forEach(p => {
+  phrases.forEach(p => {
     const exists = data.phrases.some(x => x.phrase.toLowerCase() === p.phrase.toLowerCase());
     if (exists) { skipped++; return; }
     data.phrases.push({ id: Date.now() + Math.random(), phrase: p.phrase, meaning: p.meaning, example: p.example, tags: ["slang","daily"], review: { stage: 0, correct: 0, wrong: 0 } });
     added++;
   });
   saveData(data);
-  alert(`✓ 已加入 ${added} 条${skipped ? `，跳过 ${skipped} 条（已存在）` : ""}`);
+  showToast(`已加入 ${added} 条${skipped ? `，跳过 ${skipped} 条（已存在）` : ""}`);
 }
 
 // ─── YOUTUBE EMBED ────────────────────────────────────────────────────────────
