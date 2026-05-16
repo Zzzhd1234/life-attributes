@@ -175,10 +175,10 @@ body {
 .habit-info { flex: 1; min-width: 0; }
 .habit-name { font-size: 16px; font-weight: 600; }
 .habit-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.habit-week-day-labels { display: flex; gap: 4px; margin-top: 8px; }
-.habit-week-day-label { width: 11px; font-size: 9px; color: var(--muted); text-align: center; flex-shrink: 0; }
-.habit-week-dots { display: flex; gap: 4px; margin-top: 3px; }
-.habit-week-dot { width: 11px; height: 11px; border-radius: 3px; background: #E5E5EA; flex-shrink: 0; }
+.habit-week-day-labels { display: flex; gap: 5px; margin-top: 7px; }
+.habit-week-day-label { width: 15px; font-size: 10px; color: var(--muted); text-align: center; flex-shrink: 0; }
+.habit-week-dots { display: flex; gap: 5px; margin-top: 3px; }
+.habit-week-dot { width: 15px; height: 15px; border-radius: 4px; background: #E5E5EA; flex-shrink: 0; }
 .habit-week-dot.filled { background: var(--accent); }
 .habit-week-dot.today-empty { background: transparent; border: 1.5px solid var(--accent); }
 .habit-week-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
@@ -417,7 +417,29 @@ body {
 .fi-card-num { font-size: 30px; font-weight: 800; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; margin-top: 6px; }
 .fi-card-unit { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .fi-card-icon { margin-top: auto; padding-top: 10px; align-self: flex-end; }
-.avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 16px 16px 32px; }
+.avatar-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px 8px; padding: 16px 16px 32px; }
+.sub-type-tabs { display: flex; border-top: 0.5px solid var(--border); padding: 10px 16px 6px; gap: 8px; }
+.sub-type-tab { flex: 1; padding: 6px 0; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--muted); background: transparent; cursor: pointer; transition: all 0.15s; font-weight: 500; }
+.sub-type-tab.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.video-form { padding: 6px 16px 12px; display: flex; flex-direction: column; gap: 10px; }
+.video-form-field { display: flex; flex-direction: column; gap: 3px; }
+.video-form-label { font-size: 11px; color: var(--muted); }
+.video-form-field input { border: none; border-bottom: 1px solid var(--border); outline: none; font-size: 14px; padding: 5px 0; background: transparent; color: var(--text); width: 100%; }
+.video-form-row { display: flex; gap: 12px; }
+.video-form-row .video-form-field { flex: 1; }
+.video-form-add { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 14px; font-weight: 600; cursor: pointer; align-self: flex-end; }
+.video-sub-card { padding: 10px 16px; border-top: 0.5px solid var(--border); }
+.video-sub-header { display: flex; align-items: flex-start; gap: 10px; }
+.video-sub-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+.video-sub-title { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.video-sub-dur { font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
+.video-sub-bar-wrap { display: flex; align-items: center; gap: 8px; margin: 6px 0 0 40px; }
+.video-sub-bar-track { flex: 1; height: 4px; background: #E5E5EA; border-radius: 2px; }
+.video-sub-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.3s; }
+.video-sub-prog { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.video-sub-link { display: block; font-size: 11px; color: var(--accent); margin: 5px 0 0 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+.video-sub-prog-input { display: flex; align-items: center; gap: 6px; margin: 6px 0 0 40px; }
+.video-sub-prog-input input { width: 60px; border: 1px solid var(--border); border-radius: 8px; padding: 3px 8px; font-size: 13px; text-align: center; outline: none; color: var(--text); background: transparent; }
 .avatar-option { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
 .avatar-option img { width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid transparent; transition: border-color 0.2s, transform 0.15s; }
 .avatar-option.selected img { border-color: var(--accent); transform: scale(1.06); }
@@ -1157,11 +1179,36 @@ body {
       <div id="groupSubSection" style="display:none">
         <div style="padding:6px 16px 4px;font-size:12px;color:var(--muted);border-top:0.5px solid var(--border)">子事项全部完成后自动标记完成</div>
         <div id="groupSubList"></div>
-        <div class="subtask-add-row" style="padding:6px 16px 8px;border-top:none">
+        <div class="sub-type-tabs">
+          <button class="sub-type-tab on" id="subTypeText" onclick="switchGroupSubType('text')">文字</button>
+          <button class="sub-type-tab" id="subTypeVideo" onclick="switchGroupSubType('video')">▶ 视频</button>
+        </div>
+        <div id="groupTextInputRow" class="subtask-add-row" style="padding:4px 16px 10px;border-top:none">
           <input type="text" id="groupSubInput" placeholder="添加子事项，回车确认"
                  style="flex:1;border:none;outline:none;font-size:14px;background:transparent"
                  onkeydown="if(event.key==='Enter'){addGroupSub();event.preventDefault()}">
           <button class="subtask-add-btn" onclick="addGroupSub()">+</button>
+        </div>
+        <div id="groupVideoForm" style="display:none" class="video-form">
+          <div class="video-form-field">
+            <div class="video-form-label">视频标题</div>
+            <input type="text" id="videoSubTitle" placeholder="例：第3章 React Hooks">
+          </div>
+          <div class="video-form-row">
+            <div class="video-form-field">
+              <div class="video-form-label">总时长（分钟）</div>
+              <input type="number" id="videoSubDuration" placeholder="42" min="1">
+            </div>
+            <div class="video-form-field">
+              <div class="video-form-label">当前进度（分钟）</div>
+              <input type="number" id="videoSubProgress" placeholder="0" min="0">
+            </div>
+          </div>
+          <div class="video-form-field">
+            <div class="video-form-label">链接来源（可选）</div>
+            <input type="url" id="videoSubUrl" placeholder="https://...">
+          </div>
+          <button class="video-form-add" onclick="addGroupVideoSub()">添加视频事项</button>
         </div>
       </div>
     </div>
@@ -3230,11 +3277,16 @@ function setAvatarColor(color) {
 
 // ===== AVATAR PICKER =====
 const AVATAR_STYLES = [
-  { key: 'dylan',      label: '卡通' },
-  { key: 'pixel-art',  label: '像素' },
-  { key: 'adventurer', label: '冒险者' },
-  { key: 'bottts',     label: '机器人' },
-  { key: 'lorelei',    label: '极简' },
+  { key: 'dylan',              label: '卡通' },
+  { key: 'adventurer',         label: '冒险者' },
+  { key: 'adventurer-neutral', label: '中性' },
+  { key: 'avataaars',          label: '拟真' },
+  { key: 'avataaars-neutral',  label: '拟真2' },
+  { key: 'pixel-art',          label: '像素' },
+  { key: 'pixel-art-neutral',  label: '像素2' },
+  { key: 'bottts',             label: '机器人' },
+  { key: 'lorelei',            label: '极简' },
+  { key: 'notionists',         label: 'Notion' },
 ];
 
 function openAvatarPicker() {
@@ -3796,12 +3848,59 @@ function removeGroupSub(id) {
 function renderGroupSubList() {
   const el = document.getElementById('groupSubList');
   if (!el) return;
-  el.innerHTML = _groupSubs.map(s =>
-    `<div class="subtask-item" style="padding:6px 16px">
+  el.innerHTML = _groupSubs.map(s => {
+    if (s.type === 'video') {
+      const pct = s.duration > 0 ? Math.min(100, Math.round((s.progress||0) / s.duration * 100)) : 0;
+      const domain = s.url ? (() => { try { return new URL(s.url).hostname; } catch { return s.url.slice(0,30); } })() : '';
+      return `<div class="video-sub-card">
+        <div class="video-sub-header">
+          <div class="video-sub-icon">▶</div>
+          <div class="video-sub-title">${s.title}</div>
+          <div class="video-sub-dur">${s.duration}分钟</div>
+          <button class="exlog-del" style="margin-left:6px" onclick="removeGroupSub(${s.id})">×</button>
+        </div>
+        <div class="video-sub-bar-wrap">
+          <div class="video-sub-bar-track"><div class="video-sub-bar-fill" style="width:${pct}%"></div></div>
+          <span class="video-sub-prog">${s.progress||0}/${s.duration}分</span>
+        </div>
+        ${domain ? `<a class="video-sub-link" href="${s.url}" target="_blank">🔗 ${domain}</a>` : ''}
+      </div>`;
+    }
+    return `<div class="subtask-item" style="padding:6px 16px">
       <div class="subtask-text">${s.text}</div>
       <button class="exlog-del" onclick="removeGroupSub(${s.id})">×</button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
+}
+
+let _groupSubType = 'text';
+function switchGroupSubType(type) {
+  _groupSubType = type;
+  const tbText = document.getElementById('subTypeText');
+  const tbVid  = document.getElementById('subTypeVideo');
+  if (tbText) tbText.classList.toggle('on', type === 'text');
+  if (tbVid)  tbVid.classList.toggle('on', type === 'video');
+  const textRow = document.getElementById('groupTextInputRow');
+  const vidForm = document.getElementById('groupVideoForm');
+  if (textRow) textRow.style.display = type === 'text' ? 'flex' : 'none';
+  if (vidForm) vidForm.style.display = type === 'video' ? 'flex' : 'none';
+  if (type === 'text') document.getElementById('groupSubInput')?.focus();
+  else document.getElementById('videoSubTitle')?.focus();
+}
+function addGroupVideoSub() {
+  const title = document.getElementById('videoSubTitle')?.value.trim();
+  const dur   = parseInt(document.getElementById('videoSubDuration')?.value) || 0;
+  const prog  = Math.min(dur, parseInt(document.getElementById('videoSubProgress')?.value) || 0);
+  const url   = document.getElementById('videoSubUrl')?.value.trim();
+  if (!title) { showToast('请填写视频标题'); return; }
+  if (!dur)   { showToast('请填写视频时长'); return; }
+  _groupSubs.push({ id: Date.now(), type: 'video', title, duration: dur, progress: prog, url: url || '' });
+  document.getElementById('videoSubTitle').value    = '';
+  document.getElementById('videoSubDuration').value = '';
+  document.getElementById('videoSubProgress').value = '';
+  document.getElementById('videoSubUrl').value      = '';
+  renderGroupSubList();
+  document.getElementById('videoSubTitle')?.focus();
 }
 
 function openTodoAddSheet() {
@@ -3809,10 +3908,11 @@ function openTodoAddSheet() {
   document.getElementById('todoDate').value = '';
   document.getElementById('todoTime').value = '';
   document.getElementById('newTodoSubInput').value = '';
-  _newTodoSubs = []; _isGroupTodo = false; _groupSubs = [];
+  _newTodoSubs = []; _isGroupTodo = false; _groupSubs = []; _groupSubType = 'text';
   renderNewTodoSubList(); renderGroupSubList();
   const gt = document.getElementById('groupToggle'); if (gt) gt.classList.remove('on');
   const gs = document.getElementById('groupSubSection'); if (gs) gs.style.display = 'none';
+  switchGroupSubType('text');
   if (recurEnabled) toggleRecurCheck();
   _selectedRecur = 'daily';
   selectRecur('daily');
@@ -3888,12 +3988,36 @@ function renderTodoDetail() {
   const t = state.todos.find(t => t.id === currentTodoDetailId);
   if (!t) return;
   const subs = t.subtasks || [];
-  const subtaskRows = subs.map(s => `
-    <div class="subtask-item">
+  const subtaskRows = subs.map(s => {
+    if (s.type === 'video') {
+      const pct = s.duration > 0 ? Math.min(100, Math.round((s.progress||0) / s.duration * 100)) : 0;
+      const domain = s.url ? (() => { try { return new URL(s.url).hostname; } catch { return s.url.slice(0,30); } })() : '';
+      return `<div class="video-sub-card">
+        <div class="video-sub-header">
+          <div class="video-sub-icon">▶</div>
+          <div class="video-sub-title">${s.title}</div>
+          <div class="video-sub-dur">${pct}%</div>
+          <button class="todo-del" onclick="deleteSubtask(${t.id},${s.id})">×</button>
+        </div>
+        <div class="video-sub-bar-wrap">
+          <div class="video-sub-bar-track"><div class="video-sub-bar-fill" style="width:${pct}%"></div></div>
+          <span class="video-sub-prog">${s.progress||0}/${s.duration} 分钟</span>
+        </div>
+        <div class="video-sub-prog-input">
+          <span style="font-size:11px;color:var(--muted)">更新进度</span>
+          <input type="number" value="${s.progress||0}" min="0" max="${s.duration}"
+                 onchange="updateVideoProgress(${t.id},${s.id},this.value)">
+          <span style="font-size:11px;color:var(--muted)">/ ${s.duration} 分钟</span>
+        </div>
+        ${domain ? `<a class="video-sub-link" href="${s.url}" target="_blank">🔗 ${domain}</a>` : ''}
+      </div>`;
+    }
+    return `<div class="subtask-item">
       <div class="todo-check ${s.done?'done':''}" onclick="toggleSubtask(${t.id},${s.id})">${s.done?'✓':''}</div>
       <div class="subtask-text ${s.done?'done':''}" id="sub-text-${s.id}" onclick="editSubtask(${t.id},${s.id})">${s.text}</div>
       <button class="todo-del" onclick="deleteSubtask(${t.id},${s.id})">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   const doneCount = subs.filter(s => s.done).length;
   const subTitle = subs.length ? `细分事项（${doneCount}/${subs.length} 已完成）` : '细分事项';
   const groupSubTitle = subs.length ? `子事项（${doneCount}/${subs.length} 完成）` : '子事项';
@@ -4026,17 +4150,28 @@ function toggleSubtask(todoId, subtaskId) {
   const s = (t.subtasks || []).find(s => s.id === subtaskId);
   if (!s) return;
   s.done = !s.done;
-  if (t.isGroup && (t.subtasks || []).every(s => s.done)) {
-    t.done = true; t.completedAt = TODAY;
-  } else if (t.isGroup && !s.done) {
-    t.done = false; t.completedAt = null;
-  }
+  if (t.isGroup) _checkGroupCompletion(t);
   save(); renderTodoDetail(); renderTodos();
+}
+function _checkGroupCompletion(t) {
+  const subs = t.subtasks || [];
+  const allDone = subs.every(s => s.type === 'video' ? (s.progress || 0) >= s.duration : s.done);
+  if (allDone && subs.length > 0) { t.done = true; t.completedAt = TODAY; }
+  else { t.done = false; t.completedAt = null; }
 }
 function deleteSubtask(todoId, subtaskId) {
   const t = state.todos.find(t => t.id === todoId);
   if (!t) return;
   t.subtasks = (t.subtasks || []).filter(s => s.id !== subtaskId);
+  save(); renderTodoDetail(); renderTodos();
+}
+function updateVideoProgress(todoId, subId, val) {
+  const t = state.todos.find(t => t.id === todoId);
+  if (!t) return;
+  const s = (t.subtasks || []).find(s => s.id === subId);
+  if (!s || s.type !== 'video') return;
+  s.progress = Math.max(0, Math.min(s.duration, parseInt(val) || 0));
+  if (t.isGroup) _checkGroupCompletion(t);
   save(); renderTodoDetail(); renderTodos();
 }
 function editSubtask(todoId, subtaskId) {
