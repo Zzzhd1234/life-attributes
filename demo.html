@@ -4877,9 +4877,10 @@ function initTodoTouchListeners() {
   ['todoList', 'doneTodosList'].forEach(elId => {
     const el = document.getElementById(elId);
     if (!el) return;
-    el.addEventListener('touchstart', _todoTouchStart, { passive: true });
-    el.addEventListener('touchmove',  _todoTouchCancel,{ passive: true });
-    el.addEventListener('touchcancel',_todoTouchCancel,{ passive: true });
+    el.addEventListener('touchstart',  _todoTouchStart, { passive: true });
+    el.addEventListener('touchend',    _todoTouchCancel,{ passive: true });
+    el.addEventListener('touchmove',   _todoTouchCancel,{ passive: true });
+    el.addEventListener('touchcancel', _todoTouchCancel,{ passive: true });
   });
 }
 function convertToGroup(id) {
