@@ -416,7 +416,8 @@ body {
 .fi-card-sub { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; }
 .fi-card-num { font-size: 30px; font-weight: 800; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; margin-top: 6px; }
 .fi-card-unit { font-size: 11px; color: var(--muted); margin-top: 3px; }
-.fi-card-icon { font-size: 26px; margin-top: auto; padding-top: 8px; align-self: flex-end; }
+.fi-card-icon { margin-top: auto; padding-top: 10px; align-self: flex-end; }
+.fi-card-icon-pill { display: flex; align-items: center; justify-content: center; border-radius: 100px; padding: 7px 10px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .trend-chart { display: flex; align-items: flex-end; gap: 12px; height: 120px; padding: 16px; }
 .habit-dl-row { padding: 12px 16px 10px; border-bottom: 0.5px solid var(--border); }
 .habit-dl-row:last-child { border-bottom: none; }
@@ -3137,14 +3138,26 @@ function renderReport() {
       <div class="fi-card-sub">${monthSleep.length} 条记录</div>
       <div class="fi-card-num">${avgSleep}</div>
       <div class="fi-card-unit">小时 / 日均</div>
-      <div class="fi-card-icon">🌙</div>
+      <div class="fi-card-icon"><div class="fi-card-icon-pill">
+        <svg width="20" height="20" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 3C8.477 3 4 7.477 4 13s4.477 10 10 10c.978 0 1.924-.14 2.82-.4-3.3-1.76-5.54-5.24-5.54-9.26 0-4.38 2.67-8.14 6.5-9.72C16.26 3.22 15.16 3 14 3z" fill="var(--accent)"/>
+        </svg>
+      </div></div>
     </div>
     <div class="fi-stat-card">
       <div class="fi-card-label">本月运动</div>
       <div class="fi-card-sub">力量 ${strengthDays} 天 · ${strengthSets} 组</div>
-      <div class="fi-card-num">${cardioMin}</div>
+      <div class="fi-card-num" style="color:#2DB87A">${cardioMin}</div>
       <div class="fi-card-unit">分钟有氧</div>
-      <div class="fi-card-icon">💪</div>
+      <div class="fi-card-icon"><div class="fi-card-icon-pill" style="background:rgba(45,184,122,0.12)">
+        <svg width="24" height="15" viewBox="0 0 36 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0"  y="0" width="7"  height="22" rx="3" fill="#2DB87A"/>
+          <rect x="29" y="0" width="7"  height="22" rx="3" fill="#2DB87A"/>
+          <rect x="7"  y="4" width="5"  height="14" rx="2" fill="#2DB87A" opacity="0.6"/>
+          <rect x="24" y="4" width="5"  height="14" rx="2" fill="#2DB87A" opacity="0.6"/>
+          <rect x="12" y="8" width="12" height="6"  rx="3" fill="#2DB87A" opacity="0.4"/>
+        </svg>
+      </div></div>
     </div>`;
 
   // ── Finance stats (filter by id timestamp) ──
