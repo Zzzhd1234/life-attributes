@@ -3871,7 +3871,6 @@ function addNewTodoSub() {
   _newTodoSubs.push({ id: Date.now(), text, done: false });
   input.value = '';
   renderNewTodoSubList();
-  input.focus();
 }
 function removeNewTodoSub(id) {
   _newTodoSubs = _newTodoSubs.filter(s => s.id !== id);
@@ -3893,7 +3892,6 @@ function toggleGroupMode() {
   if (btn) btn.classList.toggle('on', _isGroupTodo);
   const sec = document.getElementById('groupSubSection');
   if (sec) sec.style.display = _isGroupTodo ? 'block' : 'none';
-  if (_isGroupTodo) setTimeout(() => document.getElementById('groupSubInput')?.focus(), 50);
 }
 let _groupSubs = [];
 function addGroupSub() {
@@ -3903,7 +3901,6 @@ function addGroupSub() {
   _groupSubs.push({ id: Date.now(), text, done: false });
   input.value = '';
   renderGroupSubList();
-  input.focus();
 }
 function removeGroupSub(id) {
   _groupSubs = _groupSubs.filter(s => s.id !== id);
@@ -3948,8 +3945,6 @@ function switchGroupSubType(type) {
   const vidForm = document.getElementById('groupVideoForm');
   if (textRow) textRow.style.display = type === 'text' ? 'flex' : 'none';
   if (vidForm) vidForm.style.display = type === 'video' ? 'flex' : 'none';
-  if (type === 'text') document.getElementById('groupSubInput')?.focus();
-  else document.getElementById('videoSubTitle')?.focus();
 }
 function addGroupVideoSub() {
   const title = document.getElementById('videoSubTitle')?.value.trim();
@@ -3964,7 +3959,6 @@ function addGroupVideoSub() {
   document.getElementById('videoSubProgress').value = '';
   document.getElementById('videoSubUrl').value      = '';
   renderGroupSubList();
-  document.getElementById('videoSubTitle')?.focus();
 }
 
 function openTodoAddSheet() {
@@ -3983,7 +3977,6 @@ function openTodoAddSheet() {
   selectedTodoLabel = null;
   renderTodoLabelPicker();
   document.getElementById('page-todo-add').classList.add('open');
-  setTimeout(() => document.getElementById('todoText').focus(), 320);
 }
 function closeTodoAddSheet() { document.getElementById('page-todo-add').classList.remove('open'); }
 
@@ -4243,8 +4236,6 @@ function switchDetailSubType(type) {
   const vidForm = document.getElementById('detailVideoForm');
   if (textRow) textRow.style.display = type === 'text' ? 'flex' : 'none';
   if (vidForm) vidForm.style.display = type === 'video' ? 'flex' : 'none';
-  if (type === 'text') document.getElementById('newSubtaskInput')?.focus();
-  else document.getElementById('detailVideoTitle')?.focus();
 }
 function addDetailVideoSub(todoId) {
   const title = document.getElementById('detailVideoTitle')?.value.trim();
@@ -4304,7 +4295,6 @@ function editSubtask(todoId, subtaskId) {
   input.value = s.text;
   input.style.cssText = 'flex:1;border:none;outline:none;font-size:15px;background:transparent;width:100%;color:inherit';
   el.replaceWith(input);
-  input.focus(); input.select();
   const commit = () => {
     const val = input.value.trim();
     if (val) s.text = val;
@@ -4492,7 +4482,6 @@ function openReadingProgress(id) {
   document.getElementById('readingProgressTotal').textContent = b.totalPages > 0 ? `${b.totalPages} 页` : '未设置';
   updateReadingProgressBar();
   toggleSheet('readingProgressSheet', 'readingProgressOverlay', true);
-  setTimeout(() => document.getElementById('readingProgressCurrent')?.select(), 300);
 }
 function closeReadingProgress() { toggleSheet('readingProgressSheet', 'readingProgressOverlay', false); }
 function updateReadingProgressBar() {
@@ -5146,7 +5135,6 @@ function openReminderAddSheet(id) {
   if (isCustom) renderMiniCal();
   renderCustomDateChips();
   toggleSheet('reminderAddSheet', 'reminderAddOverlay', true);
-  setTimeout(() => document.getElementById('reminderTitle').focus(), 320);
 }
 function closeReminderAddSheet() { toggleSheet('reminderAddSheet', 'reminderAddOverlay', false); }
 
@@ -5280,7 +5268,6 @@ function openTimeLogSheet(dateStr) {
   document.getElementById('timeLogEnd').value = '';
   document.getElementById('timeLogNote').value = '';
   toggleSheet('timeLogSheet', 'timeLogOverlay', true);
-  setTimeout(() => document.getElementById('timeLogTitle').focus(), 320);
 }
 function closeTimeLogSheet() { toggleSheet('timeLogSheet', 'timeLogOverlay', false); }
 
