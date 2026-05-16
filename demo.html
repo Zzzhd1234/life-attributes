@@ -104,7 +104,7 @@ body {
 /* ===== HERO CARD ===== */
 /* ===== MERGED PROFILE CARD ===== */
 /* ===== PROFILE HERO ROW ===== */
-.profile-hero-row { display: flex; gap: 0; margin: 12px 16px 4px; align-items: stretch; box-shadow: 0 4px 16px rgba(88,86,214,0.22); border-radius: 22px; }
+.profile-hero-row { display: flex; gap: 0; margin: 12px 16px 16px; align-items: stretch; box-shadow: 0 4px 16px rgba(88,86,214,0.22); border-radius: 22px; }
 
 /* Left: score card (purple gradient) */
 .score-card {
@@ -949,7 +949,7 @@ body {
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-top:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0">
       <span style="font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase">近期待办</span>
       <button onclick="openTodoAddSheet()" style="background:none;border:none;color:var(--accent);font-size:22px;line-height:1;cursor:pointer;padding:0;font-weight:300">+</button>
@@ -4846,14 +4846,11 @@ function cancelTodoLongPress() {
   _todoLongPressTimer = null;
 }
 
-let _touchTodoId = null;
 function _todoTouchStart(e) {
   const item = e.target.closest('.todo-item');
   if (!item) return;
   const id = parseInt(item.dataset.todoId);
   if (!id) return;
-  e.preventDefault();
-  _touchTodoId = id;
   _longPressTriggered = false;
   clearTimeout(_todoLongPressTimer);
   _todoLongPressTimer = setTimeout(() => {
@@ -4870,28 +4867,15 @@ function _todoTouchStart(e) {
     ], item);
   }, 500);
 }
-function _todoTouchEnd(e) {
-  if (_longPressTriggered) { _longPressTriggered = false; return; }
-  clearTimeout(_todoLongPressTimer);
-  _todoLongPressTimer = null;
-  const id = _touchTodoId;
-  _touchTodoId = null;
-  if (!id) return;
-  if (e.target.closest('.todo-del')) deleteTodo(id);
-  else if (e.target.closest('.todo-check')) toggleTodo(id);
-  else if (e.target.closest('.todo-item')) openTodoDetail(id);
-}
 function _todoTouchCancel() {
   clearTimeout(_todoLongPressTimer);
   _todoLongPressTimer = null;
-  _touchTodoId = null;
 }
 function initTodoTouchListeners() {
   ['todoList', 'doneTodosList'].forEach(elId => {
     const el = document.getElementById(elId);
     if (!el) return;
-    el.addEventListener('touchstart', _todoTouchStart, { passive: false });
-    el.addEventListener('touchend',   _todoTouchEnd,   { passive: true });
+    el.addEventListener('touchstart', _todoTouchStart, { passive: true });
     el.addEventListener('touchmove',  _todoTouchCancel,{ passive: true });
     el.addEventListener('touchcancel',_todoTouchCancel,{ passive: true });
   });
