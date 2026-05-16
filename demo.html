@@ -639,7 +639,7 @@ body {
 .todo-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px; border-bottom: 0.5px solid var(--border);
-  -webkit-touch-callout: none; user-select: none;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y;
 }
 .todo-item:last-child { border-bottom: none; }
 .todo-check {
@@ -3961,8 +3961,7 @@ function todoItemHTML(t) {
   }
   const groupTag = t.isGroup ? `<span class="todo-group-tag">组</span>` : '';
   const pinTag = t.pinned ? `<span style="font-size:12px;margin-left:4px;opacity:0.7">📌</span>` : '';
-  return `<div class="todo-item${t.isGroup?' is-group':''}"
-    ontouchstart="startTodoLongPress(event,${t.id})" ontouchend="cancelTodoLongPress()" ontouchmove="cancelTodoLongPress()"
+  return `<div class="todo-item${t.isGroup?' is-group':''}" data-todo-id="${t.id}"
     onmousedown="startTodoLongPress(event,${t.id})" onmouseup="cancelTodoLongPress()" onmouseleave="cancelTodoLongPress()">
     <div class="todo-check ${t.done?'done':''}" onclick="if(_longPressTriggered){_longPressTriggered=false;return;}toggleTodo(${t.id})">${t.done?'✓':''}</div>
     <div class="todo-body" onclick="if(_longPressTriggered){_longPressTriggered=false;return;}openTodoDetail(${t.id})">
@@ -4803,6 +4802,57 @@ function cancelTodoLongPress() {
   clearTimeout(_todoLongPressTimer);
   _todoLongPressTimer = null;
 }
+
+let _touchTodoId = null;
+function _todoTouchStart(e) {
+  const item = e.target.closest('.todo-item');
+  if (!item) return;
+  const id = parseInt(item.dataset.todoId);
+  if (!id) return;
+  e.preventDefault();
+  _touchTodoId = id;
+  _longPressTriggered = false;
+  clearTimeout(_todoLongPressTimer);
+  _todoLongPressTimer = setTimeout(() => {
+    _longPressTriggered = true;
+    _todoLongPressTimer = null;
+    const t = state.todos.find(t => t.id === id);
+    if (!t) return;
+    showContextMenu([
+      { label: '复制任务', icon: '📋', action: () => duplicateTodo(id) },
+      { label: t.pinned ? '取消置顶' : '置顶', icon: t.pinned ? '📌' : '⬆️', action: () => pinTodo(id) },
+      { label: t.isGroup ? '转为普通事项' : '转为组事项', icon: '🗂️', action: () => convertToGroup(id) },
+      { sep: true },
+      { label: '编辑', icon: '✏️', action: () => openTodoDetail(id) },
+    ], item);
+  }, 500);
+}
+function _todoTouchEnd(e) {
+  if (_longPressTriggered) { _longPressTriggered = false; return; }
+  clearTimeout(_todoLongPressTimer);
+  _todoLongPressTimer = null;
+  const id = _touchTodoId;
+  _touchTodoId = null;
+  if (!id) return;
+  if (e.target.closest('.todo-del')) deleteTodo(id);
+  else if (e.target.closest('.todo-check')) toggleTodo(id);
+  else if (e.target.closest('.todo-item')) openTodoDetail(id);
+}
+function _todoTouchCancel() {
+  clearTimeout(_todoLongPressTimer);
+  _todoLongPressTimer = null;
+  _touchTodoId = null;
+}
+function initTodoTouchListeners() {
+  ['todoList', 'doneTodosList'].forEach(elId => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.addEventListener('touchstart', _todoTouchStart, { passive: false });
+    el.addEventListener('touchend',   _todoTouchEnd,   { passive: true });
+    el.addEventListener('touchmove',  _todoTouchCancel,{ passive: true });
+    el.addEventListener('touchcancel',_todoTouchCancel,{ passive: true });
+  });
+}
 function convertToGroup(id) {
   const t = state.todos.find(t => t.id === id);
   if (!t) return;
@@ -4926,7 +4976,8 @@ if ('serviceWorker' in navigator) {
 
 requestNotifPermission().then(checkAndNotify);
 initTodaySwipe();
-document.addEventListener('contextmenu', e => e.preventDefault());
+initTodoTouchListeners();
+document.addEventListener('contextmenu', e => e.preventDefault(), { capture: true, passive: false });
 </script>
 </body>
 </html>
