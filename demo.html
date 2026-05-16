@@ -1916,11 +1916,9 @@ let state = load();
   if (!state.abilityChangelog?.length) return;
   const sleepDates = new Set((state.sleepHistory || []).map(r => (r.date || '').slice(0, 10)));
   const before = state.abilityChangelog.length;
-  state.abilityChangelog = state.abilityChangelog.filter(e => {
-    if (e.source === '删除睡眠' || e.source === '睡眠更新') return false;
-    if (e.source?.startsWith('睡眠记录') && !sleepDates.has(e.date)) return false;
-    return true;
-  });
+  state.abilityChangelog = state.abilityChangelog.filter(e =>
+    !(e.source?.includes('睡眠') && !sleepDates.has(e.date))
+  );
   if (state.abilityChangelog.length !== before) save();
 }());
 let undoTimers = {};
@@ -2100,11 +2098,9 @@ function openAbilityLog(key) {
   // Remove changelog entries for sleep records that no longer exist in history
   const sleepDates = new Set((state.sleepHistory || []).map(r => (r.date || '').slice(0, 10)));
   const before = (state.abilityChangelog || []).length;
-  state.abilityChangelog = (state.abilityChangelog || []).filter(e => {
-    if (e.source === '删除睡眠' || e.source === '睡眠更新') return false;
-    if (e.source?.startsWith('睡眠记录') && !sleepDates.has(e.date)) return false;
-    return true;
-  });
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e =>
+    !(e.source?.includes('睡眠') && !sleepDates.has(e.date))
+  );
   if (state.abilityChangelog.length !== before) save();
   const logs = [...(state.abilityChangelog || [])].filter(e => e.attr === key).reverse();
   if (!logs.length) { listEl.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:16px 0">暂无变化记录（未来的打卡/运动/睡眠将自动记录）</div>'; }
@@ -2409,7 +2405,7 @@ function saveSleep() {
     const old = state.sleepTodayEffect;
     Object.keys(state.abilities).forEach(k => nudge(k, -old));
     nudge('颜值', -old * 0.5);
-    state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source?.startsWith('睡眠记录')));
+    state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source?.includes('睡眠')));
     state.sleepHistory = state.sleepHistory.filter(h => !h.date?.startsWith(TODAY));
   }
   const sleepSrc = `睡眠记录 ${r.rating||''}`.trim();
@@ -2428,7 +2424,7 @@ function deleteSleep() {
   const old = state.sleepTodayEffect;
   Object.keys(state.abilities).forEach(k => nudge(k, -old));
   nudge('颜值', -old * 0.5);
-  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source?.startsWith('睡眠记录')));
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source?.includes('睡眠')));
   state.sleepHistory = state.sleepHistory.filter(h => !h.date?.startsWith(TODAY));
   state.sleepLoggedToday = false;
   state.sleepTodayEffect = 0;
@@ -2495,7 +2491,7 @@ function deleteSleepRecord(date) {
   nudge('颜值', -effect * 0.5);
   state.sleepHistory = state.sleepHistory.filter(h => h.date !== date);
   state.abilityChangelog = (state.abilityChangelog || []).filter(e =>
-    !(e.source?.startsWith('睡眠记录') && e.date === date)
+    !(e.source?.includes('睡眠') && e.date === date)
   );
   if (date === TODAY) { state.sleepLoggedToday = false; state.sleepTodayEffect = 0; }
   save(); renderAbilities(); updateSleepDisplay(); openSleepHistory();
