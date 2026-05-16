@@ -1919,7 +1919,7 @@ function drawAvatar() {
   const color = state.avatarColor || '#6B5CE7';
   const bg = color.replace('#', '');
   const seed = encodeURIComponent(state.name || '玩家');
-  if (img) img.src = `https://api.dicebear.com/9.x/dylan/svg?seed=${seed}&backgroundColor=ffffff&radius=50&size=64`;
+  if (img) img.src = `https://api.dicebear.com/9.x/dylan/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64`;
   if (banner) banner.style.background = color;
 }
 
@@ -2259,8 +2259,9 @@ function toggleHabit(key) {
     h.weekCount = Math.max(0, (h.weekCount || 0) - 1);
     if (h.history) h.history = h.history.filter(d => d !== TODAY);
     clearTimeout(undoTimers[key]);
-    const undoSrc = '撤销打卡：' + h.name;
-    Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, -d, undoSrc));
+    const src = '打卡：' + h.name;
+    Object.entries(habitFX(key)).forEach(([a,d]) => nudge(a, -d));
+    state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source === src));
     showToast(`已撤销 ${h.name}`);
   }
   save(); renderHabits(); renderAbilities();
@@ -2400,8 +2401,9 @@ function saveSleep() {
 function deleteSleep() {
   if (!confirm('删除今日睡眠记录？')) return;
   const old = state.sleepTodayEffect;
-  Object.keys(state.abilities).forEach(k => nudge(k, -old, '删除睡眠'));
-  nudge('颜值', -old * 0.5, '删除睡眠');
+  Object.keys(state.abilities).forEach(k => nudge(k, -old));
+  nudge('颜值', -old * 0.5);
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === TODAY && e.source === '记录睡眠'));
   state.sleepHistory = state.sleepHistory.filter(h => !h.date?.startsWith(TODAY));
   state.sleepLoggedToday = false;
   state.sleepTodayEffect = 0;
