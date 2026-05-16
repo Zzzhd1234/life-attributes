@@ -472,7 +472,20 @@
     .explain-ex { font-size:.82rem;color:var(--text2); }
 
     /* ── LYRICS PAGE (strict Spotify style) ── */
-    #page-lyrics { padding: 0; }
+    #page-lyrics {
+      padding: 0;
+      display: block !important;
+      position: fixed;
+      top: 60px; left: 0; right: 0; bottom: 0;
+      z-index: 60;
+      background: var(--bg);
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform .32s cubic-bezier(.32,0,.28,1);
+      will-change: transform;
+      pointer-events: none;
+    }
+    #page-lyrics.active { transform: translateX(0); pointer-events: auto; }
 
     /* Search bar */
     .lp-search-section { padding: 20px 24px; background: var(--bg); border-bottom: 1px solid rgba(255,255,255,.06); }
@@ -2484,24 +2497,24 @@ function openSavedSong(id, fromArtist) {
   document.getElementById("lyrics-chat-messages").innerHTML = "";
   document.getElementById("lyrics-chat-section").style.display = "none";
   renderLyricsView();
-  switchPage("lyrics");
+  if (_fromArtist) {
+    // Keep artists page visible behind lyrics overlay
+    document.getElementById("page-lyrics").classList.add("active");
+  } else {
+    switchPage("lyrics");
+  }
   document.getElementById("lp-search-section").style.display = "none";
   document.getElementById("lp-saved-strip").style.display = "none";
   document.getElementById("lp-back-bar").style.display = _fromArtist ? "block" : "none";
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("page-lyrics").scrollTop = 0;
 }
 
 function backToArtist() {
   _fromArtist = false;
   document.getElementById("lp-back-bar").style.display = "none";
   document.getElementById("lp-search-section").style.display = "";
-  // Switch page without calling renderArtistList() — keeps artist detail (.open) intact
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById("page-artists").classList.add("active");
-  const tabs = document.querySelectorAll(".nav-tab");
-  const order = ["home","phrases","flashcard","scenarios","tips","artists","add"];
-  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
-  tabs[order.indexOf("artists")]?.classList.add("active");
+  // Just close the lyrics overlay — artists page is still active behind it
+  document.getElementById("page-lyrics").classList.remove("active");
 }
 
 // ─── ARTIST PHRASE STORAGE ────────────────────────────────────────────────────
@@ -3056,7 +3069,10 @@ _addSwipeBack(
 
 _addSwipeBack(
   document.getElementById("page-lyrics"),
-  () => { if (_fromArtist) backToArtist(); },
+  () => {
+    if (_fromArtist) backToArtist();
+    else document.getElementById("page-lyrics").classList.remove("active");
+  },
   false
 );
 </script>
