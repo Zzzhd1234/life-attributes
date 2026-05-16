@@ -2628,6 +2628,13 @@ function recalcWeeklyTotals() {
     const prevCE = cardioEffect(state.weekCardioApplied);
     nudge('体质', -prevCE.body); nudge('魅力', -prevCE.charm);
   }
+  // Undo previous 颜值 effect (derived from previously applied values)
+  if (state.weekStrengthApplied !== null && state.weekCardioApplied !== null) {
+    const prevSE = STRENGTH_EFFECT[Math.min(3, state.weekStrengthApplied)];
+    const prevCE = cardioEffect(state.weekCardioApplied);
+    const prevOverall = (prevSE + prevCE.body) / 2;
+    if (prevOverall !== 0) nudge('颜值', prevOverall > 0 ? -0.08 : 0.08);
+  }
   // Remove all previous exercise changelog entries so delete = true undo
   state.abilityChangelog = (state.abilityChangelog || []).filter(e => !e.source?.includes('/周'));
   const weekStart = getWeekStart(TODAY);
