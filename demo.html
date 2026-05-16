@@ -36,21 +36,26 @@ body {
 
 /* ===== TAB BAR ===== */
 .tab-bar {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  width: calc(100% - 32px); max-width: 358px;
-  background: #D1D1D8;
-  border-radius: 26px;
-  display: flex; padding: 5px; z-index: 1000;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 390px;
+  background: rgba(249,249,251,0.92);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid var(--border);
+  display: flex; padding: 6px 0 28px; z-index: 1000;
 }
 .tab-item {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  gap: 3px; cursor: pointer; padding: 9px 4px 8px;
-  color: #636366; border-radius: 20px; transition: color 0.15s;
+  gap: 2px; cursor: pointer; padding: 4px 0; color: #8E8E93; transition: color 0.15s;
 }
-.tab-item.active { color: var(--accent); background: white; box-shadow: 0 1px 8px rgba(0,0,0,0.10); }
+.tab-item.active { color: #1C1C1E; }
 .tab-icon { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
-.tab-label { font-size: 10px; font-weight: 600; }
+.tab-icon-outline { display: block; }
+.tab-icon-fill { display: none; }
+.tab-item.active .tab-icon-outline { display: none; }
+.tab-item.active .tab-icon-fill { display: block; }
+.tab-label { font-size: 10px; font-weight: 500; }
+.tab-item.active .tab-label { font-weight: 700; }
 
 /* ===== PAGES ===== */
 .page { display: none; padding-bottom: 110px; min-height: 100vh; animation: fadeIn 0.2s ease; }
@@ -1659,15 +1664,21 @@ body {
 <div class="tab-bar">
   <div class="tab-item active" onclick="switchTab('profile',this)">
     <div class="tab-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <svg class="tab-icon-outline" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
         <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+      <svg class="tab-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="8" r="4.5"/><path d="M3.5 21c0-4.5 3.8-7.5 8.5-7.5s8.5 3 8.5 7.5z"/>
       </svg>
     </div>
     <div class="tab-label">个人</div>
   </div>
   <div class="tab-item" onclick="switchTab('habits',this)">
     <div class="tab-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="tab-icon-outline" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2c-1 3.5-4 5-4 9a4 4 0 008 0c0-2.5-1.5-4.5-2-6-.6 2-2 3-2 3s-1-2 0-6z"/>
+      </svg>
+      <svg class="tab-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2c-1 3.5-4 5-4 9a4 4 0 008 0c0-2.5-1.5-4.5-2-6-.6 2-2 3-2 3s-1-2 0-6z"/>
       </svg>
     </div>
@@ -1675,24 +1686,39 @@ body {
   </div>
   <div class="tab-item" onclick="switchTab('calendar',this)">
     <div class="tab-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <svg class="tab-icon-outline" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
         <rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3 10h18"/>
+      </svg>
+      <svg class="tab-icon-fill" width="22" height="22" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="16" rx="2.5" fill="currentColor"/>
+        <path d="M16 3v4M8 3v4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <rect x="3" y="10" width="18" height="1.5" fill="white"/>
       </svg>
     </div>
     <div class="tab-label">日历</div>
   </div>
   <div class="tab-item" onclick="switchTab('records',this)">
     <div class="tab-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <svg class="tab-icon-outline" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
         <rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 10h8M8 14h5"/>
+      </svg>
+      <svg class="tab-icon-fill" width="22" height="22" viewBox="0 0 24 24">
+        <rect x="4" y="3" width="16" height="18" rx="2.5" fill="currentColor"/>
+        <path d="M8 10h8M8 14h5" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
       </svg>
     </div>
     <div class="tab-label">记录</div>
   </div>
   <div class="tab-item" onclick="switchTab('report',this)">
     <div class="tab-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <svg class="tab-icon-outline" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M4 20v-6M9 20v-10M14 20v-14M19 20v-8"/>
+      </svg>
+      <svg class="tab-icon-fill" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke-linecap="round">
+        <rect x="2.5" y="14" width="3" height="6" rx="1.5"/>
+        <rect x="7.5" y="10" width="3" height="10" rx="1.5"/>
+        <rect x="12.5" y="6" width="3" height="14" rx="1.5"/>
+        <rect x="17.5" y="12" width="3" height="8" rx="1.5"/>
       </svg>
     </div>
     <div class="tab-label">报告</div>
