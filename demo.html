@@ -1307,6 +1307,38 @@ body {
   <button id="readingEditDeleteBtn" class="btn-destructive" style="display:none" onclick="deleteBook()">删除书籍</button>
 </div>
 
+<!-- ===== READING PROGRESS SHEET ===== -->
+<div class="sheet-overlay reading-overlay" id="readingProgressOverlay" style="z-index:2003" onclick="closeReadingProgress()"></div>
+<div class="settings-sheet reading-edit-sheet" id="readingProgressSheet" style="z-index:2004">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="readingProgressTitle">更新进度</div>
+    <button class="sheet-close" onclick="closeReadingProgress()">✕</button>
+  </div>
+  <div class="section-label" id="readingProgressBookName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+  <div class="card">
+    <div class="settings-row">
+      <span class="settings-label">当前页</span>
+      <input id="readingProgressCurrent" type="number" min="0" placeholder="0"
+             oninput="updateReadingProgressBar()"
+             style="width:80px;border:1px solid #c7c7cc;border-radius:8px;padding:5px 8px;font-size:15px;text-align:right;outline:none">
+    </div>
+    <div class="settings-row" style="border-bottom:none">
+      <span class="settings-label">总页数</span>
+      <span id="readingProgressTotal" style="font-size:15px;color:var(--muted)">-</span>
+    </div>
+    <div style="padding:4px 16px 14px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px">
+        <span>进度</span><span id="readingProgressPct">0%</span>
+      </div>
+      <div style="height:8px;background:#F0EEF8;border-radius:4px;overflow:hidden">
+        <div id="readingProgressBar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.3s"></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-primary" style="margin-top:4px" onclick="saveReadingProgress()">保存进度</button>
+</div>
+
 <!-- ===== HABIT CALENDAR SHEET ===== -->
 <div class="sheet-overlay" id="habitCalOverlay" onclick="closeHabitCalendar()"></div>
 <div class="settings-sheet" id="habitCalSheet">
@@ -4354,11 +4386,14 @@ function renderReadingBooks() {
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.title || '未命名'}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px">${pageText}</div>
+          <button onclick="event.stopPropagation();openReadingProgress(${b.id})"
+                  style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px 10px;font-size:12px;color:var(--muted);cursor:pointer">
+            <span style="font-size:10px">📖</span> ${pageText}
+          </button>
         </div>
         <span class="reading-book-badge" style="background:${badgeBg};color:${badgeColor}">${badgeText}</span>
       </div>
-      <div class="reading-book-progress">
+      <div class="reading-book-progress" style="margin-top:8px">
         <div class="reading-book-progress-fill" style="width:${pct}%;background:${barColor}"></div>
       </div>
     </div>`;
@@ -4381,6 +4416,42 @@ function openReadingEdit(id) {
   toggleSheet('readingEditSheet', 'readingEditOverlay', true);
 }
 function closeReadingEdit() { toggleSheet('readingEditSheet', 'readingEditOverlay', false); }
+
+let _progressBookId = null;
+function openReadingProgress(id) {
+  const books = state.habits.reading?.books || [];
+  const b = books.find(b => b.id === id);
+  if (!b) return;
+  _progressBookId = id;
+  document.getElementById('readingProgressTitle').textContent = '更新进度';
+  document.getElementById('readingProgressBookName').textContent = b.title || '未命名';
+  document.getElementById('readingProgressCurrent').value = b.currentPage || 0;
+  document.getElementById('readingProgressTotal').textContent = b.totalPages > 0 ? `${b.totalPages} 页` : '未设置';
+  updateReadingProgressBar();
+  toggleSheet('readingProgressSheet', 'readingProgressOverlay', true);
+  setTimeout(() => document.getElementById('readingProgressCurrent')?.select(), 300);
+}
+function closeReadingProgress() { toggleSheet('readingProgressSheet', 'readingProgressOverlay', false); }
+function updateReadingProgressBar() {
+  const cur = parseInt(document.getElementById('readingProgressCurrent')?.value) || 0;
+  const books = state.habits.reading?.books || [];
+  const b = _progressBookId ? books.find(b => b.id === _progressBookId) : null;
+  const tot = b?.totalPages || 0;
+  const pct = tot > 0 ? Math.min(100, Math.round(cur / tot * 100)) : 0;
+  const bar   = document.getElementById('readingProgressBar');
+  const pctEl = document.getElementById('readingProgressPct');
+  if (bar)   bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = tot > 0 ? pct + '%' : `第 ${cur} 页`;
+}
+function saveReadingProgress() {
+  const books = state.habits.reading?.books || [];
+  const b = books.find(b => b.id === _progressBookId);
+  if (!b) return;
+  const cur = parseInt(document.getElementById('readingProgressCurrent')?.value) || 0;
+  b.currentPage = Math.max(0, b.totalPages > 0 ? Math.min(b.totalPages, cur) : cur);
+  save(); renderReadingBooks(); closeReadingProgress();
+  showToast('进度已更新');
+}
 function updateReadingEditBar() {
   const cur = parseInt(document.getElementById('readingEditCurrent')?.value) || 0;
   const tot = parseInt(document.getElementById('readingEditTotal')?.value) || 0;
