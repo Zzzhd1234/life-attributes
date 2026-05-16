@@ -25,6 +25,7 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
     /* NAV */
@@ -720,6 +721,20 @@
         <button class="lp-chat-send" onclick="sendLyricsChat()" id="lyrics-chat-send">发送</button>
       </div>
     </div>
+  </div>
+
+  <!-- Phrase info popup (tap on highlighted mark) -->
+  <div id="phrase-info-overlay" style="display:none;position:fixed;inset:0;z-index:9997" onclick="closePhraseInfo()"></div>
+  <div id="phrase-info-popup" style="display:none;position:fixed;z-index:9998;background:#1c1c1e;border-radius:16px;padding:18px 18px 14px;box-shadow:0 8px 40px rgba(0,0,0,.65);width:calc(100% - 48px);max-width:340px;left:50%;transform:translateX(-50%);bottom:130px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+      <div id="pip-word" style="font-size:1.05rem;font-weight:800;color:#1ed760;flex:1"></div>
+      <button onclick="closePhraseInfo()" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);width:24px;height:24px;border-radius:50%;font-size:.85rem;cursor:pointer;flex-shrink:0;margin-left:8px;line-height:1">×</button>
+    </div>
+    <div id="pip-meaning" style="font-size:.9rem;color:rgba(255,255,255,.85);margin-bottom:4px;line-height:1.5"></div>
+    <div id="pip-def" style="font-size:.82rem;color:rgba(255,255,255,.4);font-style:italic;margin-bottom:8px"></div>
+    <div id="pip-example" style="font-size:.82rem;color:rgba(255,255,255,.5);border-left:2px solid #1ed760;padding-left:8px;line-height:1.5;margin-bottom:12px"></div>
+    <div id="pip-hint" style="font-size:.8rem;color:rgba(255,255,255,.28);margin-bottom:12px">暂无释义 · 可在歌词页标记后用 AI 解释获取</div>
+    <button id="pip-unmark" style="background:rgba(255,101,132,.12);border:1px solid rgba(255,101,132,.2);color:#ff6584;border-radius:8px;padding:7px 14px;font-size:.82rem;cursor:pointer;font-family:inherit">取消标记</button>
   </div>
 
   <!-- Floating mark tooltip -->
@@ -1899,6 +1914,9 @@ document.addEventListener("DOMContentLoaded", () => {
       sel.removeAllRanges(); // kill native iOS menu before it renders
       _showMarkTooltip(text, rect);
     }, { passive: true });
+
+    // Prevent iOS contextmenu callout on long-press within lyrics
+    _lv.addEventListener('contextmenu', e => e.preventDefault(), { capture: true, passive: false });
   }
 
   // Desktop: selectionchange for mouse-driven selection
@@ -1954,7 +1972,7 @@ function applyMarks(plainText, phrases) {
   let out = "", pos = 0;
   merged.forEach(([s, e]) => {
     out += escHtml(plainText.slice(pos, s));
-    out += `<mark class="pm" onclick="event.stopPropagation();unmarkPhrase('${plainText.slice(s,e).replace(/'/g,"\\'")}') ">${escHtml(plainText.slice(s, e))}</mark>`;
+    out += `<mark class="pm" onclick="event.stopPropagation();showPhraseInfo('${plainText.slice(s,e).replace(/'/g,"\\'")}')">${escHtml(plainText.slice(s, e))}</mark>`;
     pos = e;
   });
   return out + escHtml(plainText.slice(pos));
@@ -2008,6 +2026,31 @@ function _showMarkTooltip(text, rect) {
 function hideMarkTooltip() {
   document.getElementById("mark-tooltip").style.display = "none";
   currentSelection = "";
+}
+
+function showPhraseInfo(phrase) {
+  const stored = data.phrases.find(p => p.phrase.toLowerCase() === phrase.toLowerCase());
+  const explained = explainedResults.find(r => r.phrase?.toLowerCase() === phrase.toLowerCase());
+  const info = stored || explained;
+  document.getElementById("pip-word").textContent = phrase;
+  const meaning = info?.meaning || "";
+  const def = info?.definition || "";
+  const example = info?.example || "";
+  document.getElementById("pip-meaning").textContent = meaning;
+  document.getElementById("pip-meaning").style.display = meaning ? "" : "none";
+  document.getElementById("pip-def").textContent = def;
+  document.getElementById("pip-def").style.display = def ? "" : "none";
+  document.getElementById("pip-example").textContent = example;
+  document.getElementById("pip-example").style.display = example ? "" : "none";
+  document.getElementById("pip-hint").style.display = (!meaning && !example) ? "" : "none";
+  document.getElementById("pip-unmark").onclick = () => { closePhraseInfo(); unmarkPhrase(phrase); };
+  document.getElementById("phrase-info-popup").style.display = "block";
+  document.getElementById("phrase-info-overlay").style.display = "block";
+}
+
+function closePhraseInfo() {
+  document.getElementById("phrase-info-popup").style.display = "none";
+  document.getElementById("phrase-info-overlay").style.display = "none";
 }
 
 function unmarkSelected() {
@@ -2362,7 +2405,8 @@ function saveSong() {
     id: Date.now(),
     title: currentLyricsTrack.title,
     artist: currentLyricsTrack.artist,
-    lines: lyricsLines
+    lines: lyricsLines,
+    markedPhrases: [...markedPhrases]
   });
   setSavedSongs(songs);
   renderLyricsStrip();
@@ -2377,7 +2421,7 @@ function openSavedSong(id) {
   if (!song) return;
   currentLyricsTrack = { title: song.title, artist: song.artist };
   lyricsLines = song.lines;
-  markedPhrases = [];
+  markedPhrases = song.markedPhrases ? [...song.markedPhrases] : [];
   explainedResults = [];
   lyricsChatHistory = [];
   document.getElementById("lyrics-chat-messages").innerHTML = "";
@@ -2791,6 +2835,50 @@ function useClipTranscript() {
 renderHome();
 renderScenarios();
 renderTips();
+
+// ─── SWIPE BACK ──────────────────────────────────────────────────────────────
+function _addSwipeBack(el, onBack, edgeOnly) {
+  if (!el) return;
+  let sx = 0, sy = 0, on = false;
+  el.addEventListener('touchstart', e => {
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    on = !edgeOnly || sx < 44;
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (!on) return;
+    const dx = e.touches[0].clientX - sx;
+    const dy = e.touches[0].clientY - sy;
+    if (dx < 4 || Math.abs(dy) > Math.abs(dx)) { on = false; el.style.transform = ''; return; }
+    e.preventDefault();
+    el.style.transition = 'none';
+    el.style.transform = `translateX(${Math.max(0, dx)}px)`;
+  }, { passive: false });
+  el.addEventListener('touchend', e => {
+    if (!on) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    on = false;
+    el.style.transition = 'transform .22s ease';
+    el.style.transform = '';
+    if (dx > 80) setTimeout(onBack, 80);
+  });
+}
+
+_addSwipeBack(
+  document.getElementById("artist-detail-view"),
+  () => closeArtist()
+);
+
+_addSwipeBack(
+  document.getElementById("page-lyrics"),
+  () => {
+    if (document.getElementById("lp-search-section")?.style.display === "none") {
+      switchPage("artists");
+      document.getElementById("lp-search-section").style.display = "";
+    }
+  },
+  true
+);
 </script>
 </body>
 </html>
