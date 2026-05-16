@@ -3290,11 +3290,10 @@ function closeAvatarPicker() {
   toggleSheet('avatarPickerSheet', 'avatarPickerOverlay', false);
 }
 function renderAvatarPicker() {
-  const bg  = (state.avatarColor || '#6B5CE7').replace('#', '');
   const cur = state.avatarSeed || state.name || '玩家';
   document.getElementById('avatarPickerGrid').innerHTML = DYLAN_SEEDS.map(seed => `
     <div class="avatar-option ${seed === cur ? 'selected' : ''}" onclick="selectAvatarSeed('${seed}')">
-      <img src="https://api.dicebear.com/9.x/dylan/svg?seed=${seed}&backgroundColor=${bg}&radius=50&size=64" alt="${seed}">
+      <img src="https://api.dicebear.com/9.x/dylan/svg?seed=${seed}&backgroundColor=f0f0f2&radius=50&size=64" alt="${seed}">
     </div>
   `).join('');
 }
