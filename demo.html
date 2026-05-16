@@ -4035,10 +4035,35 @@ function renderTodoDetail() {
     <div class="section-label" style="color:var(--accent)">${groupSubTitle}</div>
     <div class="card">
       ${subtaskRows}
-      <div class="subtask-add-row">
+      <div class="sub-type-tabs" style="border-top:${subs.length?'0.5px solid var(--border)':'none'}">
+        <button class="sub-type-tab on" id="detailSubTypeText" onclick="switchDetailSubType('text')">文字</button>
+        <button class="sub-type-tab" id="detailSubTypeVideo" onclick="switchDetailSubType('video')">▶ 视频</button>
+      </div>
+      <div id="detailTextInputRow" class="subtask-add-row" style="border-top:none;padding:4px 16px 10px">
         <input type="text" id="newSubtaskInput" placeholder="添加子事项"
                onkeydown="if(event.key==='Enter')addSubtask(${t.id})">
         <button class="subtask-add-btn" onclick="addSubtask(${t.id})">+</button>
+      </div>
+      <div id="detailVideoForm" style="display:none" class="video-form">
+        <div class="video-form-field">
+          <div class="video-form-label">视频标题</div>
+          <input type="text" id="detailVideoTitle" placeholder="例：第3章 React Hooks">
+        </div>
+        <div class="video-form-row">
+          <div class="video-form-field">
+            <div class="video-form-label">总时长（分钟）</div>
+            <input type="number" id="detailVideoDuration" placeholder="42" min="1">
+          </div>
+          <div class="video-form-field">
+            <div class="video-form-label">当前进度（分钟）</div>
+            <input type="number" id="detailVideoProgress" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="video-form-field">
+          <div class="video-form-label">链接来源（可选）</div>
+          <input type="url" id="detailVideoUrl" placeholder="https://...">
+        </div>
+        <button class="video-form-add" onclick="addDetailVideoSub(${t.id})">添加视频事项</button>
       </div>
     </div>` : '';
   document.getElementById('todoDetailContent').innerHTML = `
@@ -4142,6 +4167,35 @@ function addSubtask(todoId) {
   if (!t.subtasks) t.subtasks = [];
   t.subtasks.push({ id: Date.now(), text, done: false });
   input.value = '';
+  save(); renderTodoDetail(); renderTodos();
+}
+function switchDetailSubType(type) {
+  const tbText = document.getElementById('detailSubTypeText');
+  const tbVid  = document.getElementById('detailSubTypeVideo');
+  if (tbText) tbText.classList.toggle('on', type === 'text');
+  if (tbVid)  tbVid.classList.toggle('on', type === 'video');
+  const textRow = document.getElementById('detailTextInputRow');
+  const vidForm = document.getElementById('detailVideoForm');
+  if (textRow) textRow.style.display = type === 'text' ? 'flex' : 'none';
+  if (vidForm) vidForm.style.display = type === 'video' ? 'flex' : 'none';
+  if (type === 'text') document.getElementById('newSubtaskInput')?.focus();
+  else document.getElementById('detailVideoTitle')?.focus();
+}
+function addDetailVideoSub(todoId) {
+  const title = document.getElementById('detailVideoTitle')?.value.trim();
+  const dur   = parseInt(document.getElementById('detailVideoDuration')?.value) || 0;
+  const prog  = Math.min(dur, parseInt(document.getElementById('detailVideoProgress')?.value) || 0);
+  const url   = document.getElementById('detailVideoUrl')?.value.trim();
+  if (!title) { showToast('请填写视频标题'); return; }
+  if (!dur)   { showToast('请填写视频时长'); return; }
+  const t = state.todos.find(t => t.id === todoId);
+  if (!t) return;
+  if (!t.subtasks) t.subtasks = [];
+  t.subtasks.push({ id: Date.now(), type: 'video', title, duration: dur, progress: prog, url: url || '' });
+  document.getElementById('detailVideoTitle').value    = '';
+  document.getElementById('detailVideoDuration').value = '';
+  document.getElementById('detailVideoProgress').value = '';
+  document.getElementById('detailVideoUrl').value      = '';
   save(); renderTodoDetail(); renderTodos();
 }
 function toggleSubtask(todoId, subtaskId) {
