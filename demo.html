@@ -2564,13 +2564,14 @@ function openExerciseHistory() {
 function closeExerciseHistory() { toggleSheet('exerciseHistorySheet', 'exerciseHistoryOverlay', false); }
 
 // ===== EXERCISE =====
-const STRENGTH_EFFECT = [-0.1, 0.1, 0.2, 0.3];
+const STRENGTH_EFFECT = [0, 0.1, 0.2, 0.3];
 
 function cardioEffect(c) {
-  if (c < 15)  return { body: -0.1, charm: 0 };
-  if (c < 90)  return { body:  0.1, charm: 0 };
-  if (c < 150) return { body:  0.2, charm: 0.1 };
-  return              { body:  0.3, charm: 0.2 };
+  if (c === 0)  return { body:  0,   charm: 0 };
+  if (c < 15)   return { body: -0.1, charm: 0 };
+  if (c < 90)   return { body:  0.1, charm: 0 };
+  if (c < 150)  return { body:  0.2, charm: 0.1 };
+  return               { body:  0.3, charm: 0.2 };
 }
 
 const EXERCISES = {
@@ -2640,7 +2641,7 @@ function recalcWeeklyTotals() {
   nudge('魅力', newSE, exSrc); nudge('体质', newSE * 0.5, exSrc);
   nudge('体质', newCE.body, exSrc); nudge('魅力', newCE.charm, exSrc);
   const overall = (newSE + newCE.body) / 2;
-  nudge('颜值', overall > 0 ? 0.08 : -0.08, exSrc);
+  if (overall !== 0) nudge('颜值', overall > 0 ? 0.08 : -0.08, exSrc);
   state.weekStrengthApplied = state.weekStrength;
   state.weekCardioApplied   = state.weekCardio;
 }
