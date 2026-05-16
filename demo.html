@@ -4052,8 +4052,7 @@ function _startSubDrag(e, todoId, subId) {
     position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
     width: rect.width + 'px', zIndex: '9999', pointerEvents: 'none',
     boxShadow: '0 16px 48px rgba(0,0,0,0.24)', borderRadius: '12px',
-    background: 'white', transform: 'scale(1.04)', opacity: '0.97',
-    transition: 'box-shadow 0.15s, transform 0.15s'
+    background: 'white', transform: 'scale(1.04)', opacity: '0.97'
   });
   document.body.appendChild(ghost);
 
@@ -4066,9 +4065,9 @@ function _startSubDrag(e, todoId, subId) {
   const origPivot = allItems.indexOf(item);
   const others = allItems.filter(x => x !== item);
 
-  // Enable smooth transitions on sibling items
+  // Enable smooth transitions on sibling items (no willChange — avoids GPU layer compositing conflict with fixed ghost)
   const EASE = 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-  others.forEach(el => { el.style.transition = EASE; el.style.willChange = 'transform'; });
+  others.forEach(el => { el.style.transition = EASE; });
 
   // Capture natural (pre-transform) midpoints once
   const naturalMids = others.map(el => {
@@ -4110,7 +4109,7 @@ function _startSubDrag(e, todoId, subId) {
     ghost.remove();
     item.style.opacity = '';
     item.style.pointerEvents = '';
-    others.forEach(el => { el.style.transition = ''; el.style.transform = ''; el.style.willChange = ''; });
+    others.forEach(el => { el.style.transition = ''; el.style.transform = ''; });
     const tt = state.todos.find(t => t.id === todoId);
     if (!tt?.subtasks || tt.subtasks.length < 2) return;
     const oldIdx = tt.subtasks.findIndex(s => s.id === subId);
