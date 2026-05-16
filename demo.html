@@ -1909,11 +1909,20 @@ function load() {
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
 let state = load();
-// Clean up changelog entries written by old buggy delete/resave paths
-if (state.abilityChangelog?.some(e => e.source === '删除睡眠' || e.source === '睡眠更新')) {
-  state.abilityChangelog = state.abilityChangelog.filter(e => e.source !== '删除睡眠' && e.source !== '睡眠更新');
-  save();
-}
+// Purge orphaned sleep changelog entries: any '睡眠记录' entry whose date
+// has no corresponding record in sleepHistory means that sleep was deleted.
+// Also purge legacy '删除睡眠' / '睡眠更新' entries from old code.
+(function cleanSleepChangelog() {
+  if (!state.abilityChangelog?.length) return;
+  const sleepDates = new Set((state.sleepHistory || []).map(r => (r.date || '').slice(0, 10)));
+  const before = state.abilityChangelog.length;
+  state.abilityChangelog = state.abilityChangelog.filter(e => {
+    if (e.source === '删除睡眠' || e.source === '睡眠更新') return false;
+    if (e.source?.startsWith('睡眠记录') && !sleepDates.has(e.date)) return false;
+    return true;
+  });
+  if (state.abilityChangelog.length !== before) save();
+}());
 let undoTimers = {};
 let reportMonth = new Date();
 
