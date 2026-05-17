@@ -794,20 +794,27 @@
   <!-- Floating mark tooltip -->
   <div id="mark-tooltip" style="display:none;position:fixed;z-index:9999;transform:translateX(-50%)" onmousedown="event.preventDefault()">
     <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:7px solid #1c1c1e;margin:0 auto"></div>
-    <div style="background:#1c1c1e;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.6);display:flex;overflow:hidden;white-space:nowrap">
-      <button id="tt-mark" onclick="markSelectedPhrase()"
-              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit">
-        ＋ 标记
-      </button>
-      <div id="tt-div1" style="width:1px;background:rgba(255,255,255,.12);margin:8px 0"></div>
-      <button id="tt-explain" onclick="markAndExplainSelected()"
-              style="background:none;border:none;color:#fff;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit">
-        AI 解释
-      </button>
-      <button id="tt-unmark" onclick="unmarkSelected()"
-              style="display:none;background:none;border:none;color:#ff6584;padding:11px 18px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit">
-        取消标记
-      </button>
+    <div style="background:#1c1c1e;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden;min-width:160px">
+      <div id="tt-preview" style="font-size:.78rem;color:rgba(255,255,255,.5);padding:6px 14px 0;text-align:center;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <div style="display:flex;white-space:nowrap">
+        <button id="tt-left" onclick="expandSelLeft()" style="background:none;border:none;color:rgba(255,255,255,.55);padding:10px 14px;font-size:1rem;cursor:pointer;font-family:inherit">←</button>
+        <div style="width:1px;background:rgba(255,255,255,.1);margin:6px 0"></div>
+        <button id="tt-mark" onclick="markSelectedPhrase()"
+                style="background:none;border:none;color:#fff;padding:10px 14px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;flex:1">
+          ＋ 标记
+        </button>
+        <div id="tt-div1" style="width:1px;background:rgba(255,255,255,.1);margin:6px 0"></div>
+        <button id="tt-explain" onclick="markAndExplainSelected()"
+                style="background:none;border:none;color:#fff;padding:10px 14px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;flex:1">
+          AI 解释
+        </button>
+        <button id="tt-unmark" onclick="unmarkSelected()"
+                style="display:none;background:none;border:none;color:#ff6584;padding:10px 14px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;flex:1">
+          取消标记
+        </button>
+        <div style="width:1px;background:rgba(255,255,255,.1);margin:6px 0"></div>
+        <button id="tt-right" onclick="expandSelRight()" style="background:none;border:none;color:rgba(255,255,255,.55);padding:10px 14px;font-size:1rem;cursor:pointer;font-family:inherit">→</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1965,24 +1972,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const _lv = document.getElementById("lyrics-view");
   if (_lv) {
     if (navigator.maxTouchPoints > 0) {
-      // Mobile: no native selection UI — detect tapped word via caretRangeFromPoint
-      let _tapX = 0, _tapY = 0, _tapT = 0;
+      // Mobile: user-select:none so iOS never shows native selection UI.
+      // Detect word under finger via caretRangeFromPoint on any lift (tap or long-press).
+      let _tapX = 0, _tapY = 0;
       _lv.addEventListener('touchstart', e => {
         _tapX = e.touches[0].clientX;
         _tapY = e.touches[0].clientY;
-        _tapT = Date.now();
       }, { passive: true });
 
       _lv.addEventListener('touchend', e => {
-        const dur = Date.now() - _tapT;
         const x = e.changedTouches[0].clientX;
         const y = e.changedTouches[0].clientY;
-        // Ignore if too long (scroll attempt) or moved too far
-        if (dur > 500 || Math.hypot(x - _tapX, y - _tapY) > 18) return;
+        // Ignore if finger moved too far (scroll)
+        if (Math.hypot(x - _tapX, y - _tapY) > 22) return;
         // If tap landed on an already-marked phrase, let its onclick handle it
         const tgt = document.elementFromPoint(x, y);
         if (tgt && (tgt.tagName === 'MARK' || tgt.closest?.('mark'))) return;
-        // Find the character position at tap point
+        // Find caret position at finger release
         const range = document.caretRangeFromPoint
           ? document.caretRangeFromPoint(x, y)
           : (() => {
@@ -1996,18 +2002,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!range) return;
         const node = range.startContainer;
         if (!node || node.nodeType !== Node.TEXT_NODE || !_lv.contains(node)) return;
-        // Expand to word boundaries
-        const txt = node.textContent;
-        let s = range.startOffset, e2 = s;
-        while (s > 0 && /[^\s,!?.;:"'()]/.test(txt[s - 1])) s--;
-        while (e2 < txt.length && /[^\s,!?.;:"'()]/.test(txt[e2])) e2++;
-        const word = txt.slice(s, e2).trim();
-        if (!word || word.length < 2) return;
-        const wr = document.createRange();
-        wr.setStart(node, s);
-        wr.setEnd(node, e2);
-        currentSelection = word;
-        _showMarkTooltip(word, wr.getBoundingClientRect());
+        // Find the lyric line element (may contain <mark> children)
+        const lineEl = node.parentElement?.closest('.lp-lyric-line');
+        if (!lineEl) return;
+        // Get full text of the line and offset of the caret within it
+        const lineText = lineEl.textContent;
+        const caretInLine = _textOffsetInEl(node, range.startOffset, lineEl);
+        if (caretInLine < 0) return;
+        // Expand to word boundaries in the line's full text
+        let s = caretInLine, e2 = caretInLine;
+        while (s > 0 && /[^\s,!?.;:"'()]/.test(lineText[s - 1])) s--;
+        while (e2 < lineText.length && /[^\s,!?.;:"'()]/.test(lineText[e2])) e2++;
+        if (e2 <= s || lineText.slice(s, e2).trim().length < 2) return;
+        _startLineSel(lineEl, lineText, s, e2);
       }, { passive: true });
 
     } else {
@@ -2109,6 +2116,78 @@ function renderLyricsStrip() {
   ).join("");
 }
 
+// ─── LINE SELECTION STATE ─────────────────────────────────────────────────────
+// Tracks the current selection within a single lyric line for expand-by-word.
+let _lineSel = null; // { el, text, start, end }
+
+function _textOffsetInEl(targetNode, targetOffset, rootEl) {
+  let pos = 0;
+  const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    if (walker.currentNode === targetNode) return pos + targetOffset;
+    pos += walker.currentNode.textContent.length;
+  }
+  return -1;
+}
+
+function _domRangeAtLinePos(lineEl, start, end) {
+  let pos = 0;
+  const range = document.createRange();
+  let sSet = false, eSet = false;
+  const walker = document.createTreeWalker(lineEl, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const len = node.textContent.length;
+    if (!sSet && pos + len >= start) { range.setStart(node, start - pos); sSet = true; }
+    if (!eSet && pos + len >= end)   { range.setEnd(node, end - pos);   eSet = true; }
+    if (sSet && eSet) break;
+    pos += len;
+  }
+  return (sSet && eSet) ? range : null;
+}
+
+function _startLineSel(lineEl, lineText, start, end) {
+  _lineSel = { el: lineEl, text: lineText, start, end };
+  _applyLineSel();
+}
+
+function _applyLineSel() {
+  if (!_lineSel) return;
+  const { el, text, start, end } = _lineSel;
+  const phrase = text.slice(start, end).trim();
+  currentSelection = phrase;
+  document.getElementById("tt-preview").textContent = phrase;
+  // Show expand buttons only on touch devices
+  const hasMobile = navigator.maxTouchPoints > 0;
+  document.getElementById("tt-left").style.display  = hasMobile ? "" : "none";
+  document.getElementById("tt-right").style.display = hasMobile ? "" : "none";
+  const domRange = _domRangeAtLinePos(el, start, end);
+  const rect = domRange ? domRange.getBoundingClientRect() : el.getBoundingClientRect();
+  _showMarkTooltip(phrase, rect);
+}
+
+function expandSelLeft() {
+  if (!_lineSel) return;
+  const { text, start, end } = _lineSel;
+  let s = start;
+  while (s > 0 && /\s/.test(text[s - 1])) s--;
+  while (s > 0 && /\S/.test(text[s - 1])) s--;
+  if (s >= start) return;
+  _lineSel.start = s;
+  _applyLineSel();
+}
+
+function expandSelRight() {
+  if (!_lineSel) return;
+  const { text, start, end } = _lineSel;
+  let e2 = end;
+  while (e2 < text.length && /\s/.test(text[e2])) e2++;
+  while (e2 < text.length && /\S/.test(text[e2])) e2++;
+  if (e2 <= end) return;
+  _lineSel.end = e2;
+  _applyLineSel();
+}
+
 function _showMarkTooltip(text, rect) {
   const tt = document.getElementById("mark-tooltip");
   const already = markedPhrases.some(p => p.toLowerCase() === text.toLowerCase());
@@ -2116,14 +2195,15 @@ function _showMarkTooltip(text, rect) {
   document.getElementById("tt-div1").style.display    = already ? "none" : "";
   document.getElementById("tt-explain").style.display = already ? "none" : "";
   document.getElementById("tt-unmark").style.display  = already ? "" : "none";
-  tt.style.left = (rect.left + rect.right) / 2 + "px";
-  tt.style.top  = Math.min(window.innerHeight - 80, rect.bottom + 8) + "px";
+  tt.style.left = Math.max(60, Math.min(window.innerWidth - 60, (rect.left + rect.right) / 2)) + "px";
+  tt.style.top  = Math.min(window.innerHeight - 90, rect.bottom + 8) + "px";
   tt.style.display = "block";
 }
 
 function hideMarkTooltip() {
   document.getElementById("mark-tooltip").style.display = "none";
   currentSelection = "";
+  _lineSel = null;
 }
 
 function showPhraseInfo(phrase) {
