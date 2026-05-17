@@ -528,6 +528,7 @@
     .lp-lyric-line:hover { color: #fff; }
     .lp-lyric-gap { height: 22px; }
     .lp-lyric-line mark.pm { background: rgba(255,220,0,.3); border-radius: 3px; padding: 0 3px; color: #fff; font-style: normal; }
+    .lp-lyric-line mark.ts { background: rgba(108,99,255,.55); border-radius: 3px; padding: 0 3px; color: #fff; font-style: normal; }
 
     /* Bottom toolbar (below lyrics card) */
     .lp-toolbar { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 0 24px 28px; }
@@ -1972,49 +1973,131 @@ document.addEventListener("DOMContentLoaded", () => {
   const _lv = document.getElementById("lyrics-view");
   if (_lv) {
     if (navigator.maxTouchPoints > 0) {
-      // Mobile: user-select:none so iOS never shows native selection UI.
-      // Detect word under finger via caretRangeFromPoint on any lift (tap or long-press).
-      let _tapX = 0, _tapY = 0;
-      _lv.addEventListener('touchstart', e => {
-        _tapX = e.touches[0].clientX;
-        _tapY = e.touches[0].clientY;
-      }, { passive: true });
+      // Mobile: user-select:none → no native iOS selection UI.
+      // State machine: IDLE → LONGPRESS_WAIT → SELECTING (drag) or IDLE (tap).
+      let _ss = 'IDLE'; // selection state
+      let _stX = 0, _stY = 0, _stTimer = null;
+      let _dragLineEl = null, _dragLineText = '', _dragAnchor = 0, _dragHead = 0;
 
-      _lv.addEventListener('touchend', e => {
-        const x = e.changedTouches[0].clientX;
-        const y = e.changedTouches[0].clientY;
-        // Ignore if finger moved too far (scroll)
-        if (Math.hypot(x - _tapX, y - _tapY) > 22) return;
-        // If tap landed on an already-marked phrase, let its onclick handle it
-        const tgt = document.elementFromPoint(x, y);
-        if (tgt && (tgt.tagName === 'MARK' || tgt.closest?.('mark'))) return;
-        // Find caret position at finger release
-        const range = document.caretRangeFromPoint
+      function _caretPosAt(x, y) {
+        const r = document.caretRangeFromPoint
           ? document.caretRangeFromPoint(x, y)
           : (() => {
-              const pos = document.caretPositionFromPoint?.(x, y);
-              if (!pos) return null;
-              const r = document.createRange();
-              r.setStart(pos.offsetNode, pos.offset);
-              r.collapse(true);
-              return r;
+              const p = document.caretPositionFromPoint?.(x, y);
+              if (!p) return null;
+              const rr = document.createRange();
+              rr.setStart(p.offsetNode, p.offset);
+              rr.collapse(true);
+              return rr;
             })();
-        if (!range) return;
-        const node = range.startContainer;
-        if (!node || node.nodeType !== Node.TEXT_NODE || !_lv.contains(node)) return;
-        // Find the lyric line element (may contain <mark> children)
+        if (!r) return null;
+        const node = r.startContainer;
+        if (!node || node.nodeType !== Node.TEXT_NODE || !_lv.contains(node)) return null;
         const lineEl = node.parentElement?.closest('.lp-lyric-line');
-        if (!lineEl) return;
-        // Get full text of the line and offset of the caret within it
-        const lineText = lineEl.textContent;
-        const caretInLine = _textOffsetInEl(node, range.startOffset, lineEl);
-        if (caretInLine < 0) return;
-        // Expand to word boundaries in the line's full text
-        let s = caretInLine, e2 = caretInLine;
-        while (s > 0 && /[^\s,!?.;:"'()]/.test(lineText[s - 1])) s--;
-        while (e2 < lineText.length && /[^\s,!?.;:"'()]/.test(lineText[e2])) e2++;
-        if (e2 <= s || lineText.slice(s, e2).trim().length < 2) return;
-        _startLineSel(lineEl, lineText, s, e2);
+        if (!lineEl) return null;
+        const pos = _textOffsetInEl(node, r.startOffset, lineEl);
+        return { lineEl, pos };
+      }
+
+      function _wordBounds(text, pos) {
+        let s = pos, e = pos;
+        while (s > 0 && /[^\s,!?.;:"'()]/.test(text[s - 1])) s--;
+        while (e < text.length && /[^\s,!?.;:"'()]/.test(text[e])) e++;
+        return { s, e };
+      }
+
+      function _updateDragHighlight() {
+        if (!_dragLineEl) return;
+        const s = Math.min(_dragAnchor, _dragHead);
+        const e = Math.max(_dragAnchor, _dragHead);
+        const t = _dragLineText;
+        _dragLineEl.innerHTML = escHtml(t.slice(0, s))
+          + `<mark class="ts">${escHtml(t.slice(s, e))}</mark>`
+          + escHtml(t.slice(e));
+      }
+
+      function _endDrag() {
+        if (_dragLineEl) {
+          _dragLineEl.innerHTML = applyMarks(_dragLineText, markedPhrases);
+        }
+        const s = Math.min(_dragAnchor, _dragHead);
+        const e = Math.max(_dragAnchor, _dragHead);
+        if (e > s && _dragLineText.slice(s, e).trim().length >= 2) {
+          _startLineSel(_dragLineEl, _dragLineText, s, e);
+        }
+        _dragLineEl = null;
+      }
+
+      _lv.addEventListener('touchstart', e => {
+        clearTimeout(_stTimer);
+        _stX = e.touches[0].clientX;
+        _stY = e.touches[0].clientY;
+        _ss = 'LONGPRESS_WAIT';
+        _stTimer = setTimeout(() => {
+          if (_ss !== 'LONGPRESS_WAIT') return;
+          const tgt = document.elementFromPoint(_stX, _stY);
+          if (tgt && (tgt.tagName === 'MARK' || tgt.closest?.('mark'))) { _ss = 'IDLE'; return; }
+          const caret = _caretPosAt(_stX, _stY);
+          if (!caret) { _ss = 'IDLE'; return; }
+          const { lineEl, pos } = caret;
+          const lineText = lineEl.textContent;
+          const { s, e: e2 } = _wordBounds(lineText, pos);
+          if (e2 <= s || lineText.slice(s, e2).trim().length < 2) { _ss = 'IDLE'; return; }
+          _ss = 'SELECTING';
+          _dragLineEl = lineEl;
+          _dragLineText = lineText;
+          _dragAnchor = s;
+          _dragHead = e2;
+          navigator.vibrate?.(30);
+          _updateDragHighlight();
+        }, 380);
+      }, { passive: true });
+
+      _lv.addEventListener('touchmove', e => {
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+        if (_ss === 'LONGPRESS_WAIT') {
+          if (Math.hypot(x - _stX, y - _stY) > 12) { clearTimeout(_stTimer); _ss = 'IDLE'; }
+          return;
+        }
+        if (_ss !== 'SELECTING') return;
+        e.preventDefault();
+        const caret = _caretPosAt(x, y);
+        if (!caret || caret.lineEl !== _dragLineEl) return;
+        _dragHead = caret.pos;
+        _updateDragHighlight();
+      }, { passive: false });
+
+      _lv.addEventListener('touchend', e => {
+        clearTimeout(_stTimer);
+        const x = e.changedTouches[0].clientX;
+        const y = e.changedTouches[0].clientY;
+        if (_ss === 'SELECTING') {
+          _ss = 'IDLE';
+          _endDrag();
+          return;
+        }
+        if (_ss === 'LONGPRESS_WAIT') {
+          _ss = 'IDLE';
+          if (Math.hypot(x - _stX, y - _stY) > 22) return;
+          const tgt = document.elementFromPoint(x, y);
+          if (tgt && (tgt.tagName === 'MARK' || tgt.closest?.('mark'))) return;
+          const caret = _caretPosAt(x, y);
+          if (!caret) return;
+          const { lineEl, pos } = caret;
+          const lineText = lineEl.textContent;
+          const { s, e: e2 } = _wordBounds(lineText, pos);
+          if (e2 > s && lineText.slice(s, e2).trim().length >= 2) {
+            _startLineSel(lineEl, lineText, s, e2);
+          }
+        }
+        _ss = 'IDLE';
+      }, { passive: true });
+
+      _lv.addEventListener('touchcancel', () => {
+        clearTimeout(_stTimer);
+        if (_dragLineEl) { _dragLineEl.innerHTML = applyMarks(_dragLineText, markedPhrases); _dragLineEl = null; }
+        _ss = 'IDLE';
       }, { passive: true });
 
     } else {
