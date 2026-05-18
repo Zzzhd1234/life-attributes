@@ -243,6 +243,101 @@ textarea.mi { resize: vertical; min-height: 60px; }
   white-space: nowrap;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── SONGS SEARCH ── */
+.songs-search { display: flex; gap: 8px; margin-bottom: 12px; }
+.songs-search-in {
+  flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: .84rem; outline: none;
+  transition: border-color .2s;
+}
+.songs-search-in:focus { border-color: rgba(108,99,255,.4); }
+.songs-search-in::placeholder { color: var(--text3); }
+.songs-search-btn {
+  background: var(--surface3); border: 1px solid var(--border2); color: var(--text2);
+  border-radius: 8px; padding: 8px 14px; font-size: .82rem; white-space: nowrap; transition: all .15s;
+}
+.songs-search-btn:hover { background: rgba(30,215,96,.12); border-color: var(--green); color: var(--green); }
+.songs-search-btn:disabled { opacity: .5; cursor: default; }
+.sr-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  border-radius: 10px; cursor: pointer; transition: background .15s;
+  border: 1px solid transparent; margin-bottom: 6px;
+}
+.sr-item:hover { background: var(--surface2); border-color: var(--border); }
+.sr-icon { font-size: 1.1rem; flex-shrink: 0; }
+.sr-info { flex: 1; min-width: 0; }
+.sr-title { font-size: .88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-meta { font-size: .74rem; color: var(--text3); margin-top: 2px; }
+
+/* ── LYRICS MODAL ── */
+.lm-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 800;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .22s;
+}
+.lm-bg.open { opacity: 1; pointer-events: all; }
+.lm-box {
+  width: min(940px, calc(100vw - 48px)); height: min(82vh, 680px);
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 18px;
+  display: flex; flex-direction: column;
+  transform: translateY(20px) scale(.97); transition: transform .25s; overflow: hidden;
+}
+.lm-bg.open .lm-box { transform: translateY(0) scale(1); }
+.lm-header {
+  display: flex; align-items: center; gap: 14px; padding: 18px 24px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.lm-title { flex: 1; min-width: 0; }
+.lm-song-name { font-size: 1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lm-song-artist { font-size: .78rem; color: var(--text3); margin-top: 2px; }
+.lm-save-btn {
+  background: rgba(30,215,96,.15); border: 1px solid rgba(30,215,96,.35);
+  color: var(--green); border-radius: 8px; padding: 7px 18px; font-size: .82rem;
+  font-weight: 600; white-space: nowrap; transition: all .15s; flex-shrink: 0;
+}
+.lm-save-btn:hover { background: rgba(30,215,96,.28); }
+.lm-save-btn:disabled { opacity: .4; cursor: default; }
+.lm-close { background: none; border: none; color: var(--text3); font-size: 1.2rem; padding: 4px 8px; border-radius: 7px; transition: color .15s; flex-shrink: 0; }
+.lm-close:hover { color: var(--text); }
+.lm-body { display: flex; flex: 1; min-height: 0; }
+.lm-lyrics-col {
+  flex: 1; overflow-y: auto; padding: 22px 28px;
+  border-right: 1px solid var(--border);
+  user-select: text; -webkit-user-select: text;
+}
+.lm-lyrics-col::-webkit-scrollbar { width: 4px; }
+.lm-lyrics-col::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+.lm-lyric-line { padding: 3px 0; line-height: 1.85; font-size: .9rem; color: rgba(255,255,255,.82); min-height: 26px; }
+.lm-lyric-line mark.pm {
+  background: rgba(255,220,0,.28); border-radius: 3px; padding: 0 2px; color: #fff; font-style: normal; cursor: pointer;
+}
+.lm-lyric-line mark.pm:hover { background: rgba(255,220,0,.42); }
+.lm-marks-col { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; padding: 20px 18px; }
+.lm-marks-head { font-size: .74rem; font-weight: 700; color: var(--text3); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 12px; }
+.lm-marks-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; min-height: 0; }
+.lm-mark-pill { display: flex; align-items: center; gap: 6px; background: rgba(255,215,0,.07); border: 1px solid rgba(255,215,0,.18); border-radius: 20px; padding: 5px 8px 5px 14px; font-size: .82rem; color: rgba(255,255,255,.8); }
+.lm-mark-pill span { flex: 1; min-width: 0; word-break: break-all; }
+.lm-mark-rm { background: none; border: none; color: var(--text3); font-size: .78rem; padding: 2px 4px; cursor: pointer; border-radius: 4px; line-height: 1; }
+.lm-mark-rm:hover { color: var(--red); }
+.lm-empty-marks { color: var(--text3); font-size: .8rem; line-height: 1.75; margin-top: 4px; }
+.lm-add-all { margin-top: 14px; background: var(--accent); border: none; color: #fff; border-radius: 9px; padding: 10px 16px; font-size: .84rem; font-weight: 600; transition: background .15s; }
+.lm-add-all:hover { background: #7b74ff; }
+.lm-add-all:disabled { opacity: .35; cursor: default; }
+
+/* floating mark tooltip */
+.mark-tooltip {
+  position: fixed; z-index: 900; background: var(--accent); border-radius: 8px;
+  padding: 6px 18px; font-size: .83rem; font-weight: 600; color: #fff;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,.55);
+  opacity: 0; pointer-events: none; transition: opacity .12s; white-space: nowrap;
+  transform: translateX(-50%);
+}
+.mark-tooltip::after {
+  content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-bottom: none; border-top-color: var(--accent);
+}
+.mark-tooltip.show { opacity: 1; pointer-events: all; }
 </style>
 </head>
 <body>
@@ -292,6 +387,29 @@ textarea.mi { resize: vertical; min-height: 60px; }
     <div id="col-phrases"></div>
   </div>
 </div>
+
+<!-- LYRICS MODAL -->
+<div class="lm-bg" id="lm-bg" onclick="onLmBgClick(event)">
+  <div class="lm-box">
+    <div class="lm-header">
+      <div class="lm-title">
+        <div class="lm-song-name" id="lm-song-name">—</div>
+        <div class="lm-song-artist" id="lm-song-artist"></div>
+      </div>
+      <button class="lm-save-btn" id="lm-save-btn" onclick="saveSong()">＋ 保存到曲库</button>
+      <button class="lm-close" onclick="closeLyricsModal()">✕</button>
+    </div>
+    <div class="lm-body">
+      <div class="lm-lyrics-col" id="lm-lyrics-col"></div>
+      <div class="lm-marks-col">
+        <div class="lm-marks-head">已标记</div>
+        <div class="lm-marks-list" id="lm-marks-list"></div>
+        <button class="lm-add-all" id="lm-add-all-btn" onclick="addAllMarkedToVocab()" disabled>加入语料库</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="mark-tooltip" id="mark-tooltip" onclick="markSelection()">标记</div>
 
 <!-- MODAL: ADD / EDIT PHRASE -->
 <div class="modal-bg" id="modal-bg" onclick="onModalBgClick(event)">
@@ -457,9 +575,17 @@ function openArtist(id) {
 function renderSongs(a) {
   const songs = songsByArtist(a.name);
   const col = document.getElementById("col-songs");
+  const searchHtml = `<div class="songs-search">
+    <input class="songs-search-in" id="song-search-in" type="text" placeholder="搜索歌词…"
+           onkeydown="if(event.key==='Enter')searchSong()">
+    <button class="songs-search-btn" id="song-search-btn" onclick="searchSong()">搜索</button>
+  </div>
+  <div id="sr-list"></div>`;
+
   if (!songs.length) {
     col.innerHTML = `<div class="col-head"><span class="col-title">曲库</span></div>
-      <div class="empty-col"><div class="ei">🎵</div>暂无保存歌曲<br><span style="font-size:.78rem;opacity:.55">在 SpeakUp 手机端搜索并保存歌词后显示于此</span></div>`;
+      ${searchHtml}
+      <div class="empty-col" style="margin-top:8px"><div class="ei">🎵</div>暂无保存歌曲<br><span style="font-size:.78rem;opacity:.55">搜索歌词并保存</span></div>`;
     return;
   }
   const existing = getPhrases(a.id).map(p => p.phrase.toLowerCase());
@@ -467,6 +593,7 @@ function renderSongs(a) {
       <span class="col-title">曲库</span>
       <span class="col-count">${songs.length} 首</span>
     </div>
+    ${searchHtml}
     ${songs.map(s => {
       const marks = (s.markedPhrases || []).filter(p => p.trim());
       const marksHtml = marks.length ? `<div class="marks-wrap">${marks.map(p => {
@@ -475,25 +602,21 @@ function renderSongs(a) {
         return `<span class="mark-pill">${esc(p)}
           ${has
             ? `<button class="pill-add" disabled>已添加</button>`
-            : `<button class="pill-add" onclick="addFromSong('${ea(a.id)}','${ea(p)}','${ea(s.title)}','${ea(orig)}')">＋ 加入语料</button>`
+            : `<button class="pill-add" onclick="event.stopPropagation();addFromSong('${ea(a.id)}','${ea(p)}','${ea(s.title)}','${ea(orig)}')">＋</button>`
           }</span>`;
       }).join("")}</div>` : "";
-      return `<div class="song-card" id="sc-${s.id}">
-        <div class="song-header" onclick="toggleSong(${s.id})">
+      return `<div class="song-card" id="sc-${s.id}" onclick="openSavedSongInModal(${s.id})" style="cursor:pointer">
+        <div class="song-header">
           <div class="song-icon">🎵</div>
           <div class="song-info">
             <div class="song-title">${esc(s.title)}</div>
             <div class="song-meta">${s.lines.filter(l=>l.trim()).length} 行歌词${marks.length ? ` · ${marks.length} 个标记` : ""}</div>
           </div>
-          <svg class="song-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
         </div>
         ${marksHtml}
       </div>`;
     }).join("")}`;
-}
-
-function toggleSong(id) {
-  document.getElementById("sc-" + id)?.classList.toggle("open");
 }
 
 function addFromSong(artistId, phrase, song, orig) {
@@ -598,9 +721,247 @@ function saveModal() {
 }
 
 document.addEventListener("keydown", e => {
+  if (document.getElementById("lm-bg").classList.contains("open")) {
+    if (e.key === "Escape") { closeLyricsModal(); return; }
+  }
   if (!document.getElementById("modal-bg").classList.contains("open")) return;
   if (e.key === "Escape") closeModal();
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveModal();
+});
+
+// ─── SONGS STORAGE ───────────────────────────────────────────────────────────
+function setSongs(arr) { localStorage.setItem(SONGS_KEY, JSON.stringify(arr)); }
+
+// ─── LYRICS SEARCH ───────────────────────────────────────────────────────────
+let _srResults = [];
+
+async function searchSong() {
+  if (!_curArtist) return;
+  const titleEl = document.getElementById("song-search-in");
+  const btn = document.getElementById("song-search-btn");
+  const title = titleEl.value.trim();
+  if (!title) { titleEl.focus(); return; }
+  btn.disabled = true; btn.textContent = "搜索中…";
+  try {
+    const params = new URLSearchParams({ track_name: title, artist_name: _curArtist.name });
+    const res = await fetch("https://lrclib.net/api/search?" + params);
+    if (!res.ok) throw new Error("网络错误");
+    const results = await res.json();
+    _srResults = results.filter(r => r.plainLyrics);
+    renderSearchResults();
+  } catch {
+    const c = document.getElementById("sr-list");
+    if (c) c.innerHTML = `<div style="color:var(--text3);font-size:.82rem;padding:6px 2px">搜索失败，请重试</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = "搜索";
+  }
+}
+
+function renderSearchResults() {
+  const c = document.getElementById("sr-list");
+  if (!c) return;
+  if (!_srResults.length) {
+    c.innerHTML = `<div style="color:var(--text3);font-size:.82rem;padding:6px 2px">未找到歌词，试试英文歌名</div>`; return;
+  }
+  c.innerHTML = _srResults.slice(0, 6).map((r, i) => `
+    <div class="sr-item" onclick="openLyricsFromResult(${i})">
+      <div class="sr-icon">🎵</div>
+      <div class="sr-info">
+        <div class="sr-title">${esc(r.trackName)}</div>
+        <div class="sr-meta">${esc(r.artistName)} · ${(r.plainLyrics||"").split("\n").filter(l=>l.trim()).length} 行</div>
+      </div>
+    </div>`).join("");
+}
+
+// ─── LYRICS MODAL STATE ──────────────────────────────────────────────────────
+let _lmTrack = null;
+let _lmLines = [];
+let _lmMarks = [];
+let _lmSongId = null;
+let _lmSaved  = false;
+
+function openLyricsFromResult(idx) {
+  const r = _srResults[idx];
+  if (!r) return;
+  _lmLines = (r.plainLyrics || "").split("\n");
+  _lmTrack = { title: r.trackName, artist: r.artistName };
+  _lmMarks = [];
+  const songs = getSongs();
+  const key = ((r.artistName||"")+"|"+(r.trackName||"")).toLowerCase();
+  const existing = songs.find(s => (((s.artist||"")+"|"+(s.title||"")).toLowerCase()) === key);
+  _lmSaved = !!existing;
+  _lmSongId = existing ? existing.id : null;
+  if (existing) _lmMarks = existing.markedPhrases ? [...existing.markedPhrases] : [];
+  _openLyricsModal();
+}
+
+function openSavedSongInModal(songId) {
+  const song = getSongs().find(s => s.id === songId);
+  if (!song) return;
+  _lmLines = song.lines || [];
+  _lmTrack = { title: song.title, artist: song.artist };
+  _lmMarks = song.markedPhrases ? [...song.markedPhrases] : [];
+  _lmSongId = songId;
+  _lmSaved = true;
+  _openLyricsModal();
+}
+
+function _openLyricsModal() {
+  document.getElementById("lm-song-name").textContent = _lmTrack.title || "Unknown";
+  document.getElementById("lm-song-artist").textContent = _lmTrack.artist || "";
+  const saveBtn = document.getElementById("lm-save-btn");
+  saveBtn.textContent = _lmSaved ? "✓ 已保存" : "＋ 保存到曲库";
+  saveBtn.disabled = _lmSaved;
+  _renderLyricsInModal();
+  _renderMarksPanel();
+  document.getElementById("lm-bg").classList.add("open");
+}
+
+function closeLyricsModal() {
+  document.getElementById("lm-bg").classList.remove("open");
+  _hideMarkTooltip();
+  if (_curArtist) renderSongs(_curArtist);
+}
+
+function onLmBgClick(e) {
+  if (e.target === document.getElementById("lm-bg")) closeLyricsModal();
+}
+
+function _applyMarks(text, marks) {
+  if (!marks.length) return esc(text);
+  const ranges = [];
+  marks.forEach(m => {
+    const re = new RegExp(m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    let match;
+    while ((match = re.exec(text)) !== null) ranges.push([match.index, match.index + match[0].length]);
+  });
+  if (!ranges.length) return esc(text);
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged = [ranges[0]];
+  for (let i = 1; i < ranges.length; i++) {
+    const last = merged[merged.length - 1];
+    if (ranges[i][0] <= last[1]) last[1] = Math.max(last[1], ranges[i][1]);
+    else merged.push(ranges[i]);
+  }
+  let out = "", pos = 0;
+  merged.forEach(([s, e]) => {
+    out += esc(text.slice(pos, s));
+    out += `<mark class="pm">${esc(text.slice(s, e))}</mark>`;
+    pos = e;
+  });
+  return out + esc(text.slice(pos));
+}
+
+function _renderLyricsInModal() {
+  document.getElementById("lm-lyrics-col").innerHTML = _lmLines.map(l =>
+    `<div class="lm-lyric-line">${l.trim() ? _applyMarks(l.trim(), _lmMarks) : ""}</div>`
+  ).join("");
+}
+
+function _renderMarksPanel() {
+  const list = document.getElementById("lm-marks-list");
+  const btn = document.getElementById("lm-add-all-btn");
+  if (!_lmMarks.length) {
+    list.innerHTML = `<div class="lm-empty-marks">在左侧选中歌词文字，点击「标记」将词汇添加到此处</div>`;
+    btn.disabled = true; return;
+  }
+  list.innerHTML = _lmMarks.map((m, i) => `
+    <div class="lm-mark-pill">
+      <span>${esc(m)}</span>
+      <button class="lm-mark-rm" onclick="removeMarked(${i})">✕</button>
+    </div>`).join("");
+  btn.disabled = false;
+}
+
+function removeMarked(idx) {
+  _lmMarks.splice(idx, 1);
+  _renderLyricsInModal();
+  _renderMarksPanel();
+  if (_lmSaved) _updateSavedSongMarks();
+}
+
+function _updateSavedSongMarks() {
+  if (!_lmSongId) return;
+  const songs = getSongs();
+  const s = songs.find(x => x.id === _lmSongId);
+  if (s) { s.markedPhrases = [..._lmMarks]; setSongs(songs); }
+}
+
+function saveSong() {
+  if (!_lmTrack || !_lmLines.length) return;
+  const songs = getSongs();
+  const key = ((_lmTrack.artist||"")+"|"+(_lmTrack.title||"")).toLowerCase();
+  if (songs.some(s => (((s.artist||"")+"|"+(s.title||"")).toLowerCase()) === key)) {
+    toast("已保存过这首歌"); return;
+  }
+  const id = Date.now();
+  songs.unshift({ id, title: _lmTrack.title, artist: _lmTrack.artist, lines: _lmLines, markedPhrases: [..._lmMarks] });
+  setSongs(songs);
+  _lmSongId = id; _lmSaved = true;
+  document.getElementById("lm-save-btn").textContent = "✓ 已保存";
+  document.getElementById("lm-save-btn").disabled = true;
+  toast("歌曲已保存");
+}
+
+function addAllMarkedToVocab() {
+  if (!_lmMarks.length || !_curArtist) return;
+  const phrases = getPhrases(_curArtist.id);
+  let added = 0;
+  _lmMarks.forEach(m => {
+    if (phrases.some(p => p.phrase.toLowerCase() === m.toLowerCase())) return;
+    const origLine = (_lmLines.find(l => l.toLowerCase().includes(m.toLowerCase())) || "").trim();
+    const src = _lmTrack.title + (_lmTrack.artist ? " — " + _lmTrack.artist : "");
+    phrases.unshift({ phrase: m, meaning: "", example: "", source: src, lyricsSource: src, originalLine: origLine });
+    added++;
+  });
+  savePhrases(_curArtist.id, phrases);
+  renderPhrases(_curArtist.id);
+  closeLyricsModal();
+  toast(added ? `${added} 条语料已加入语料库，可点击编辑补充释义` : "都已添加过了");
+}
+
+// ─── TEXT SELECTION → MARK ───────────────────────────────────────────────────
+let _selText = "";
+
+function _showMarkTooltip(x, y, text) {
+  _selText = text;
+  const tt = document.getElementById("mark-tooltip");
+  tt.style.left = x + "px";
+  tt.style.top = (y - 44) + "px";
+  tt.classList.add("show");
+}
+
+function _hideMarkTooltip() {
+  document.getElementById("mark-tooltip").classList.remove("show");
+  _selText = "";
+}
+
+function markSelection() {
+  const text = _selText.trim();
+  if (!text) return;
+  _hideMarkTooltip();
+  if (_lmMarks.some(m => m.toLowerCase() === text.toLowerCase())) { toast("已标记"); return; }
+  _lmMarks.push(text);
+  _renderLyricsInModal();
+  _renderMarksPanel();
+  if (_lmSaved) _updateSavedSongMarks();
+  window.getSelection()?.removeAllRanges();
+}
+
+document.addEventListener("mouseup", e => {
+  if (!document.getElementById("lm-bg").classList.contains("open")) return;
+  if (e.target.closest(".lm-marks-col") || e.target.closest(".mark-tooltip")) return;
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) { _hideMarkTooltip(); return; }
+  const text = sel.toString().trim();
+  if (!text || !sel.rangeCount) { _hideMarkTooltip(); return; }
+  const rect = sel.getRangeAt(0).getBoundingClientRect();
+  _showMarkTooltip((rect.left + rect.right) / 2, rect.top + window.scrollY, text);
+});
+
+document.addEventListener("mousedown", e => {
+  if (e.target.closest(".mark-tooltip")) return;
+  _hideMarkTooltip();
 });
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
