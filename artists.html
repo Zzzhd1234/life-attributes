@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpeakUp · Artists</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080808;
+  --surface: #111;
+  --surface2: #1a1a1a;
+  --surface3: #222;
+  --border: rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.12);
+  --accent: #6c63ff;
+  --accent-low: rgba(108,99,255,.14);
+  --text: #f0f0f0;
+  --text2: rgba(240,240,240,.55);
+  --text3: rgba(240,240,240,.3);
+  --green: #1ed760;
+  --red: #ff5f72;
+  --r: 12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
+button { font-family: inherit; cursor: pointer; }
+input, textarea { font-family: inherit; }
+
+/* ── SITE HEADER ── */
+.site-header {
+  position: sticky; top: 0; z-index: 200;
+  height: 62px; background: rgba(8,8,8,.9); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 40px; gap: 28px;
+}
+.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.brand-logo { font-size: 1.3rem; }
+.brand-name { font-size: 1rem; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+.brand-name em { font-style: normal; color: var(--accent); }
+.header-search { flex: 1; max-width: 340px; position: relative; }
+.header-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .35; pointer-events: none; }
+.search-in {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 14px 8px 38px; color: var(--text);
+  font-size: .88rem; outline: none; transition: border-color .2s;
+}
+.search-in:focus { border-color: rgba(108,99,255,.5); }
+.search-in::placeholder { color: var(--text3); }
+.header-nav { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.nav-btn {
+  background: none; border: 1px solid var(--border2); color: var(--text2);
+  padding: 6px 16px; border-radius: 7px; font-size: .83rem; font-weight: 500;
+  transition: all .15s;
+}
+.nav-btn:hover { background: var(--surface2); color: var(--text); }
+.nav-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── LIST VIEW ── */
+.list-wrap { max-width: 1280px; margin: 0 auto; padding: 52px 40px 100px; }
+.list-heading { margin-bottom: 44px; }
+.list-heading h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -.05em; margin-bottom: 10px; }
+.list-heading p { color: var(--text2); font-size: .95rem; max-width: 480px; }
+
+.artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+
+.artist-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px 28px 24px; cursor: pointer;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  position: relative; overflow: hidden;
+}
+.artist-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--c, var(--accent)); opacity: .85;
+}
+.artist-card:hover { border-color: var(--c, var(--accent)); transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+.ac-avatar { font-size: 3.2rem; margin-bottom: 18px; line-height: 1; }
+.ac-name { font-size: 1.35rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: 4px; }
+.ac-sub { font-size: .78rem; color: var(--text3); margin-bottom: 12px; letter-spacing: .01em; }
+.ac-desc {
+  font-size: .84rem; color: var(--text2); line-height: 1.65; margin-bottom: 18px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ac-stats { display: flex; gap: 18px; }
+.ac-stat { font-size: .8rem; color: var(--text3); }
+.ac-stat b { color: var(--text); font-weight: 600; }
+
+.no-results { text-align: center; padding: 80px 24px; color: var(--text3); font-size: .9rem; display: none; }
+
+/* ── DETAIL VIEW ── */
+.detail-header {
+  position: sticky; top: 62px; z-index: 150;
+  background: rgba(8,8,8,.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  height: 50px; display: flex; align-items: center; padding: 0 40px; gap: 14px;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; color: var(--text2); font-size: .88rem; font-weight: 500;
+  padding: 5px 10px; border-radius: 7px; transition: background .15s, color .15s;
+}
+.back-btn:hover { background: var(--surface2); color: var(--text); }
+.breadcrumb { font-size: .85rem; color: var(--text3); }
+.sep { color: var(--text3); font-size: .75rem; }
+
+.hero-wrap {
+  background: linear-gradient(180deg, var(--surface) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+}
+.hero-inner { max-width: 1280px; margin: 0 auto; padding: 44px 40px 36px; display: flex; gap: 36px; }
+.hero-avatar {
+  width: 108px; height: 108px; border-radius: 50%;
+  background: var(--surface2); display: flex; align-items: center; justify-content: center;
+  font-size: 3.4rem; flex-shrink: 0; box-shadow: 0 0 0 3px var(--c, var(--accent));
+}
+.hero-info { flex: 1; }
+.hero-name { font-size: 2.4rem; font-weight: 800; letter-spacing: -.05em; margin-bottom: 6px; }
+.hero-sub { font-size: .88rem; color: var(--text2); margin-bottom: 12px; }
+.hero-desc { font-size: .88rem; color: var(--text2); line-height: 1.75; max-width: 600px; margin-bottom: 16px; }
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.tag { padding: 4px 14px; border-radius: 20px; font-size: .75rem; background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
+
+/* ── COLUMNS ── */
+.detail-body { max-width: 1280px; margin: 0 auto; padding: 36px 40px 100px; display: grid; grid-template-columns: 400px 1fr; gap: 36px; align-items: start; }
+
+/* songs column */
+.col-songs { position: sticky; top: 112px; max-height: calc(100vh - 130px); overflow-y: auto; }
+.col-songs::-webkit-scrollbar { width: 4px; }
+.col-songs::-webkit-scrollbar-track { background: transparent; }
+.col-songs::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+.col-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.col-title { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
+.col-count { font-size: .8rem; color: var(--text3); font-weight: 400; }
+
+.song-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+.song-header { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; transition: background .15s; }
+.song-header:hover { background: var(--surface2); }
+.song-icon { width: 42px; height: 42px; border-radius: 8px; background: rgba(30,215,96,.1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.song-info { flex: 1; min-width: 0; }
+.song-title { font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-meta { font-size: .74rem; color: var(--text3); margin-top: 2px; }
+.song-chevron { color: var(--text3); transition: transform .22s; flex-shrink: 0; }
+.song-card.open .song-chevron { transform: rotate(90deg); }
+
+.marks-wrap { padding: 4px 16px 14px; display: flex; flex-wrap: wrap; gap: 7px; }
+.mark-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,215,0,.07); border: 1px solid rgba(255,215,0,.18);
+  border-radius: 20px; padding: 4px 8px 4px 12px; font-size: .79rem; color: rgba(255,255,255,.8);
+}
+.pill-add {
+  background: rgba(30,215,96,.16); border: none; border-radius: 10px;
+  color: var(--green); font-size: .7rem; padding: 2px 9px; cursor: pointer; transition: background .15s;
+}
+.pill-add:hover { background: rgba(30,215,96,.3); }
+.pill-add:disabled { opacity: .3; cursor: default; }
+
+.empty-col { text-align: center; padding: 44px 16px; color: var(--text3); line-height: 1.7; font-size: .85rem; }
+.empty-col .ei { font-size: 2rem; margin-bottom: 10px; }
+
+/* phrases column */
+.phrases-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.btn-add {
+  background: var(--accent); border: none; color: #fff;
+  padding: 8px 20px; border-radius: 8px; font-size: .85rem; font-weight: 600;
+  transition: background .15s, transform .15s;
+}
+.btn-add:hover { background: #7b74ff; transform: translateY(-1px); }
+
+.phrase-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px 22px; margin-bottom: 10px;
+  transition: border-color .2s;
+}
+.phrase-card:hover { border-color: rgba(108,99,255,.35); }
+.pc-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pc-phrase { font-size: 1.05rem; font-weight: 700; margin-bottom: 5px; }
+.pc-btns { display: flex; gap: 2px; flex-shrink: 0; }
+.pc-btn {
+  background: none; border: none; color: var(--text3); padding: 5px 8px;
+  border-radius: 7px; font-size: .82rem; transition: color .15s, background .15s; line-height: 1;
+}
+.pc-btn:hover { color: var(--text); background: var(--surface2); }
+.pc-btn.del:hover { color: var(--red); }
+.pc-meaning { font-size: .87rem; color: var(--text2); margin-bottom: 8px; }
+.pc-example {
+  font-size: .82rem; color: var(--text3); font-style: italic;
+  border-left: 2px solid var(--accent); padding-left: 10px; line-height: 1.65; margin-bottom: 8px;
+}
+.pc-orig {
+  font-size: .8rem; color: var(--text3); font-style: italic;
+  border-left: 2px solid rgba(30,215,96,.4); padding-left: 10px; line-height: 1.65; margin-bottom: 6px;
+}
+.pc-src { font-size: .74rem; color: var(--text3); }
+.pc-song-src { font-size: .74rem; color: rgba(30,215,96,.65); display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+
+/* ── MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-bg.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 18px;
+  padding: 36px; width: 500px; max-width: calc(100vw - 40px);
+  transform: translateY(24px) scale(.97); transition: transform .25s;
+}
+.modal-bg.open .modal { transform: translateY(0) scale(1); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.modal-title { font-size: 1.05rem; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(--text3); font-size: 1.2rem; padding: 2px 6px; border-radius: 6px; transition: color .15s; }
+.modal-close:hover { color: var(--text); }
+.mf { margin-bottom: 16px; }
+.ml { font-size: .76rem; color: var(--text3); margin-bottom: 6px; }
+.mi {
+  width: 100%; background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  border-radius: 9px; padding: 10px 14px; color: var(--text); font-size: .9rem; outline: none;
+  transition: border-color .2s;
+}
+.mi:focus { border-color: rgba(108,99,255,.5); }
+textarea.mi { resize: vertical; min-height: 60px; }
+.mfoot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+.btn-cancel { background: none; border: 1px solid var(--border2); color: var(--text2); padding: 9px 22px; border-radius: 9px; font-size: .87rem; transition: background .15s; }
+.btn-cancel:hover { background: var(--surface3); }
+.btn-save { background: var(--accent); border: none; color: #fff; padding: 9px 26px; border-radius: 9px; font-size: .87rem; font-weight: 600; transition: background .15s; }
+.btn-save:hover { background: #7b74ff; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: #1e1e1e; border: 1px solid var(--border2); color: var(--text);
+  padding: 10px 24px; border-radius: 24px; font-size: .87rem;
+  opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s; z-index: 9999;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- SITE HEADER -->
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-logo">🎵</span>
+    <span class="brand-name">SpeakUp <em>Artists</em></span>
+  </div>
+  <div class="header-search" id="hdr-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input class="search-in" id="search-in" placeholder="搜索艺人…" oninput="filterArtists()">
+  </div>
+  <nav class="header-nav" id="hdr-nav"></nav>
+</header>
+
+<!-- VIEW: LIST -->
+<div id="v-list" class="view active">
+  <div class="list-wrap">
+    <div class="list-heading">
+      <h1>艺人语料库</h1>
+      <p>通过歌词学地道英语，深入了解每位艺人的语言风格与俚语</p>
+    </div>
+    <div id="artist-grid" class="artist-grid"></div>
+    <div id="no-results" class="no-results">未找到匹配的艺人</div>
+  </div>
+</div>
+
+<!-- VIEW: ARTIST DETAIL -->
+<div id="v-artist" class="view">
+  <div class="detail-header">
+    <button class="back-btn" onclick="backToList()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      艺人库
+    </button>
+    <span class="sep">›</span>
+    <span class="breadcrumb" id="bc"></span>
+  </div>
+  <div class="hero-wrap" id="hero-wrap">
+    <div class="hero-inner" id="hero-inner"></div>
+  </div>
+  <div class="detail-body">
+    <div class="col-songs" id="col-songs"></div>
+    <div id="col-phrases"></div>
+  </div>
+</div>
+
+<!-- MODAL: ADD / EDIT PHRASE -->
+<div class="modal-bg" id="modal-bg" onclick="onModalBgClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">添加语料</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mf"><div class="ml">词汇 / 短语</div><input class="mi" id="m-phrase" type="text" placeholder="e.g. YOLO"></div>
+    <div class="mf"><div class="ml">中文释义</div><textarea class="mi" id="m-meaning" placeholder="中文意思…"></textarea></div>
+    <div class="mf"><div class="ml">例句</div><textarea class="mi" id="m-example" placeholder="英文例句…"></textarea></div>
+    <div class="mf"><div class="ml">来源</div><input class="mi" id="m-source" type="text" placeholder="歌曲 / 专辑名"></div>
+    <div class="mfoot">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATIC DATA ─────────────────────────────────────────────────────────────
+const ARTISTS = [
+  {
+    id: "drake", name: "Drake", avatar: "🦉", color: "#b8860b",
+    origin: "Toronto, Canada · 多伦多", style: "Hip-Hop · R&B · Rap",
+    desc: "Aubrey Drake Graham，出道于 2006 年，以情感细腻的歌词和双重身份（说唱+演唱）著称。他普及了大量加拿大俚语和新词，是当代流行英语的重要塑造者之一。",
+    tags: ["Toronto slang","Emotional rap","R&B","YOLO era"],
+    phrases: [
+      { phrase:"YOLO", meaning:"You Only Live Once，活在当下，及时行乐", example:"We're going skydiving tomorrow — YOLO!", source:"The Motto (2011)" },
+      { phrase:"Started from the bottom", meaning:"从底层白手起家", example:"I started from the bottom, now I'm running this company.", source:"Started From the Bottom (2013)" },
+      { phrase:"No new friends", meaning:"不需要新朋友，只信原来的兄弟", example:"I don't trust easily — no new friends.", source:"No New Friends (2013)" },
+      { phrase:"Know yourself, know your worth", meaning:"了解自己，认清自身价值", example:"Don't let anyone underestimate you. Know yourself, know your worth.", source:"0 to 100 (2014)" },
+      { phrase:"0 to 100", meaning:"瞬间从零状态爆发到满状态", example:"He went from 0 to 100 real quick when they disrespected him.", source:"0 to 100 / The Catch Up (2014)" },
+      { phrase:"God's plan", meaning:"一切都是命中注定，自有安排", example:"I didn't plan any of this — it's God's plan.", source:"God's Plan (2018)" },
+      { phrase:"In my feelings", meaning:"陷入情绪中，多愁善感", example:"Sorry for texting you at 2am, I was in my feelings.", source:"In My Feelings (2018)" },
+      { phrase:"Woes", meaning:"死党，最亲近的兄弟", example:"I only ride with my woes — people who've been there from day one.", source:"Know Yourself (2015)" },
+      { phrase:"The 6 / The 6ix", meaning:"多伦多的别称（来自416区号）", example:"Reppin' the 6 wherever I go.", source:"Know Yourself (2015)" },
+      { phrase:"More life", meaning:"祝你活得更好，长命百岁（多伦多祝福语）", example:"More life to you and everyone you love.", source:"More Life (2017)" },
+      { phrase:"Real one", meaning:"真朋友，靠得住的人", example:"She's been there through everything — she's a real one.", source:"Crew Love (2011)" },
+      { phrase:"Charged up", meaning:"充满能量，准备好了，斗志昂扬", example:"I've been in the gym every day — I'm charged up for this season.", source:"Charged Up (2015)" },
+      { phrase:"Hotline bling", meaning:"不停地打电话/发消息联系某人", example:"He's always on my hotline bling — can't get a moment to myself.", source:"Hotline Bling (2015)" },
+      { phrase:"I'm on one", meaning:"我状态来了，我在飘，情绪高涨", example:"Don't talk to me right now, I'm on one.", source:"I'm On One (2011)" },
+      { phrase:"Running through the 6 with my woes", meaning:"和兄弟们在城里混，在本地闯荡", example:"Every weekend we're running through the city with the crew.", source:"Know Yourself (2015)" },
+    ]
+  }
+];
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+const PHRASES_KEY = "artist_site_phrases";
+const SONGS_KEY   = "speakup_songs";
+
+function getPhrases(id) {
+  try {
+    const all = JSON.parse(localStorage.getItem(PHRASES_KEY) || "{}");
+    if (all[id]) return all[id];
+  } catch {}
+  const a = ARTISTS.find(x => x.id === id);
+  return a ? a.phrases.map(p => ({ ...p })) : [];
+}
+function savePhrases(id, phrases) {
+  try {
+    const all = JSON.parse(localStorage.getItem(PHRASES_KEY) || "{}");
+    all[id] = phrases;
+    localStorage.setItem(PHRASES_KEY, JSON.stringify(all));
+  } catch {}
+}
+function getSongs() {
+  try { return JSON.parse(localStorage.getItem(SONGS_KEY) || "[]"); } catch { return []; }
+}
+function songsByArtist(name) {
+  const low = name.toLowerCase().trim();
+  return getSongs().filter(s => {
+    const sl = (s.artist || "").toLowerCase().trim();
+    return sl === low || sl.includes(low) || low.includes(sl);
+  });
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const ea  = s => String(s||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+
+let _tTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(_tTimer);
+  _tTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+// ─── ROUTING ─────────────────────────────────────────────────────────────────
+let _curArtist = null;
+
+function show(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("v-" + name).classList.add("active");
+  const isDetail = name === "artist";
+  document.getElementById("hdr-search").style.display = isDetail ? "none" : "";
+  document.getElementById("hdr-nav").innerHTML = isDetail ? `` : ``;
+  document.title = isDetail && _curArtist
+    ? `${_curArtist.name} · SpeakUp Artists`
+    : "SpeakUp · Artists";
+}
+
+// ─── LIST ─────────────────────────────────────────────────────────────────────
+function renderList() {
+  _curArtist = null;
+  show("list");
+  document.getElementById("search-in").value = "";
+  document.getElementById("artist-grid").innerHTML = ARTISTS.map(a => {
+    const sc = songsByArtist(a.name).length;
+    const pc = getPhrases(a.id).length;
+    return `<div class="artist-card" style="--c:${a.color}" onclick="openArtist('${a.id}')">
+      <div class="ac-avatar">${a.avatar}</div>
+      <div class="ac-name">${esc(a.name)}</div>
+      <div class="ac-sub">${esc(a.origin)}</div>
+      <div class="ac-desc">${esc(a.desc)}</div>
+      <div class="ac-stats">
+        <div class="ac-stat"><b>${pc}</b> 条语料</div>
+        <div class="ac-stat"><b>${a.tags.length}</b> 标签</div>
+        ${sc ? `<div class="ac-stat" style="color:var(--green)"><b>${sc}</b> 首歌</div>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function filterArtists() {
+  const q = document.getElementById("search-in").value.toLowerCase();
+  let n = 0;
+  document.querySelectorAll(".artist-card").forEach(c => {
+    const ok = !q || c.textContent.toLowerCase().includes(q);
+    c.style.display = ok ? "" : "none";
+    if (ok) n++;
+  });
+  document.getElementById("no-results").style.display = n ? "none" : "";
+}
+
+function backToList() { renderList(); }
+
+// ─── DETAIL ───────────────────────────────────────────────────────────────────
+function openArtist(id) {
+  const a = ARTISTS.find(x => x.id === id);
+  if (!a) return;
+  _curArtist = a;
+  show("artist");
+  document.getElementById("bc").textContent = a.name;
+
+  // Hero
+  document.getElementById("hero-wrap").style.cssText = `--c:${a.color}`;
+  document.getElementById("hero-inner").innerHTML = `
+    <div class="hero-avatar">${a.avatar}</div>
+    <div class="hero-info">
+      <div class="hero-name">${esc(a.name)}</div>
+      <div class="hero-sub">${esc(a.origin)} · ${esc(a.style)}</div>
+      <div class="hero-desc">${esc(a.desc)}</div>
+      <div class="tag-row">${a.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>
+    </div>`;
+
+  renderSongs(a);
+  renderPhrases(id);
+}
+
+function renderSongs(a) {
+  const songs = songsByArtist(a.name);
+  const col = document.getElementById("col-songs");
+  if (!songs.length) {
+    col.innerHTML = `<div class="col-head"><span class="col-title">曲库</span></div>
+      <div class="empty-col"><div class="ei">🎵</div>暂无保存歌曲<br><span style="font-size:.78rem;opacity:.55">在 SpeakUp 手机端搜索并保存歌词后显示于此</span></div>`;
+    return;
+  }
+  const existing = getPhrases(a.id).map(p => p.phrase.toLowerCase());
+  col.innerHTML = `<div class="col-head">
+      <span class="col-title">曲库</span>
+      <span class="col-count">${songs.length} 首</span>
+    </div>
+    ${songs.map(s => {
+      const marks = (s.markedPhrases || []).filter(p => p.trim());
+      const marksHtml = marks.length ? `<div class="marks-wrap">${marks.map(p => {
+        const orig = s.lines.find(l => l.toLowerCase().includes(p.toLowerCase())) || "";
+        const has = existing.includes(p.toLowerCase());
+        return `<span class="mark-pill">${esc(p)}
+          ${has
+            ? `<button class="pill-add" disabled>已添加</button>`
+            : `<button class="pill-add" onclick="addFromSong('${ea(a.id)}','${ea(p)}','${ea(s.title)}','${ea(orig)}')">＋ 加入语料</button>`
+          }</span>`;
+      }).join("")}</div>` : "";
+      return `<div class="song-card" id="sc-${s.id}">
+        <div class="song-header" onclick="toggleSong(${s.id})">
+          <div class="song-icon">🎵</div>
+          <div class="song-info">
+            <div class="song-title">${esc(s.title)}</div>
+            <div class="song-meta">${s.lines.filter(l=>l.trim()).length} 行歌词${marks.length ? ` · ${marks.length} 个标记` : ""}</div>
+          </div>
+          <svg class="song-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        ${marksHtml}
+      </div>`;
+    }).join("")}`;
+}
+
+function toggleSong(id) {
+  document.getElementById("sc-" + id)?.classList.toggle("open");
+}
+
+function addFromSong(artistId, phrase, song, orig) {
+  const phrases = getPhrases(artistId);
+  if (phrases.some(p => p.phrase.toLowerCase() === phrase.toLowerCase())) { toast(`"${phrase}" 已在语料库中`); return; }
+  phrases.push({ phrase, meaning: "", example: "", source: song, lyricsSource: song, originalLine: orig });
+  savePhrases(artistId, phrases);
+  const a = ARTISTS.find(x => x.id === artistId);
+  renderSongs(a);
+  renderPhrases(artistId);
+  toast(`"${phrase}" 已加入语料，可点击编辑补充释义`);
+}
+
+function renderPhrases(artistId) {
+  const phrases = getPhrases(artistId);
+  const col = document.getElementById("col-phrases");
+  const cards = phrases.map((p, i) => {
+    const src = p.lyricsSource
+      ? `<div class="pc-song-src">🎵 ${esc(p.lyricsSource)}</div>`
+      : (p.source ? `<div class="pc-src">来自：${esc(p.source)}</div>` : "");
+    return `<div class="phrase-card">
+      <div class="pc-row">
+        <div class="pc-phrase">${esc(p.phrase)}</div>
+        <div class="pc-btns">
+          <button class="pc-btn" onclick="openModal('${ea(artistId)}',${i})" title="编辑">✏</button>
+          <button class="pc-btn del" onclick="delPhrase('${ea(artistId)}',${i})" title="删除">✕</button>
+        </div>
+      </div>
+      ${p.meaning ? `<div class="pc-meaning">${esc(p.meaning)}</div>` : ""}
+      ${p.originalLine ? `<div class="pc-orig">${esc(p.originalLine)}</div>` : ""}
+      ${p.example ? `<div class="pc-example">${esc(p.example)}</div>` : ""}
+      ${src}
+    </div>`;
+  }).join("");
+
+  col.innerHTML = `<div class="phrases-bar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="col-title">语料</span>
+        <span class="col-count">${phrases.length} 条</span>
+      </div>
+      <button class="btn-add" onclick="openModal('${ea(artistId)}',null)">＋ 添加语料</button>
+    </div>
+    ${phrases.length ? cards : `<div class="empty-col"><div class="ei">💬</div>暂无语料<br>点击右上角添加</div>`}`;
+}
+
+function delPhrase(artistId, idx) {
+  if (!confirm("删除此语料？")) return;
+  const phrases = getPhrases(artistId);
+  phrases.splice(idx, 1);
+  savePhrases(artistId, phrases);
+  renderPhrases(artistId);
+  const a = ARTISTS.find(x => x.id === artistId);
+  if (a) renderSongs(a);
+  toast("已删除");
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+let _mArtist = null, _mIdx = null;
+
+function openModal(artistId, idx) {
+  _mArtist = artistId; _mIdx = idx;
+  const phrases = getPhrases(artistId);
+  const p = idx !== null ? phrases[idx] : {};
+  document.getElementById("modal-title").textContent = idx !== null ? "编辑语料" : "添加语料";
+  document.getElementById("m-phrase").value  = p.phrase  || "";
+  document.getElementById("m-meaning").value = p.meaning || "";
+  document.getElementById("m-example").value = p.example || "";
+  document.getElementById("m-source").value  = p.source  || "";
+  document.getElementById("modal-bg").classList.add("open");
+  setTimeout(() => document.getElementById("m-phrase").focus(), 50);
+}
+
+function closeModal() { document.getElementById("modal-bg").classList.remove("open"); }
+
+function onModalBgClick(e) {
+  if (e.target === document.getElementById("modal-bg")) closeModal();
+}
+
+function saveModal() {
+  const phrase = document.getElementById("m-phrase").value.trim();
+  if (!phrase) { document.getElementById("m-phrase").focus(); return; }
+  const phrases = getPhrases(_mArtist);
+  const obj = {
+    phrase,
+    meaning: document.getElementById("m-meaning").value.trim(),
+    example: document.getElementById("m-example").value.trim(),
+    source:  document.getElementById("m-source").value.trim(),
+  };
+  if (_mIdx !== null) {
+    obj.lyricsSource  = phrases[_mIdx].lyricsSource;
+    obj.originalLine  = phrases[_mIdx].originalLine;
+    phrases[_mIdx] = obj;
+  } else {
+    phrases.unshift(obj);
+  }
+  savePhrases(_mArtist, phrases);
+  closeModal();
+  renderPhrases(_mArtist);
+  const a = ARTISTS.find(x => x.id === _mArtist);
+  if (a) renderSongs(a);
+  toast(_mIdx !== null ? "语料已更新" : "语料已添加");
+}
+
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("modal-bg").classList.contains("open")) return;
+  if (e.key === "Escape") closeModal();
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveModal();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderList();
+</script>
+</body>
+</html>
