@@ -338,6 +338,24 @@ textarea.mi { resize: vertical; min-height: 60px; }
   border: 5px solid transparent; border-bottom: none; border-top-color: var(--accent);
 }
 .mark-tooltip.show { opacity: 1; pointer-events: all; }
+
+/* ── PHRASE GROUPS ── */
+.source-group { margin-bottom: 26px; }
+.source-group-head { font-size: .73rem; font-weight: 700; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.filter-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(108,99,255,.18); border: 1px solid rgba(108,99,255,.32); color: rgba(200,198,255,.9); font-size: .77rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-clear-filter { background: none; border: 1px solid var(--border2); color: var(--text3); padding: 4px 12px; border-radius: 8px; font-size: .78rem; transition: all .15s; cursor: pointer; }
+.btn-clear-filter:hover { border-color: var(--accent); color: var(--accent); }
+.song-lyrics-btn { background: none; border: 1px solid var(--border2); color: var(--text3); border-radius: 6px; padding: 4px 10px; font-size: .74rem; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
+.song-lyrics-btn:hover { border-color: rgba(30,215,96,.5); color: var(--green); }
+.song-card.filter-active { border-color: rgba(108,99,255,.5); background: rgba(108,99,255,.07); }
+.lm-copy-btn { background: none; border: 1px solid var(--border2); color: var(--text2); border-radius: 8px; padding: 7px 14px; font-size: .82rem; font-weight: 500; transition: all .15s; flex-shrink: 0; }
+.lm-copy-btn:hover { border-color: rgba(255,255,255,.3); color: var(--text); }
+.lm-explain-btn { margin-top: 8px; background: rgba(108,99,255,.14); border: 1px solid rgba(108,99,255,.28); color: rgba(190,186,255,.9); border-radius: 9px; padding: 9px 16px; font-size: .84rem; font-weight: 600; transition: all .15s; }
+.lm-explain-btn:hover { background: rgba(108,99,255,.26); }
+.lm-explain-btn:disabled { opacity: .32; cursor: default; }
+.lm-ai-result { background: rgba(108,99,255,.09); border: 1px solid rgba(108,99,255,.18); border-radius: 10px; padding: 12px 14px; margin-top: 10px; font-size: .81rem; color: rgba(255,255,255,.8); line-height: 1.72; max-height: 220px; overflow-y: auto; }
+.lm-ai-result p { margin: 0 0 5px; }
+.lm-ai-result p:last-child { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -396,6 +414,7 @@ textarea.mi { resize: vertical; min-height: 60px; }
         <div class="lm-song-name" id="lm-song-name">—</div>
         <div class="lm-song-artist" id="lm-song-artist"></div>
       </div>
+      <button class="lm-copy-btn" onclick="copyLyrics()">复制歌词</button>
       <button class="lm-save-btn" id="lm-save-btn" onclick="saveSong()">＋ 保存到曲库</button>
       <button class="lm-close" onclick="closeLyricsModal()">✕</button>
     </div>
@@ -404,6 +423,8 @@ textarea.mi { resize: vertical; min-height: 60px; }
       <div class="lm-marks-col">
         <div class="lm-marks-head">已标记</div>
         <div class="lm-marks-list" id="lm-marks-list"></div>
+        <button class="lm-explain-btn" id="lm-explain-btn" onclick="explainMarked()" disabled>AI 解释</button>
+        <div class="lm-ai-result" id="lm-ai-result" style="display:none"></div>
         <button class="lm-add-all" id="lm-add-all-btn" onclick="addAllMarkedToVocab()" disabled>加入语料库</button>
       </div>
     </div>
@@ -554,6 +575,7 @@ function openArtist(id) {
   const a = ARTISTS.find(x => x.id === id);
   if (!a) return;
   _curArtist = a;
+  _phraseFilter = null;
   show("artist");
   document.getElementById("bc").textContent = a.name;
 
@@ -602,27 +624,27 @@ function renderSongs(a) {
         return `<span class="mark-pill">${esc(p)}
           ${has
             ? `<button class="pill-add" disabled>已添加</button>`
-            : `<button class="pill-add" onclick="event.stopPropagation();addFromSong('${ea(a.id)}','${ea(p)}','${ea(s.title)}','${ea(orig)}')">＋</button>`
+            : `<button class="pill-add" onclick="event.stopPropagation();addFromSong('${ea(a.id)}',${s.id},'${ea(p)}','${ea(s.title)}','${ea(orig)}')">＋</button>`
           }</span>`;
       }).join("")}</div>` : "";
-      return `<div class="song-card" id="sc-${s.id}" onclick="openSavedSongInModal(${s.id})" style="cursor:pointer">
+      return `<div class="song-card" id="sc-${s.id}" onclick="filterBySong(${s.id},'${ea(s.title)}')" style="cursor:pointer">
         <div class="song-header">
           <div class="song-icon">🎵</div>
           <div class="song-info">
             <div class="song-title">${esc(s.title)}</div>
             <div class="song-meta">${s.lines.filter(l=>l.trim()).length} 行歌词${marks.length ? ` · ${marks.length} 个标记` : ""}</div>
           </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          <button class="song-lyrics-btn" onclick="event.stopPropagation();openSavedSongInModal(${s.id})">查看歌词</button>
         </div>
         ${marksHtml}
       </div>`;
     }).join("")}`;
 }
 
-function addFromSong(artistId, phrase, song, orig) {
+function addFromSong(artistId, songId, phrase, song, orig) {
   const phrases = getPhrases(artistId);
   if (phrases.some(p => p.phrase.toLowerCase() === phrase.toLowerCase())) { toast(`"${phrase}" 已在语料库中`); return; }
-  phrases.push({ phrase, meaning: "", example: "", source: song, lyricsSource: song, originalLine: orig });
+  phrases.push({ phrase, meaning: "", example: "", source: song, lyricsSource: song, originalLine: orig, songId });
   savePhrases(artistId, phrases);
   const a = ARTISTS.find(x => x.id === artistId);
   renderSongs(a);
@@ -630,36 +652,95 @@ function addFromSong(artistId, phrase, song, orig) {
   toast(`"${phrase}" 已加入语料，可点击编辑补充释义`);
 }
 
+let _phraseFilter = null; // { id: songId, title }
+
 function renderPhrases(artistId) {
-  const phrases = getPhrases(artistId);
+  const allPhrases = getPhrases(artistId);
   const col = document.getElementById("col-phrases");
-  const cards = phrases.map((p, i) => {
-    const src = p.lyricsSource
-      ? `<div class="pc-song-src">🎵 ${esc(p.lyricsSource)}</div>`
-      : (p.source ? `<div class="pc-src">来自：${esc(p.source)}</div>` : "");
-    return `<div class="phrase-card">
-      <div class="pc-row">
-        <div class="pc-phrase">${esc(p.phrase)}</div>
-        <div class="pc-btns">
-          <button class="pc-btn" onclick="openModal('${ea(artistId)}',${i})" title="编辑">✏</button>
-          <button class="pc-btn del" onclick="delPhrase('${ea(artistId)}',${i})" title="删除">✕</button>
-        </div>
+
+  if (_phraseFilter) {
+    const filtered = allPhrases.map((p, i) => ({ ...p, _i: i }))
+      .filter(p => _matchesSongFilter(p, _phraseFilter));
+    col.innerHTML = `<div class="phrases-bar">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="col-title">语料</span>
+        <span class="filter-badge">🎵 ${esc(_phraseFilter.title)}</span>
+        <button class="btn-clear-filter" onclick="clearPhraseFilter()">✕ 全部</button>
+        <span class="col-count">${filtered.length} 条</span>
       </div>
-      ${p.meaning ? `<div class="pc-meaning">${esc(p.meaning)}</div>` : ""}
-      ${p.originalLine ? `<div class="pc-orig">${esc(p.originalLine)}</div>` : ""}
-      ${p.example ? `<div class="pc-example">${esc(p.example)}</div>` : ""}
-      ${src}
-    </div>`;
-  }).join("");
+      <button class="btn-add" onclick="openModal('${ea(artistId)}',null)">＋ 添加</button>
+    </div>
+    ${filtered.length
+      ? filtered.map(p => _phraseCard(p, p._i, artistId, true)).join("")
+      : `<div class="empty-col"><div class="ei">🎵</div>此歌曲暂无语料<br>打开歌词页面标记词汇</div>`}`;
+    return;
+  }
+
+  // All phrases grouped by source
+  const indexed = allPhrases.map((p, i) => ({ ...p, _i: i }));
+  const groups = {};
+  indexed.forEach(p => {
+    const key = p.lyricsSource || p.source || "其他";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(p);
+  });
+  const groupHtml = Object.entries(groups).map(([src, items]) =>
+    `<div class="source-group">
+      <div class="source-group-head">🎵 ${esc(src)}</div>
+      ${items.map(p => _phraseCard(p, p._i, artistId, false)).join("")}
+    </div>`
+  ).join("");
 
   col.innerHTML = `<div class="phrases-bar">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="col-title">语料</span>
-        <span class="col-count">${phrases.length} 条</span>
-      </div>
-      <button class="btn-add" onclick="openModal('${ea(artistId)}',null)">＋ 添加语料</button>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="col-title">语料</span>
+      <span class="col-count">${allPhrases.length} 条</span>
     </div>
-    ${phrases.length ? cards : `<div class="empty-col"><div class="ei">💬</div>暂无语料<br>点击右上角添加</div>`}`;
+    <button class="btn-add" onclick="openModal('${ea(artistId)}',null)">＋ 添加语料</button>
+  </div>
+  ${allPhrases.length ? groupHtml : `<div class="empty-col"><div class="ei">💬</div>暂无语料<br>点击右上角添加</div>`}`;
+}
+
+function _phraseCard(p, idx, artistId, showSrc) {
+  const src = showSrc
+    ? (p.lyricsSource
+        ? `<div class="pc-song-src">🎵 ${esc(p.lyricsSource)}</div>`
+        : (p.source ? `<div class="pc-src">来自：${esc(p.source)}</div>` : ""))
+    : "";
+  return `<div class="phrase-card">
+    <div class="pc-row">
+      <div class="pc-phrase">${esc(p.phrase)}</div>
+      <div class="pc-btns">
+        <button class="pc-btn" onclick="openModal('${ea(artistId)}',${idx})" title="编辑">✏</button>
+        <button class="pc-btn del" onclick="delPhrase('${ea(artistId)}',${idx})" title="删除">✕</button>
+      </div>
+    </div>
+    ${p.meaning ? `<div class="pc-meaning">${esc(p.meaning)}</div>` : ""}
+    ${p.originalLine ? `<div class="pc-orig">${esc(p.originalLine)}</div>` : ""}
+    ${p.example ? `<div class="pc-example">${esc(p.example)}</div>` : ""}
+    ${src}
+  </div>`;
+}
+
+function _matchesSongFilter(phrase, filter) {
+  if (phrase.songId && phrase.songId === filter.id) return true;
+  const src = ((phrase.lyricsSource || phrase.source || "")).toLowerCase();
+  const tl = filter.title.toLowerCase();
+  return src.startsWith(tl) || src.includes(tl);
+}
+
+function filterBySong(songId, title) {
+  if (_phraseFilter && _phraseFilter.id === songId) { clearPhraseFilter(); return; }
+  _phraseFilter = { id: songId, title };
+  document.querySelectorAll(".song-card").forEach(c => c.classList.remove("filter-active"));
+  document.getElementById("sc-" + songId)?.classList.add("filter-active");
+  if (_curArtist) renderPhrases(_curArtist.id);
+}
+
+function clearPhraseFilter() {
+  _phraseFilter = null;
+  document.querySelectorAll(".song-card").forEach(c => c.classList.remove("filter-active"));
+  if (_curArtist) renderPhrases(_curArtist.id);
 }
 
 function delPhrase(artistId, idx) {
@@ -860,17 +941,23 @@ function _renderLyricsInModal() {
 
 function _renderMarksPanel() {
   const list = document.getElementById("lm-marks-list");
-  const btn = document.getElementById("lm-add-all-btn");
+  const addBtn = document.getElementById("lm-add-all-btn");
+  const expBtn = document.getElementById("lm-explain-btn");
+  const aiRes = document.getElementById("lm-ai-result");
   if (!_lmMarks.length) {
     list.innerHTML = `<div class="lm-empty-marks">在左侧选中歌词文字，点击「标记」将词汇添加到此处</div>`;
-    btn.disabled = true; return;
+    addBtn.disabled = true;
+    if (expBtn) expBtn.disabled = true;
+    if (aiRes) aiRes.style.display = "none";
+    return;
   }
   list.innerHTML = _lmMarks.map((m, i) => `
     <div class="lm-mark-pill">
       <span>${esc(m)}</span>
       <button class="lm-mark-rm" onclick="removeMarked(${i})">✕</button>
     </div>`).join("");
-  btn.disabled = false;
+  addBtn.disabled = false;
+  if (expBtn) expBtn.disabled = false;
 }
 
 function removeMarked(idx) {
@@ -911,7 +998,7 @@ function addAllMarkedToVocab() {
     if (phrases.some(p => p.phrase.toLowerCase() === m.toLowerCase())) return;
     const origLine = (_lmLines.find(l => l.toLowerCase().includes(m.toLowerCase())) || "").trim();
     const src = _lmTrack.title + (_lmTrack.artist ? " — " + _lmTrack.artist : "");
-    phrases.unshift({ phrase: m, meaning: "", example: "", source: src, lyricsSource: src, originalLine: origLine });
+    phrases.unshift({ phrase: m, meaning: "", example: "", source: src, lyricsSource: src, originalLine: origLine, songId: _lmSongId });
     added++;
   });
   savePhrases(_curArtist.id, phrases);
@@ -950,7 +1037,9 @@ function markSelection() {
 
 document.addEventListener("mouseup", e => {
   if (!document.getElementById("lm-bg").classList.contains("open")) return;
-  if (e.target.closest(".lm-marks-col") || e.target.closest(".mark-tooltip")) return;
+  if (e.target.closest(".mark-tooltip")) return;
+  // Only show tooltip when selection ends within the lyrics column
+  if (!e.target.closest(".lm-lyrics-col")) { _hideMarkTooltip(); return; }
   const sel = window.getSelection();
   if (!sel || sel.isCollapsed) { _hideMarkTooltip(); return; }
   const text = sel.toString().trim();
@@ -963,6 +1052,64 @@ document.addEventListener("mousedown", e => {
   if (e.target.closest(".mark-tooltip")) return;
   _hideMarkTooltip();
 });
+
+// ─── COPY LYRICS ─────────────────────────────────────────────────────────────
+function copyLyrics() {
+  const text = _lmLines.join("\n");
+  const doFallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.cssText = "position:fixed;opacity:0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy"); toast("歌词已复制"); } catch { toast("复制失败"); }
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast("歌词已复制")).catch(doFallback);
+  else doFallback();
+}
+
+// ─── AI EXPLAIN ──────────────────────────────────────────────────────────────
+function getApiKey() { return localStorage.getItem("speakup_apikey") || ""; }
+
+async function explainMarked() {
+  if (!_lmMarks.length) return;
+  let key = getApiKey();
+  if (!key) {
+    key = prompt("请输入 Claude API Key（sk-ant-...）：");
+    if (!key) return;
+    localStorage.setItem("speakup_apikey", key.trim());
+    key = key.trim();
+  }
+  const btn = document.getElementById("lm-explain-btn");
+  const resultEl = document.getElementById("lm-ai-result");
+  btn.disabled = true; btn.textContent = "解释中…";
+  resultEl.style.display = "none";
+
+  const songCtx = _lmTrack ? `歌曲《${_lmTrack.title}》${_lmTrack.artist ? "by " + _lmTrack.artist : ""}` : "";
+  const userMsg = `你是英语学习助手。${songCtx ? `以下短语来自${songCtx}，` : ""}请用简洁中文解释以下英语短语的含义和典型用法：\n${_lmMarks.map((p, i) => `${i + 1}. ${p}`).join("\n")}`;
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 900, messages: [{ role: "user", content: userMsg }] })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content?.[0]?.text || "无返回";
+    resultEl.style.display = "block";
+    resultEl.innerHTML = text.split("\n").filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join("");
+  } catch (err) {
+    toast("AI 解释失败：" + err.message);
+  } finally {
+    btn.disabled = !_lmMarks.length;
+    btn.textContent = "AI 解释";
+  }
+}
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderList();
