@@ -93,6 +93,19 @@ input, textarea { font-family: inherit; }
 .ac-stat b { color: var(--text); font-weight: 600; }
 
 .no-results { text-align: center; padding: 80px 24px; color: var(--text3); font-size: .9rem; display: none; }
+.list-heading-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; }
+.list-heading-row h1 { margin: 0; }
+.ac-del { position: absolute; top: 12px; right: 12px; background: rgba(255,95,114,.12); border: 1px solid rgba(255,95,114,.25); color: var(--red); width: 26px; height: 26px; border-radius: 50%; font-size: .72rem; display: flex; align-items: center; justify-content: center; transition: background .15s; z-index: 1; cursor: pointer; }
+.ac-del:hover { background: rgba(255,95,114,.32); }
+.am-preview { display: flex; align-items: center; gap: 16px; padding: 14px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.am-prev-avatar { font-size: 2.6rem; width: 60px; height: 60px; border-radius: 50%; background: var(--surface3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.emoji-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.emoji-btn { background: var(--surface3); border: 1px solid transparent; border-radius: 7px; padding: 5px 8px; font-size: 1.1rem; cursor: pointer; line-height: 1; transition: border-color .15s; }
+.emoji-btn:hover { border-color: var(--accent); }
+.color-grid { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.color-dot { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .15s, border-color .15s; flex-shrink: 0; }
+.color-dot:hover { transform: scale(1.15); }
+.color-dot.selected { border-color: #fff; }
 
 /* ── DETAIL VIEW ── */
 .detail-header {
@@ -380,7 +393,10 @@ textarea.mi { resize: vertical; min-height: 60px; }
 <div id="v-list" class="view active">
   <div class="list-wrap">
     <div class="list-heading">
-      <h1>艺人语料库</h1>
+      <div class="list-heading-row">
+        <h1>艺人语料库</h1>
+        <button class="btn-add" onclick="openArtistModal()">＋ 添加艺人</button>
+      </div>
       <p>通过歌词学地道英语，深入了解每位艺人的语言风格与俚语</p>
     </div>
     <div id="artist-grid" class="artist-grid"></div>
@@ -433,6 +449,43 @@ textarea.mi { resize: vertical; min-height: 60px; }
 </div>
 <div class="mark-tooltip" id="mark-tooltip" onclick="markSelection()">标记</div>
 
+<!-- MODAL: ADD ARTIST -->
+<div class="modal-bg" id="am-bg" onclick="if(event.target===this)closeArtistModal()">
+  <div class="modal" style="width:520px;max-height:88vh;overflow-y:auto">
+    <div class="modal-head">
+      <div class="modal-title">添加艺人</div>
+      <button class="modal-close" onclick="closeArtistModal()">✕</button>
+    </div>
+    <div class="am-preview">
+      <div class="am-prev-avatar" id="am-prev-avatar" style="box-shadow:0 0 0 3px var(--accent)">🎤</div>
+      <div>
+        <div id="am-prev-name" style="font-size:1.05rem;font-weight:700;color:var(--text2)">艺人名称</div>
+        <div id="am-prev-sub" style="font-size:.8rem;color:var(--text3);margin-top:3px">风格 · 地区</div>
+      </div>
+    </div>
+    <div class="mf"><div class="ml">艺人名称 *</div><input class="mi" id="am-name" type="text" placeholder="e.g. Taylor Swift" oninput="updateAmPreview()"></div>
+    <div class="mf">
+      <div class="ml">头像 Emoji</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <input class="mi" id="am-avatar" type="text" placeholder="🎤" style="width:72px;text-align:center;font-size:1.3rem" oninput="updateAmPreview()">
+        <div class="emoji-grid" id="am-emoji-grid"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <div class="ml">主题色</div>
+      <div class="color-grid" id="am-color-grid"></div>
+    </div>
+    <div class="mf"><div class="ml">来源地区</div><input class="mi" id="am-origin" type="text" placeholder="e.g. Nashville · 美国" oninput="updateAmPreview()"></div>
+    <div class="mf"><div class="ml">音乐风格</div><input class="mi" id="am-style" type="text" placeholder="e.g. Pop · Country" oninput="updateAmPreview()"></div>
+    <div class="mf"><div class="ml">简介</div><textarea class="mi" id="am-desc" placeholder="艺人简介…" rows="3"></textarea></div>
+    <div class="mf"><div class="ml">标签（逗号分隔）</div><input class="mi" id="am-tags" type="text" placeholder="e.g. storytelling, anthems"></div>
+    <div class="mfoot">
+      <button class="btn-cancel" onclick="closeArtistModal()">取消</button>
+      <button class="btn-save" onclick="saveArtistModal()">添加</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: ADD / EDIT PHRASE -->
 <div class="modal-bg" id="modal-bg" onclick="onModalBgClick(event)">
   <div class="modal">
@@ -480,15 +533,22 @@ const ARTISTS = [
 ];
 
 // ─── STORAGE ─────────────────────────────────────────────────────────────────
-const PHRASES_KEY = "artist_site_phrases";
-const SONGS_KEY   = "speakup_songs";
+const PHRASES_KEY  = "artist_site_phrases";
+const SONGS_KEY    = "speakup_songs";
+const CUSTOM_A_KEY = "artist_site_custom_artists";
+
+function getCustomArtists() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_A_KEY) || "[]"); } catch { return []; }
+}
+function saveCustomArtists(arr) { localStorage.setItem(CUSTOM_A_KEY, JSON.stringify(arr)); }
+function getAllArtists() { return [...ARTISTS, ...getCustomArtists()]; }
 
 function getPhrases(id) {
   try {
     const all = JSON.parse(localStorage.getItem(PHRASES_KEY) || "{}");
     if (all[id]) return all[id];
   } catch {}
-  const a = ARTISTS.find(x => x.id === id);
+  const a = getAllArtists().find(x => x.id === id);
   return a ? a.phrases.map(p => ({ ...p })) : [];
 }
 function savePhrases(id, phrases) {
@@ -541,17 +601,21 @@ function renderList() {
   _curArtist = null;
   show("list");
   document.getElementById("search-in").value = "";
-  document.getElementById("artist-grid").innerHTML = ARTISTS.map(a => {
+  document.getElementById("artist-grid").innerHTML = getAllArtists().map(a => {
     const sc = songsByArtist(a.name).length;
     const pc = getPhrases(a.id).length;
-    return `<div class="artist-card" style="--c:${a.color}" onclick="openArtist('${a.id}')">
-      <div class="ac-avatar">${a.avatar}</div>
+    const delBtn = a.isCustom
+      ? `<button class="ac-del" onclick="event.stopPropagation();deleteCustomArtist('${a.id}')" title="删除">✕</button>`
+      : "";
+    return `<div class="artist-card" style="--c:${a.color || "var(--accent)"}" onclick="openArtist('${a.id}')">
+      ${delBtn}
+      <div class="ac-avatar">${a.avatar || "🎤"}</div>
       <div class="ac-name">${esc(a.name)}</div>
-      <div class="ac-sub">${esc(a.origin)}</div>
-      <div class="ac-desc">${esc(a.desc)}</div>
+      <div class="ac-sub">${esc(a.origin || "")}</div>
+      <div class="ac-desc">${esc(a.desc || "")}</div>
       <div class="ac-stats">
         <div class="ac-stat"><b>${pc}</b> 条语料</div>
-        <div class="ac-stat"><b>${a.tags.length}</b> 标签</div>
+        ${a.tags?.length ? `<div class="ac-stat"><b>${a.tags.length}</b> 标签</div>` : ""}
         ${sc ? `<div class="ac-stat" style="color:var(--green)"><b>${sc}</b> 首歌</div>` : ""}
       </div>
     </div>`;
@@ -573,7 +637,7 @@ function backToList() { renderList(); }
 
 // ─── DETAIL ───────────────────────────────────────────────────────────────────
 function openArtist(id) {
-  const a = ARTISTS.find(x => x.id === id);
+  const a = getAllArtists().find(x => x.id === id);
   if (!a) return;
   _curArtist = a;
   _phraseFilter = null;
@@ -651,7 +715,7 @@ function addFromSong(artistId, songId, phrase, song, orig) {
   if (phrases.some(p => p.phrase.toLowerCase() === phrase.toLowerCase())) { toast(`"${phrase}" 已在语料库中`); return; }
   phrases.push({ phrase, meaning: "", example: "", source: song, lyricsSource: song, originalLine: orig, songId });
   savePhrases(artistId, phrases);
-  const a = ARTISTS.find(x => x.id === artistId);
+  const a = getAllArtists().find(x => x.id === artistId);
   renderSongs(a);
   renderPhrases(artistId);
   toast(`"${phrase}" 已加入语料，可点击编辑补充释义`);
@@ -754,7 +818,7 @@ function delPhrase(artistId, idx) {
   phrases.splice(idx, 1);
   savePhrases(artistId, phrases);
   renderPhrases(artistId);
-  const a = ARTISTS.find(x => x.id === artistId);
+  const a = getAllArtists().find(x => x.id === artistId);
   if (a) renderSongs(a);
   toast("已删除");
 }
@@ -801,7 +865,7 @@ function saveModal() {
   savePhrases(_mArtist, phrases);
   closeModal();
   renderPhrases(_mArtist);
-  const a = ARTISTS.find(x => x.id === _mArtist);
+  const a = getAllArtists().find(x => x.id === _mArtist);
   if (a) renderSongs(a);
   toast(_mIdx !== null ? "语料已更新" : "语料已添加");
 }
@@ -1060,6 +1124,97 @@ document.addEventListener("mousedown", e => {
   if (e.target.closest(".mark-tooltip")) return;
   _hideMarkTooltip();
 });
+
+// ─── ARTIST MODAL ────────────────────────────────────────────────────────────
+const AM_EMOJIS = ['🎤','🎵','🎸','🎹','🥁','🎷','🎺','🎻','🎧','🌟','🦁','🐺','🦊','🌙','🔥','💫','🎭','🏆','🌊','👑','💎','🌈'];
+const AM_COLORS = ['#b8860b','#e74c3c','#e67e22','#f1c40f','#27ae60','#1ed760','#3498db','#6c63ff','#9b59b6','#ff6b9d','#16a085','#c0392b'];
+let _amColor = '#6c63ff';
+
+function openArtistModal() {
+  _amColor = '#6c63ff';
+  document.getElementById("am-name").value = "";
+  document.getElementById("am-avatar").value = "";
+  document.getElementById("am-origin").value = "";
+  document.getElementById("am-style").value = "";
+  document.getElementById("am-desc").value = "";
+  document.getElementById("am-tags").value = "";
+  updateAmPreview();
+
+  // Render emoji grid
+  document.getElementById("am-emoji-grid").innerHTML = AM_EMOJIS.map(e =>
+    `<button class="emoji-btn" onclick="document.getElementById('am-avatar').value='${e}';updateAmPreview()">${e}</button>`
+  ).join("");
+
+  // Render color grid
+  document.getElementById("am-color-grid").innerHTML = AM_COLORS.map(c =>
+    `<span class="color-dot${c === _amColor ? " selected" : ""}" style="background:${c}" onclick="selectAmColor('${c}')"></span>`
+  ).join("") + `<input type="color" id="am-color-pick" value="${_amColor}" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);cursor:pointer;padding:0" oninput="selectAmColor(this.value)">`;
+
+  document.getElementById("am-bg").classList.add("open");
+}
+
+function selectAmColor(c) {
+  _amColor = c;
+  document.querySelectorAll("#am-color-grid .color-dot").forEach(d => {
+    d.classList.toggle("selected", d.style.background === c);
+  });
+  const pick = document.getElementById("am-color-pick");
+  if (pick) pick.value = c;
+  updateAmPreview();
+}
+
+function updateAmPreview() {
+  const name = document.getElementById("am-name").value.trim() || "艺人名称";
+  const avatar = document.getElementById("am-avatar").value.trim() || "🎤";
+  const origin = document.getElementById("am-origin").value.trim();
+  const style  = document.getElementById("am-style").value.trim();
+  document.getElementById("am-prev-name").textContent = name;
+  document.getElementById("am-prev-sub").textContent = [style, origin].filter(Boolean).join(" · ") || "风格 · 地区";
+  document.getElementById("am-prev-avatar").textContent = avatar;
+  document.getElementById("am-prev-avatar").style.boxShadow = `0 0 0 3px ${_amColor}`;
+}
+
+function closeArtistModal() { document.getElementById("am-bg").classList.remove("open"); }
+
+function saveArtistModal() {
+  const name = document.getElementById("am-name").value.trim();
+  if (!name) { document.getElementById("am-name").focus(); return; }
+  const id = "custom_" + Date.now();
+  const tagsRaw = document.getElementById("am-tags").value.trim();
+  const artist = {
+    id,
+    isCustom: true,
+    name,
+    avatar: document.getElementById("am-avatar").value.trim() || "🎤",
+    color: _amColor,
+    origin: document.getElementById("am-origin").value.trim(),
+    style: document.getElementById("am-style").value.trim(),
+    desc: document.getElementById("am-desc").value.trim(),
+    tags: tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [],
+    phrases: []
+  };
+  const customs = getCustomArtists();
+  customs.push(artist);
+  saveCustomArtists(customs);
+  closeArtistModal();
+  renderList();
+  toast(`艺人「${name}」已添加`);
+}
+
+function deleteCustomArtist(id) {
+  const a = getCustomArtists().find(x => x.id === id);
+  if (!a) return;
+  if (!confirm(`删除艺人「${a.name}」及其所有语料？此操作不可撤销。`)) return;
+  saveCustomArtists(getCustomArtists().filter(x => x.id !== id));
+  // Also remove phrases
+  try {
+    const all = JSON.parse(localStorage.getItem(PHRASES_KEY) || "{}");
+    delete all[id];
+    localStorage.setItem(PHRASES_KEY, JSON.stringify(all));
+  } catch {}
+  renderList();
+  toast(`「${a.name}」已删除`);
+}
 
 // ─── COPY LYRICS ─────────────────────────────────────────────────────────────
 function copyLyrics() {
