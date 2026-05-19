@@ -245,7 +245,8 @@ textarea.mi { resize: vertical; min-height: 60px; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── SONGS SEARCH ── */
-.songs-search { display: flex; gap: 8px; margin-bottom: 12px; }
+.songs-search { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.songs-search-row { display: flex; gap: 8px; }
 .songs-search-in {
   flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: .84rem; outline: none;
@@ -598,9 +599,13 @@ function renderSongs(a) {
   const songs = songsByArtist(a.name);
   const col = document.getElementById("col-songs");
   const searchHtml = `<div class="songs-search">
-    <input class="songs-search-in" id="song-search-in" type="text" placeholder="搜索歌词…"
-           onkeydown="if(event.key==='Enter')searchSong()">
-    <button class="songs-search-btn" id="song-search-btn" onclick="searchSong()">搜索</button>
+    <div class="songs-search-row">
+      <input class="songs-search-in" id="song-search-artist" type="text" placeholder="歌手名…"
+             value="${esc(a.name)}" onkeydown="if(event.key==='Enter')searchSong()" style="flex:0 0 120px">
+      <input class="songs-search-in" id="song-search-in" type="text" placeholder="歌曲名…"
+             onkeydown="if(event.key==='Enter')searchSong()">
+      <button class="songs-search-btn" id="song-search-btn" onclick="searchSong()">搜索</button>
+    </div>
   </div>
   <div id="sr-list"></div>`;
 
@@ -819,12 +824,15 @@ let _srResults = [];
 async function searchSong() {
   if (!_curArtist) return;
   const titleEl = document.getElementById("song-search-in");
+  const artistEl = document.getElementById("song-search-artist");
   const btn = document.getElementById("song-search-btn");
   const title = titleEl.value.trim();
   if (!title) { titleEl.focus(); return; }
   btn.disabled = true; btn.textContent = "搜索中…";
   try {
-    const params = new URLSearchParams({ track_name: title, artist_name: _curArtist.name });
+    const artistName = artistEl ? artistEl.value.trim() : _curArtist.name;
+    const params = new URLSearchParams({ track_name: title });
+    if (artistName) params.append("artist_name", artistName);
     const res = await fetch("https://lrclib.net/api/search?" + params);
     if (!res.ok) throw new Error("网络错误");
     const results = await res.json();
