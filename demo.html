@@ -932,6 +932,31 @@ body {
 .cal-dots { display:flex; gap:2px; margin-top:2px; flex-wrap:wrap; justify-content:center; }
 .cal-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
 
+/* ===== CAL DAY VIEW ===== */
+.cal-day-header { display:flex; align-items:center; justify-content:space-between; padding:52px 12px 10px; border-bottom:0.5px solid var(--border); flex-shrink:0; }
+.cal-day-back { background:none; border:none; font-size:22px; color:var(--accent); cursor:pointer; padding:0 6px; line-height:1; }
+.cal-day-date-block { display:flex; flex-direction:column; align-items:center; gap:1px; }
+.cal-day-weekday { font-size:12px; color:var(--muted); font-weight:500; text-transform:uppercase; letter-spacing:0.4px; }
+.cal-day-numcircle { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:var(--text); }
+.cal-day-numcircle.today { background:var(--accent); color:white; }
+.cal-day-navbtn { background:none; border:none; font-size:22px; color:var(--accent); cursor:pointer; padding:0 6px; line-height:1; }
+.cal-day-allday { flex-shrink:0; border-bottom:0.5px solid var(--border); min-height:36px; display:flex; align-items:center; padding:7px 12px; gap:6px; flex-wrap:wrap; }
+.cal-day-allday-label { font-size:11px; color:var(--muted); flex-shrink:0; margin-right:2px; }
+.cal-day-pill { font-size:11px; font-weight:500; padding:3px 8px; border-radius:12px; white-space:nowrap; }
+.cal-day-scroll { flex:1; overflow-y:auto; position:relative; }
+.cal-day-timeline { position:relative; padding:0 0 40px; }
+.cal-hour-row { display:flex; align-items:flex-start; min-height:60px; position:relative; }
+.cal-hour-label { width:44px; flex-shrink:0; font-size:11px; color:var(--muted); padding-top:0; text-align:right; padding-right:8px; line-height:1; margin-top:-6px; }
+.cal-hour-line { flex:1; border-top:0.5px solid var(--border); min-height:60px; position:relative; }
+.cal-hour-row:first-child .cal-hour-line { border-top:none; }
+.cal-now-line { position:absolute; left:44px; right:0; height:2px; z-index:10; pointer-events:none; }
+.cal-now-dot { position:absolute; left:44px; width:9px; height:9px; border-radius:50%; margin-left:-5px; margin-top:-4px; z-index:11; pointer-events:none; }
+.cal-event-block { position:absolute; left:48px; right:8px; border-radius:8px; padding:4px 8px; overflow:hidden; cursor:pointer; box-sizing:border-box; min-height:22px; }
+.cal-event-block:active { opacity:0.75; }
+.cal-event-title { font-size:12px; font-weight:600; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cal-event-time-small { font-size:10px; opacity:0.8; white-space:nowrap; overflow:hidden; }
+.cal-day-empty { text-align:center; font-size:14px; color:var(--muted); padding:48px 0; }
+
 /* ===== REMINDERS ===== */
 .reminder-item { display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:0.5px solid var(--border); }
 .reminder-item:last-child { border-bottom:none; }
@@ -1302,6 +1327,25 @@ body {
     <button class="todo-page-action" onclick="openReadingEdit(null)">＋ 添加</button>
   </div>
   <div class="todo-page-body" id="readingBookList"></div>
+</div>
+
+<!-- ===== CAL DAY VIEW ===== -->
+<div id="page-cal-day" class="todo-fullpage">
+  <div class="cal-day-header">
+    <button class="cal-day-back" onclick="closeCalDay()">‹ 日历</button>
+    <div class="cal-day-date-block">
+      <div class="cal-day-weekday" id="calDayWeekday"></div>
+      <div class="cal-day-numcircle" id="calDayNumCircle"></div>
+    </div>
+    <div style="display:flex;gap:0">
+      <button class="cal-day-navbtn" onclick="navigateCalDay(-1)">‹</button>
+      <button class="cal-day-navbtn" onclick="navigateCalDay(1)">›</button>
+    </div>
+  </div>
+  <div class="cal-day-allday" id="calDayAllDay"></div>
+  <div class="cal-day-scroll">
+    <div class="cal-day-timeline" id="calDayTimeline"></div>
+  </div>
 </div>
 
 <!-- ===== READING EDIT SHEET (above fullpage) ===== -->
@@ -4864,7 +4908,7 @@ function renderCalendarPage() {
     for (let i = 0; i < Math.min(tc, 2); i++) dots.push(`<div class="cal-dot" style="background:var(--success)"></div>`);
     if (rc) dots.push(`<div class="cal-dot" style="background:var(--warning)"></div>`);
     if (timeLogDates[dateStr]) dots.push(`<div class="cal-dot" style="background:#5AC8FA"></div>`);
-    cells += `<div class="cal-cell${isToday?' today':''}" onclick="openDayDetail('${dateStr}')">
+    cells += `<div class="cal-cell${isToday?' today':''}" onclick="openCalDay('${dateStr}')">
       <div class="cal-day-num">${d}</div>
       <div class="cal-dots">${dots.join('')}</div>
     </div>`;
@@ -5049,6 +5093,121 @@ function initTodaySwipe() {
       inner.style.transform  = 'translateX(0)';
     }
   }, { passive: true });
+}
+
+// ===== CAL DAY VIEW =====
+let _calDayStr = '';
+const WEEKDAYS_CN = ['日', '一', '二', '三', '四', '五', '六'];
+
+function openCalDay(dateStr) {
+  _calDayStr = dateStr;
+  document.getElementById('page-cal-day').classList.add('open');
+  renderCalDayView();
+}
+function closeCalDay() {
+  document.getElementById('page-cal-day').classList.remove('open');
+}
+function navigateCalDay(delta) {
+  const [y, m, d] = _calDayStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + delta);
+  _calDayStr = localDateStr(dt);
+  renderCalDayView();
+}
+function renderCalDayView() {
+  const dateStr = _calDayStr;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const isToday = dateStr === TODAY;
+
+  // Header
+  document.getElementById('calDayWeekday').textContent = '周' + WEEKDAYS_CN[dt.getDay()];
+  const circle = document.getElementById('calDayNumCircle');
+  circle.textContent = d;
+  circle.className = 'cal-day-numcircle' + (isToday ? ' today' : '');
+
+  // All-day strip: habits + done todos without time
+  const checkedHabits = Object.entries(state.habits).filter(([, h]) => (h.history || []).includes(dateStr));
+  const doneTodos = state.todos.filter(t => t.done && t.completedAt === dateStr);
+  let alldayHtml = '<span class="cal-day-allday-label">全天</span>';
+  checkedHabits.forEach(([, h]) => {
+    alldayHtml += `<span class="cal-day-pill" style="background:rgba(88,86,214,0.12);color:var(--accent)">${h.icon}${h.name}</span>`;
+  });
+  doneTodos.forEach(t => {
+    alldayHtml += `<span class="cal-day-pill" style="background:rgba(52,199,89,0.12);color:#34C759">${t.text}</span>`;
+  });
+  if (checkedHabits.length === 0 && doneTodos.length === 0) alldayHtml += '<span style="font-size:12px;color:var(--muted)">无</span>';
+  document.getElementById('calDayAllDay').innerHTML = alldayHtml;
+
+  // Build timed events list
+  const events = [];
+  // Reminders
+  state.reminders.filter(r => r.datetime?.startsWith(dateStr)).forEach(r => {
+    const startT = r.datetime.slice(11, 16);
+    const [sh, sm] = startT.split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    let endMin = startMin + 60;
+    if (r.endTime) { const [eh, em] = r.endTime.split(':').map(Number); endMin = eh * 60 + em; }
+    if (endMin <= startMin) endMin = startMin + 30;
+    events.push({ label: r.title, startMin, endMin, color: 'var(--warning)', bg: 'rgba(255,149,0,0.13)', textColor: '#CC8400' });
+  });
+  // Time logs
+  (state.timeLogs || []).filter(l => l.date === dateStr).forEach(l => {
+    if (!l.startTime || !l.endTime) return;
+    const [sh, sm] = l.startTime.split(':').map(Number);
+    const [eh, em] = l.endTime.split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    let endMin = eh * 60 + em;
+    if (endMin <= startMin) endMin = startMin + 30;
+    events.push({ label: l.title, startMin, endMin, color: '#5AC8FA', bg: 'rgba(90,200,250,0.13)', textColor: '#007AFF' });
+  });
+
+  // Timeline: hours 0–23, 60px each
+  const HOUR_H = 60;
+  const HOURS = Array.from({ length: 24 }, (_, i) => i);
+  const nowMin = isToday ? (new Date().getHours() * 60 + new Date().getMinutes()) : -1;
+
+  let timelineHtml = '';
+  HOURS.forEach(h => {
+    const label = h === 0 ? '' : (h < 10 ? `0${h}:00` : `${h}:00`);
+    timelineHtml += `<div class="cal-hour-row" style="height:${HOUR_H}px">
+      <div class="cal-hour-label">${label}</div>
+      <div class="cal-hour-line"></div>
+    </div>`;
+  });
+
+  // Event blocks positioned absolutely
+  events.forEach(ev => {
+    const top = (ev.startMin / 60) * HOUR_H;
+    const height = Math.max(22, ((ev.endMin - ev.startMin) / 60) * HOUR_H);
+    const [sh, sm] = [Math.floor(ev.startMin / 60), ev.startMin % 60];
+    const [eh, em] = [Math.floor(ev.endMin / 60), ev.endMin % 60];
+    const fmt = n => String(n).padStart(2, '0');
+    const timeLabel = `${fmt(sh)}:${fmt(sm)} – ${fmt(eh)}:${fmt(em)}`;
+    timelineHtml += `<div class="cal-event-block" style="top:${top}px;height:${height}px;background:${ev.bg};border-left:3px solid ${ev.color}">
+      <div class="cal-event-title" style="color:${ev.textColor}">${ev.label}</div>
+      ${height > 30 ? `<div class="cal-event-time-small" style="color:${ev.textColor}">${timeLabel}</div>` : ''}
+    </div>`;
+  });
+
+  // Now-line
+  if (nowMin >= 0) {
+    const nowTop = (nowMin / 60) * HOUR_H;
+    timelineHtml += `<div class="cal-now-line" style="top:${nowTop}px;background:var(--accent)"></div>`;
+    timelineHtml += `<div class="cal-now-dot" style="top:${nowTop}px;background:var(--accent)"></div>`;
+  }
+
+  if (events.length === 0 && nowMin < 0) {
+    timelineHtml += `<div class="cal-day-empty" style="position:absolute;left:44px;right:0;top:120px">暂无安排</div>`;
+  }
+
+  const tl = document.getElementById('calDayTimeline');
+  tl.style.position = 'relative';
+  tl.innerHTML = timelineHtml;
+
+  // Scroll to 8am or now
+  const scrollTo = nowMin >= 0 ? Math.max(0, (nowMin / 60) * HOUR_H - 80) : 8 * HOUR_H - 20;
+  const scroll = tl.parentElement;
+  requestAnimationFrame(() => { scroll.scrollTop = scrollTo; });
 }
 
 function openDayDetail(dateStr) {
@@ -5584,6 +5743,7 @@ if ('serviceWorker' in navigator) {
     { id: 'page-todo-add',    close: () => closeTodoAddSheet() },
     { id: 'page-todo-detail', close: () => closeTodoDetail() },
     { id: 'page-reading',     close: () => closeReadingPage() },
+    { id: 'page-cal-day',     close: () => closeCalDay() },
   ];
   pages.forEach(({ id, close }) => {
     const page = document.getElementById(id);
