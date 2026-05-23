@@ -757,17 +757,21 @@ body {
 .cal-today-title { font-size: 22px; font-weight: 700; color: #1C1C1E; }
 .cal-today-add-btn { width:32px; height:32px; border-radius:50%; background:var(--accent); border:none; color:white; font-size:20px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-bottom:2px; flex-shrink:0; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
 
-/* ===== ADD PICKER (long-press) ===== */
-.add-picker-overlay { position:fixed; inset:0; z-index:3000; background:rgba(0,0,0,0.18); opacity:0; transition:opacity .18s; pointer-events:none; }
+/* ===== ADD PICKER (long-press inline morph) ===== */
+.add-picker-overlay { position:fixed; inset:0; z-index:3000; opacity:0; transition:opacity .2s; pointer-events:none; }
 .add-picker-overlay.show { opacity:1; pointer-events:auto; }
-.add-picker-wrap { position:fixed; z-index:3001; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:390px; padding:0 20px 36px; }
-.add-picker-pill { display:flex; background:white; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,0.22); overflow:hidden; position:relative; height:56px; }
-.add-picker-option { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:15px; font-weight:600; color:#1C1C1E; transition:color .15s; position:relative; z-index:1; }
+.add-picker-pill-wrap { position:fixed; z-index:3001; transform:translateY(-50%); }
+.add-picker-pill { display:flex; align-items:center; background:var(--card); border-radius:22px; box-shadow:0 6px 28px rgba(0,0,0,0.22); overflow:hidden; position:relative; height:44px; width:44px; transition:width .28s cubic-bezier(0.34,1.4,0.64,1); }
+.add-picker-pill.expanded { width:264px; }
+.add-picker-plus { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:300; color:white; z-index:2; transition:opacity .12s; }
+.add-picker-pill.expanded .add-picker-plus { opacity:0; pointer-events:none; }
+.add-picker-slider { position:absolute; top:4px; bottom:4px; left:4px; width:36px; border-radius:18px; background:var(--accent); z-index:0; transition:left .22s cubic-bezier(0.34,1.56,0.64,1), width .28s cubic-bezier(0.34,1.4,0.64,1); }
+.add-picker-pill.expanded .add-picker-slider { width:calc(50% - 4px); }
+.add-picker-pill.expanded .add-picker-slider.right { left:calc(50%); }
+.add-picker-options { display:flex; width:264px; flex-shrink:0; opacity:0; transition:opacity .14s .14s; }
+.add-picker-pill.expanded .add-picker-options { opacity:1; }
+.add-picker-option { flex:1; display:flex; align-items:center; justify-content:center; gap:5px; font-size:14px; font-weight:600; color:var(--text); position:relative; z-index:1; white-space:nowrap; }
 .add-picker-option.sel { color:white; }
-.add-picker-slider { position:absolute; top:4px; bottom:4px; width:calc(50% - 4px); border-radius:16px; background:var(--accent); transition:left .2s cubic-bezier(0.34,1.56,0.64,1); z-index:0; }
-.add-picker-slider.left { left:4px; }
-.add-picker-slider.right { left:calc(50%); }
-.add-picker-hint { text-align:center; font-size:12px; color:rgba(255,255,255,0.75); margin-top:10px; }
 
 /* ===== POMODORO PAGE ===== */
 .pomo-header { display:flex; align-items:center; justify-content:space-between; padding:52px 16px 12px; border-bottom:0.5px solid var(--border); flex-shrink:0; }
@@ -1390,13 +1394,15 @@ body {
 
 <!-- ===== ADD PICKER OVERLAY ===== -->
 <div class="add-picker-overlay" id="addPickerOverlay"></div>
-<div class="add-picker-wrap" id="addPickerWrap" style="display:none">
+<div class="add-picker-pill-wrap" id="addPickerPillWrap" style="display:none">
   <div class="add-picker-pill" id="addPickerPill">
-    <div class="add-picker-slider left" id="addPickerSlider"></div>
-    <div class="add-picker-option sel" id="addOptPomo">🍅 番茄钟</div>
-    <div class="add-picker-option" id="addOptNew">＋ 新建事项</div>
+    <div class="add-picker-slider" id="addPickerSlider"></div>
+    <div class="add-picker-plus">＋</div>
+    <div class="add-picker-options">
+      <div class="add-picker-option sel" id="addOptPomo">🍅 番茄钟</div>
+      <div class="add-picker-option" id="addOptNew">✚ 新建事项</div>
+    </div>
   </div>
-  <div class="add-picker-hint">松手确认 · 左右滑动切换</div>
 </div>
 
 <!-- ===== POMODORO PAGE ===== -->
@@ -5862,35 +5868,56 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
 }
 
-// ===== ADD PICKER (long-press ＋) =====
+// ===== ADD PICKER (long-press ＋ inline morph) =====
 let _addPickerDateStr = TODAY;
-let _addPickerSel = 0; // 0=pomo, 1=new
+let _addPickerSel = 0;
+let _addPickerActive = false;
 let _addPickerLongTimer = null;
+let _addPickerSX = 0, _addPickerSY = 0;
 
-function openAddPicker() {
+function _openAddPicker() {
+  const btn = document.getElementById('calTodayAddBtn');
+  const rect = btn.getBoundingClientRect();
   if (navigator.vibrate) navigator.vibrate(12);
   _addPickerSel = 0;
-  _syncPickerSel();
-  const wrap = document.getElementById('addPickerWrap');
-  const overlay = document.getElementById('addPickerOverlay');
+  _addPickerActive = true;
+
+  const wrap = document.getElementById('addPickerPillWrap');
+  wrap.style.right = (window.innerWidth - rect.right) + 'px';
+  wrap.style.top = (rect.top + rect.height / 2) + 'px';
   wrap.style.display = '';
-  requestAnimationFrame(() => overlay.classList.add('show'));
-}
-function closeAddPicker(confirm) {
+  btn.style.opacity = '0';
+
+  _syncPickerSel(false); // no transition on slider init
   const overlay = document.getElementById('addPickerOverlay');
+  requestAnimationFrame(() => {
+    overlay.classList.add('show');
+    document.getElementById('addPickerPill').classList.add('expanded');
+  });
+}
+function _closeAddPicker(confirm) {
+  _addPickerActive = false;
+  const pill = document.getElementById('addPickerPill');
+  const overlay = document.getElementById('addPickerOverlay');
+  const wrap = document.getElementById('addPickerPillWrap');
+  const btn = document.getElementById('calTodayAddBtn');
+  pill.classList.remove('expanded');
   overlay.classList.remove('show');
-  setTimeout(() => { document.getElementById('addPickerWrap').style.display = 'none'; }, 200);
+  setTimeout(() => {
+    wrap.style.display = 'none';
+    if (btn) btn.style.opacity = '';
+  }, 260);
   if (confirm) {
     if (navigator.vibrate) navigator.vibrate([4, 4, 4]);
-    if (_addPickerSel === 0) openPomodoro();
-    else openTodoAddSheet();
+    setTimeout(() => { _addPickerSel === 0 ? openPomodoro() : openTodoAddSheet(); }, 80);
   }
 }
 function _syncPickerSel() {
   const slider = document.getElementById('addPickerSlider');
   const optPomo = document.getElementById('addOptPomo');
   const optNew  = document.getElementById('addOptNew');
-  slider.className = 'add-picker-slider ' + (_addPickerSel === 0 ? 'left' : 'right');
+  if (!slider) return;
+  slider.classList.toggle('right', _addPickerSel === 1);
   optPomo.classList.toggle('sel', _addPickerSel === 0);
   optNew.classList.toggle('sel',  _addPickerSel === 1);
 }
@@ -5898,44 +5925,70 @@ function _syncPickerSel() {
 (function initAddPickerBtn() {
   const btn = document.getElementById('calTodayAddBtn');
   if (!btn) return;
-  // Short tap → new todo
-  btn.addEventListener('click', () => { openTodoAddSheet(); });
-  // Long press → picker
+
+  function onMovePassive(e) {
+    if (!_addPickerLongTimer) return;
+    const dx = e.touches[0].clientX - _addPickerSX;
+    const dy = e.touches[0].clientY - _addPickerSY;
+    if (Math.hypot(dx, dy) > 10) {
+      clearTimeout(_addPickerLongTimer);
+      _addPickerLongTimer = null;
+      document.removeEventListener('touchmove', onMovePassive);
+    }
+  }
+  function onMoveActive(e) {
+    if (!_addPickerActive) return;
+    e.preventDefault();
+    const pill = document.getElementById('addPickerPill');
+    if (!pill) return;
+    const rect = pill.getBoundingClientRect();
+    const x = e.touches[0].clientX;
+    const newSel = x < rect.left + rect.width / 2 ? 0 : 1;
+    if (newSel !== _addPickerSel) {
+      _addPickerSel = newSel;
+      _syncPickerSel();
+      if (navigator.vibrate) navigator.vibrate(6);
+    }
+  }
+  function onEnd() {
+    document.removeEventListener('touchmove', onMovePassive);
+    document.removeEventListener('touchmove', onMoveActive);
+    if (_addPickerLongTimer) {
+      clearTimeout(_addPickerLongTimer);
+      _addPickerLongTimer = null;
+      openTodoAddSheet(); // short tap → new todo
+      return;
+    }
+    if (_addPickerActive) _closeAddPicker(true);
+  }
+  function onCancel() {
+    document.removeEventListener('touchmove', onMovePassive);
+    document.removeEventListener('touchmove', onMoveActive);
+    if (_addPickerLongTimer) { clearTimeout(_addPickerLongTimer); _addPickerLongTimer = null; }
+    if (_addPickerActive) _closeAddPicker(false);
+  }
+
   btn.addEventListener('touchstart', e => {
     e.stopPropagation();
+    _addPickerSX = e.touches[0].clientX;
+    _addPickerSY = e.touches[0].clientY;
+    _addPickerActive = false;
+
+    // Passive move: cancel long-press if finger drifts
+    document.addEventListener('touchmove', onMovePassive, { passive: true });
+
     _addPickerLongTimer = setTimeout(() => {
       _addPickerLongTimer = null;
-      openAddPicker();
-      // Attach move/end to track finger on pill
-      document.addEventListener('touchmove', _pickerTouchMove, { passive: true });
-      document.addEventListener('touchend', _pickerTouchEnd, { once: true });
+      document.removeEventListener('touchmove', onMovePassive);
+      _openAddPicker();
+      // Switch to non-passive move so we can preventDefault during picker
+      document.addEventListener('touchmove', onMoveActive, { passive: false });
     }, 420);
-  }, { passive: true });
-  btn.addEventListener('touchend', () => {
-    if (_addPickerLongTimer) { clearTimeout(_addPickerLongTimer); _addPickerLongTimer = null; }
-  });
-  btn.addEventListener('touchcancel', () => {
-    if (_addPickerLongTimer) { clearTimeout(_addPickerLongTimer); _addPickerLongTimer = null; }
-  });
-}());
 
-function _pickerTouchMove(e) {
-  const pill = document.getElementById('addPickerPill');
-  if (!pill) return;
-  const rect = pill.getBoundingClientRect();
-  const x = e.touches[0].clientX;
-  const mid = rect.left + rect.width / 2;
-  const newSel = x < mid ? 0 : 1;
-  if (newSel !== _addPickerSel) {
-    _addPickerSel = newSel;
-    _syncPickerSel();
-    if (navigator.vibrate) navigator.vibrate(6);
-  }
-}
-function _pickerTouchEnd() {
-  document.removeEventListener('touchmove', _pickerTouchMove);
-  closeAddPicker(true);
-}
+    document.addEventListener('touchend',   onEnd,    { once: true });
+    document.addEventListener('touchcancel', onCancel, { once: true });
+  }, { passive: true });
+}());
 
 // ===== POMODORO =====
 const POMO_BREAK = 5;
