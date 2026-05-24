@@ -816,6 +816,16 @@ body {
 .pomo-dur-pad { height:50px; flex-shrink:0; }
 .pomo-dur-item { height:50px; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--muted); font-variant-numeric:tabular-nums; cursor:pointer; }
 .pomo-dur-item.sel { color:var(--text); font-size:28px; font-weight:700; }
+/* Dial state */
+.pomo-dial-center-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.pomo-dial-number { font-size:52px; font-weight:700; line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+.pomo-dial-mins { font-size:13px; font-weight:600; color:var(--muted); letter-spacing:2px; margin-top:4px; }
+.pomo-task-title { font-size:20px; font-weight:700; text-align:center; padding:0 24px; margin-top:8px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; display:none; }
+.pomo-start-btn { height:52px; padding:0 52px; border-radius:26px; background:var(--card); border:0.5px solid var(--border); color:var(--text); font-size:16px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:10px; margin-top:20px; -webkit-tap-highlight-color:transparent; transition:transform .15s; }
+.pomo-start-btn:active { opacity:.7; transform:scale(.96); }
+.pomo-run-controls { display:none; flex-direction:row; align-items:center; gap:20px; margin-top:16px; }
+.pomo-plus-min { font-size:15px; color:var(--muted); cursor:pointer; padding:8px; -webkit-tap-highlight-color:transparent; }
+.pomo-plus-min:active { opacity:.5; }
 /* Task picker sheet */
 .pomo-task-row { display:flex; align-items:center; gap:10px; padding:13px 16px; border-bottom:0.5px solid var(--border); cursor:pointer; -webkit-tap-highlight-color:transparent; }
 .pomo-task-row:last-child { border-bottom:none; }
@@ -1439,39 +1449,45 @@ body {
     <button class="pomo-task-btn" id="pomoTaskBtn" onclick="openPomoTaskPicker()">
       <span id="pomoTaskLabel">点击选择任务…</span>
     </button>
+    <div class="pomo-task-title" id="pomoTaskTitle"></div>
     <div class="pomo-session-info" id="pomoSessionInfo"></div>
-    <div class="pomo-mode-toggle">
+    <div class="pomo-mode-toggle" id="pomoModeToggle">
       <button class="pomo-mode-btn active" id="pomoBtnModeDown" onclick="setPomodoroMode('countdown')">倒计时</button>
       <button class="pomo-mode-btn" id="pomoBtnModeUp" onclick="setPomodoroMode('stopwatch')">正计时</button>
     </div>
     <div class="pomo-clock-wrap">
       <svg width="264" height="264" viewBox="0 0 264 264" id="pomoClockSvg">
         <circle class="pomo-ring-bg" cx="132" cy="132" r="109"/>
+        <g id="pomoDialGroup"></g>
         <circle class="pomo-ring-fg" id="pomoRingFg" cx="132" cy="132" r="109" transform="rotate(-90 132 132)"/>
+        <circle id="pomoDialHandle" r="11" cx="132" cy="23" style="fill:var(--accent);stroke:var(--bg);stroke-width:3;display:none"/>
       </svg>
-      <div class="pomo-clock-center">
+      <div class="pomo-clock-center" id="pomoDialCenter">
+        <div class="pomo-dial-center-wrap">
+          <div class="pomo-dial-number" id="pomoDialNumber">25</div>
+          <div class="pomo-dial-mins">MINS</div>
+        </div>
+      </div>
+      <div class="pomo-clock-center" id="pomoRunCenter" style="display:none">
         <div class="pomo-emoji-bg" id="pomoEmojiBg">
           <div class="pomo-emoji" id="pomoEmoji">🍅</div>
         </div>
       </div>
     </div>
-    <div class="pomo-time-display">
+    <div class="pomo-time-display" id="pomoTimeDisplay" style="display:none">
       <span class="pomo-mm" id="pomoMM">25</span><span class="pomo-ss" id="pomoSS">:00</span>
     </div>
-    <div class="pomo-phase" id="pomoPhase">FOCUS</div>
-    <div class="pomo-sessions" id="pomoSessions"></div>
-    <div class="pomo-controls">
-      <button class="pomo-btn-side" onclick="pomoReset()">↺</button>
-      <button class="pomo-btn-main" id="pomoBtnPlay" onclick="pomoToggle()">▶</button>
-      <button class="pomo-btn-side" onclick="pomoSkip()">⏭</button>
+    <div class="pomo-phase" id="pomoPhase" style="display:none">FOCUS</div>
+    <div class="pomo-sessions" id="pomoSessions" style="display:none"></div>
+    <button class="pomo-start-btn" id="pomoStartBtn" onclick="pomoToggle()">开始 ▶</button>
+    <div class="pomo-run-controls" id="pomoRunControls">
+      <span class="pomo-plus-min" id="pomoPlusMin" onclick="pomoAddMin()">＋1 分</span>
+      <button class="pomo-btn-main" id="pomoBtnPlay" onclick="pomoToggle()">⏸</button>
     </div>
-    <div class="pomo-dur-section" id="pomoDurSection">
-      <div class="pomo-wheel-outer">
-        <div class="pomo-wheel-band"></div>
-        <div class="pomo-wheel-mask"></div>
-        <div class="pomo-dur-wheel" id="pomoDurWheel"></div>
-      </div>
-      <div class="pomo-dur-unit">分钟</div>
+    <div class="pomo-controls" id="pomoIdleControls" style="display:none">
+      <button class="pomo-btn-side" onclick="pomoReset()">↺</button>
+      <button class="pomo-btn-main" onclick="pomoToggle()">▶</button>
+      <button class="pomo-btn-side" onclick="pomoSkip()">⏭</button>
     </div>
   </div>
 </div>
@@ -6064,10 +6080,12 @@ let _pomoTask = '';
 let _pomoMode = 'countdown';
 let _pomoElapsedSec = 0;
 let _pomoStartTime = null;
+let _pomoPhaseUI = 'dial'; // 'dial' | 'run' | 'pause'
 
 function openPomodoro() {
   document.getElementById('page-pomodoro').classList.add('open');
-  _pomoInitWheel();
+  _pomoInitDial();
+  _pomoInitDialTouch();
   _pomoTask = '';
   _pomoUpdateTaskBtn();
   _pomoMode = 'countdown';
@@ -6155,8 +6173,8 @@ function pomoStart() {
   if (_pomoMode === 'countdown' && _pomoRemSec <= 0) return;
   if (!_pomoStartTime) _pomoStartTime = new Date();
   _pomoRunning = true;
-  document.getElementById('pomoBtnPlay').textContent = '⏸';
-  document.getElementById('pomoDurSection').classList.add('hidden');
+  _pomoPhaseUI = 'run';
+  _pomoUpdateUI();
   if (_pomoMode === 'stopwatch') {
     _pomoTimer = setInterval(() => {
       _pomoElapsedSec++;
@@ -6173,10 +6191,8 @@ function pomoStart() {
 function pomoStop() {
   _pomoRunning = false;
   clearInterval(_pomoTimer); _pomoTimer = null;
-  const pb = document.getElementById('pomoBtnPlay');
-  if (pb) pb.textContent = '▶';
-  const ds = document.getElementById('pomoDurSection');
-  if (ds && _pomoMode === 'countdown' && _pomoPhase === 'work') ds.classList.remove('hidden');
+  _pomoPhaseUI = 'pause';
+  _pomoUpdateUI();
 }
 function pomoReset() {
   pomoStop();
@@ -6186,9 +6202,10 @@ function pomoReset() {
   _pomoSession = 0;
   _pomoElapsedSec = 0;
   _pomoStartTime = null;
-  const ds = document.getElementById('pomoDurSection');
-  if (ds) ds.classList.toggle('hidden', _pomoMode === 'stopwatch');
-  _pomoRender();
+  _pomoPhaseUI = _pomoMode === 'countdown' ? 'dial' : 'pause';
+  _pomoUpdateUI();
+  if (_pomoMode === 'countdown') { _pomoRenderDial(); }
+  else { _pomoRender(); }
 }
 function pomoSkip() {
   if (_pomoMode === 'stopwatch') {
@@ -6210,7 +6227,9 @@ function pomoSkip() {
   }
 }
 function _pomoPhaseEnd() {
-  pomoStop();
+  // inline stop without changing _pomoPhaseUI to 'pause' — avoids flash of idle controls
+  _pomoRunning = false;
+  clearInterval(_pomoTimer); _pomoTimer = null;
   if (navigator.vibrate) navigator.vibrate([60, 80, 60]);
   if (_pomoPhase === 'work') {
     const task = _pomoTask || '专注';
@@ -6284,6 +6303,174 @@ function _pomoRender() {
     if (dotsEl) dotsEl.innerHTML = Array.from({length: POMO_MAX_SESSIONS}, (_,i) =>
       `<div class="pomo-session-dot${i < _pomoSession ? ' done':''}"></div>`).join('');
   }
+}
+
+function _pomoInitDial() {
+  const g = document.getElementById('pomoDialGroup');
+  if (!g || g.dataset.init) return;
+  g.dataset.init = '1';
+  const cx = 132, cy = 132, frag = document.createDocumentFragment();
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * 2 * Math.PI - Math.PI / 2;
+    const maj = i % 5 === 0;
+    const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    ln.setAttribute('x1', (cx + 117 * Math.cos(a)).toFixed(1));
+    ln.setAttribute('y1', (cy + 117 * Math.sin(a)).toFixed(1));
+    ln.setAttribute('x2', (cx + (maj ? 103 : 111) * Math.cos(a)).toFixed(1));
+    ln.setAttribute('y2', (cy + (maj ? 103 : 111) * Math.sin(a)).toFixed(1));
+    ln.setAttribute('stroke', maj ? 'var(--muted)' : 'var(--border)');
+    ln.setAttribute('stroke-width', maj ? '2' : '1');
+    ln.setAttribute('stroke-linecap', 'round');
+    frag.appendChild(ln);
+  }
+  [15, 30, 45, 60].forEach(min => {
+    const a = (min / 60) * 2 * Math.PI - Math.PI / 2;
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', (cx + 82 * Math.cos(a)).toFixed(1));
+    t.setAttribute('y', (cy + 82 * Math.sin(a)).toFixed(1));
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('dominant-baseline', 'central');
+    t.setAttribute('font-size', '13');
+    t.setAttribute('fill', 'var(--muted)');
+    t.textContent = min;
+    frag.appendChild(t);
+  });
+  g.appendChild(frag);
+}
+
+function _pomoInitDialTouch() {
+  const svg = document.getElementById('pomoClockSvg');
+  if (!svg || svg.dataset.dialTouch) return;
+  svg.dataset.dialTouch = '1';
+  const onMove = e => {
+    if (_pomoPhaseUI !== 'dial') return;
+    e.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    const t = e.touches[0];
+    const dx = t.clientX - rect.left - 132;
+    const dy = t.clientY - rect.top - 132;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 30) return;
+    let ang = Math.atan2(dy, dx) + Math.PI / 2;
+    if (ang < 0) ang += 2 * Math.PI;
+    let mins = Math.round((ang / (2 * Math.PI)) * 60 / 5) * 5;
+    if (mins === 0) mins = 60;
+    _setDialMinutes(Math.max(5, Math.min(60, mins)));
+  };
+  svg.addEventListener('touchstart', e => {
+    if (_pomoPhaseUI !== 'dial') return;
+    const rect = svg.getBoundingClientRect();
+    const t = e.touches[0];
+    const dx = t.clientX - rect.left - 132;
+    const dy = t.clientY - rect.top - 132;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 54) return;
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', () => {
+      document.removeEventListener('touchmove', onMove);
+    }, { once: true });
+  }, { passive: true });
+}
+
+function _setDialMinutes(mins) {
+  _pomoWorkMin = mins;
+  _pomoTotalSec = mins * 60;
+  _pomoRemSec = mins * 60;
+  _pomoRenderDial();
+}
+
+function _pomoRenderDial() {
+  const numEl = document.getElementById('pomoDialNumber');
+  const ring = document.getElementById('pomoRingFg');
+  const handle = document.getElementById('pomoDialHandle');
+  if (!numEl || !ring || !handle) return;
+  numEl.textContent = _pomoWorkMin;
+  const frac = _pomoWorkMin / 60;
+  ring.style.strokeDasharray = POMO_CIRC;
+  ring.style.strokeDashoffset = POMO_CIRC * (1 - frac);
+  const ang = frac * 2 * Math.PI - Math.PI / 2;
+  handle.setAttribute('cx', (132 + 109 * Math.cos(ang)).toFixed(1));
+  handle.setAttribute('cy', (132 + 109 * Math.sin(ang)).toFixed(1));
+  handle.style.display = '';
+}
+
+function _pomoUpdateUI() {
+  const isDial = _pomoPhaseUI === 'dial';
+  const isRun  = _pomoPhaseUI === 'run';
+  const isPause = _pomoPhaseUI === 'pause';
+
+  // dial center vs run center
+  const dialCenter = document.getElementById('pomoDialCenter');
+  const runCenter  = document.getElementById('pomoRunCenter');
+  if (dialCenter) dialCenter.style.display = isDial ? '' : 'none';
+  if (runCenter)  runCenter.style.display  = isDial ? 'none' : '';
+
+  // dial group + handle only in dial mode
+  const dialGroup  = document.getElementById('pomoDialGroup');
+  const handle     = document.getElementById('pomoDialHandle');
+  if (dialGroup) dialGroup.style.display = isDial ? '' : 'none';
+  if (handle)    handle.style.display    = isDial ? '' : 'none';
+
+  // ring stroke thickness
+  const ring = document.getElementById('pomoRingFg');
+  const ringBg = document.querySelector('.pomo-ring-bg');
+  if (ring) ring.setAttribute('stroke-width', isDial ? '14' : '22');
+  if (ringBg) ringBg.setAttribute('stroke-width', isDial ? '14' : '22');
+
+  // time display: hidden in dial
+  const timeDisp = document.getElementById('pomoTimeDisplay');
+  if (timeDisp) timeDisp.style.display = isDial ? 'none' : '';
+
+  // phase label + sessions
+  const phaseEl = document.getElementById('pomoPhase');
+  const sessEl  = document.getElementById('pomoSessions');
+  if (phaseEl) phaseEl.style.display = isDial ? 'none' : '';
+  if (sessEl)  sessEl.style.display  = isDial ? 'none' : '';
+
+  // mode toggle: hidden while running
+  const modeToggle = document.getElementById('pomoModeToggle');
+  if (modeToggle) modeToggle.style.display = (isRun || isPause) ? 'none' : '';
+
+  // task btn: dial mode only
+  const taskBtn = document.getElementById('pomoTaskBtn');
+  if (taskBtn) taskBtn.style.display = isDial ? '' : 'none';
+
+  // task title: running/pause
+  const taskTitle = document.getElementById('pomoTaskTitle');
+  if (taskTitle) {
+    if (!isDial) {
+      taskTitle.textContent = _pomoTask || '专注';
+      taskTitle.style.display = '';
+    } else {
+      taskTitle.style.display = 'none';
+    }
+  }
+
+  // session info: running only
+  const infoEl = document.getElementById('pomoSessionInfo');
+  if (infoEl) infoEl.style.display = (isRun || isPause) ? '' : 'none';
+
+  // start btn: dial mode only
+  const startBtn = document.getElementById('pomoStartBtn');
+  if (startBtn) startBtn.style.display = isDial ? '' : 'none';
+
+  // run controls (＋1分 + pause pill): running/pause
+  const runCtrl = document.getElementById('pomoRunControls');
+  if (runCtrl) runCtrl.style.display = (isRun || isPause) ? 'flex' : 'none';
+
+  // play/pause icon inside run controls
+  const playBtn = document.getElementById('pomoBtnPlay');
+  if (playBtn) playBtn.textContent = isRun ? '⏸' : '▶';
+
+  // idle controls (reset/play/skip row): pause only — hidden entirely; use run controls instead
+  const idleCtrl = document.getElementById('pomoIdleControls');
+  if (idleCtrl) idleCtrl.style.display = 'none';
+}
+
+function pomoAddMin() {
+  _pomoTotalSec += 60;
+  _pomoRemSec += 60;
+  _pomoRender();
 }
 
 // Task picker
