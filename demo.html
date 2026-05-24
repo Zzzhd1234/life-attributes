@@ -1494,8 +1494,8 @@ body {
 </div>
 
 <!-- ===== POMO TASK PICKER ===== -->
-<div class="sheet-overlay" id="pomoTaskOverlay" onclick="closePomoTaskPicker()"></div>
-<div class="settings-sheet" id="pomoTaskSheet">
+<div class="sheet-overlay" id="pomoTaskOverlay" style="z-index:2003" onclick="closePomoTaskPicker()"></div>
+<div class="settings-sheet" id="pomoTaskSheet" style="z-index:2004">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
     <div class="sheet-title">专注任务</div>
@@ -6368,7 +6368,6 @@ function _pomoInitDialTouch() {
     const c = getCenter();
     const t = e.touches[0];
     const dx = t.clientX - c.x, dy = t.clientY - c.y;
-    if (Math.sqrt(dx * dx + dy * dy) < 30) return;
     let ang = Math.atan2(dy, dx) + Math.PI / 2;
     if (ang < 0) ang += 2 * Math.PI;
     let mins = Math.round((ang / (2 * Math.PI)) * 60 / 5) * 5;
@@ -6380,9 +6379,13 @@ function _pomoInitDialTouch() {
     const c = getCenter();
     const t = e.touches[0];
     const dx = t.clientX - c.x, dy = t.clientY - c.y;
-    if (Math.sqrt(dx * dx + dy * dy) < 44) return;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // require touch near the ring track (r=109 ±35px) for arc-following gesture
+    if (dist < 74 || dist > 144) return;
     document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('touchend', () => document.removeEventListener('touchmove', onMove), { once: true });
+    const cleanup = () => document.removeEventListener('touchmove', onMove);
+    document.addEventListener('touchend', cleanup, { once: true });
+    document.addEventListener('touchcancel', cleanup, { once: true });
   }, { passive: true });
 }
 
