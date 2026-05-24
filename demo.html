@@ -756,6 +756,7 @@ body {
 .cal-today-greeting { font-size: 14px; color: var(--muted); margin-bottom: 2px; }
 .cal-today-title { font-size: 22px; font-weight: 700; color: #1C1C1E; }
 .cal-today-add-btn { width:32px; height:32px; border-radius:50%; background:var(--accent); border:none; color:white; font-size:20px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-bottom:2px; flex-shrink:0; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+.cal-header-icon-btn { width:32px; height:32px; border-radius:50%; background:var(--card); border:0.5px solid var(--border); font-size:17px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
 
 /* ===== ADD PICKER (long-press inline morph) ===== */
 .add-picker-overlay { position:fixed; inset:0; z-index:3000; opacity:0; transition:opacity .2s; pointer-events:none; }
@@ -2044,7 +2045,15 @@ body {
 
 <!-- ===== PAGE: 日历 ===== -->
 <div id="page-calendar" class="page">
-  <div class="page-header"><h1>日历</h1></div>
+  <div class="page-header">
+    <div class="header-row">
+      <h1>日历</h1>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <button class="cal-header-icon-btn" onclick="openPomodoro()" title="番茄钟">🍅</button>
+        <button class="cal-today-add-btn" id="calTodayAddBtn" style="margin-bottom:0">＋</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 模式切换 -->
   <div class="cal-mode-tabs">
@@ -2060,7 +2069,6 @@ body {
           <div class="cal-today-greeting" id="calTodayGreeting">今天</div>
           <div class="cal-today-title" id="calTodayTitle">今日事项</div>
         </div>
-        <button class="cal-today-add-btn" id="calTodayAddBtn">＋</button>
       </div>
       <div style="overflow:hidden">
         <div id="calTodayInner">
@@ -6175,6 +6183,14 @@ function pomoStart() {
   _pomoRunning = true;
   _pomoPhaseUI = 'run';
   _pomoUpdateUI();
+  // Snap ring to start position immediately (no animated jump from dial arc)
+  const ring = document.getElementById('pomoRingFg');
+  if (ring) {
+    ring.style.transition = 'none';
+    ring.style.strokeDasharray = POMO_CIRC;
+    ring.style.strokeDashoffset = _pomoMode === 'stopwatch' ? POMO_CIRC : 0;
+    requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.transition = ''; }));
+  }
   if (_pomoMode === 'stopwatch') {
     _pomoTimer = setInterval(() => {
       _pomoElapsedSec++;
@@ -6280,8 +6296,8 @@ function _pomoRender() {
     document.getElementById('pomoSS').textContent = ':' + fmt(ss);
     ring.style.strokeDasharray = POMO_CIRC;
     ring.style.strokeDashoffset = POMO_CIRC * (1 - Math.min(_pomoElapsedSec / 1500, 1));
-    ring.className = 'pomo-ring-fg';
-    if (emojiBg) emojiBg.className = 'pomo-emoji-bg';
+    ring.setAttribute('class', 'pomo-ring-fg');
+    if (emojiBg) emojiBg.setAttribute('class', 'pomo-emoji-bg');
     if (emojiEl) emojiEl.textContent = '⏱';
     document.getElementById('pomoPhase').textContent = '计时中';
     const dotsEl = document.getElementById('pomoSessions');
@@ -6295,8 +6311,8 @@ function _pomoRender() {
     ring.style.strokeDasharray = POMO_CIRC;
     ring.style.strokeDashoffset = POMO_CIRC * (1 - frac);
     const isBreak = _pomoPhase === 'break';
-    ring.className = 'pomo-ring-fg' + (isBreak ? ' break' : '');
-    if (emojiBg) emojiBg.className = 'pomo-emoji-bg' + (isBreak ? ' break' : '');
+    ring.setAttribute('class', 'pomo-ring-fg' + (isBreak ? ' break' : ''));
+    if (emojiBg) emojiBg.setAttribute('class', 'pomo-emoji-bg' + (isBreak ? ' break' : ''));
     if (emojiEl) emojiEl.textContent = isBreak ? '☕' : '🍅';
     document.getElementById('pomoPhase').textContent = isBreak ? 'BREAK' : 'FOCUS';
     const dotsEl = document.getElementById('pomoSessions');
@@ -6339,36 +6355,34 @@ function _pomoInitDial() {
 }
 
 function _pomoInitDialTouch() {
-  const svg = document.getElementById('pomoClockSvg');
-  if (!svg || svg.dataset.dialTouch) return;
-  svg.dataset.dialTouch = '1';
+  const wrap = document.querySelector('#page-pomodoro .pomo-clock-wrap');
+  if (!wrap || wrap.dataset.dialTouch) return;
+  wrap.dataset.dialTouch = '1';
+  const getCenter = () => {
+    const r = wrap.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  };
   const onMove = e => {
     if (_pomoPhaseUI !== 'dial') return;
     e.preventDefault();
-    const rect = svg.getBoundingClientRect();
+    const c = getCenter();
     const t = e.touches[0];
-    const dx = t.clientX - rect.left - 132;
-    const dy = t.clientY - rect.top - 132;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 30) return;
+    const dx = t.clientX - c.x, dy = t.clientY - c.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 30) return;
     let ang = Math.atan2(dy, dx) + Math.PI / 2;
     if (ang < 0) ang += 2 * Math.PI;
     let mins = Math.round((ang / (2 * Math.PI)) * 60 / 5) * 5;
     if (mins === 0) mins = 60;
     _setDialMinutes(Math.max(5, Math.min(60, mins)));
   };
-  svg.addEventListener('touchstart', e => {
+  wrap.addEventListener('touchstart', e => {
     if (_pomoPhaseUI !== 'dial') return;
-    const rect = svg.getBoundingClientRect();
+    const c = getCenter();
     const t = e.touches[0];
-    const dx = t.clientX - rect.left - 132;
-    const dy = t.clientY - rect.top - 132;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 54) return;
+    const dx = t.clientX - c.x, dy = t.clientY - c.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 44) return;
     document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('touchend', () => {
-      document.removeEventListener('touchmove', onMove);
-    }, { once: true });
+    document.addEventListener('touchend', () => document.removeEventListener('touchmove', onMove), { once: true });
   }, { passive: true });
 }
 
