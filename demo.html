@@ -6158,7 +6158,7 @@ function pomoReset() {
   _pomoSession = 0;
   _pomoElapsedSec = 0;
   _pomoStartTime = null;
-  _pomoPhaseUI = _pomoMode === 'countdown' ? 'dial' : 'pause';
+  _pomoPhaseUI = _pomoMode === 'countdown' ? 'dial' : 'ready';
   _pomoUpdateUI();
   if (_pomoMode === 'countdown') { _pomoRenderDial(); }
   else { _pomoRender(); }
@@ -6359,50 +6359,54 @@ function _pomoRenderDial() {
 }
 
 function _pomoUpdateUI() {
-  const isDial = _pomoPhaseUI === 'dial';
-  const isRun  = _pomoPhaseUI === 'run';
+  const isDial  = _pomoPhaseUI === 'dial';    // countdown, not started
+  const isReady = _pomoPhaseUI === 'ready';   // stopwatch, not started
+  const isRun   = _pomoPhaseUI === 'run';
   const isPause = _pomoPhaseUI === 'pause';
+  const isIdle  = isDial || isReady;          // any "not-yet-started" state
 
-  // dial center vs run center
+  // dial center (countdown number) vs run/emoji center
   const dialCenter = document.getElementById('pomoDialCenter');
   const runCenter  = document.getElementById('pomoRunCenter');
   if (dialCenter) dialCenter.style.display = isDial ? '' : 'none';
   if (runCenter)  runCenter.style.display  = isDial ? 'none' : '';
 
-  // dial group + handle only in dial mode
-  const dialGroup  = document.getElementById('pomoDialGroup');
-  const handle     = document.getElementById('pomoDialHandle');
+  // tick marks + handle: countdown dial only
+  const dialGroup = document.getElementById('pomoDialGroup');
+  const handle    = document.getElementById('pomoDialHandle');
   if (dialGroup) dialGroup.style.display = isDial ? '' : 'none';
   if (handle)    handle.style.display    = isDial ? '' : 'none';
 
-  // ring stroke thickness
-  const ring = document.getElementById('pomoRingFg');
+  // ring stroke: thin decorative in dial, thick in all other states
+  const ring   = document.getElementById('pomoRingFg');
   const ringBg = document.querySelector('.pomo-ring-bg');
-  if (ring) ring.setAttribute('stroke-width', isDial ? '14' : '22');
+  if (ring)   ring.setAttribute('stroke-width', isDial ? '14' : '22');
   if (ringBg) ringBg.setAttribute('stroke-width', isDial ? '14' : '22');
 
-  // time display: hidden in dial
+  // time display: hidden in dial only
   const timeDisp = document.getElementById('pomoTimeDisplay');
   if (timeDisp) timeDisp.style.display = isDial ? 'none' : '';
 
-  // phase label + sessions
+  // phase label + session dots: only when session is in progress
   const phaseEl = document.getElementById('pomoPhase');
   const sessEl  = document.getElementById('pomoSessions');
-  if (phaseEl) phaseEl.style.display = isDial ? 'none' : '';
-  if (sessEl)  sessEl.style.display  = isDial ? 'none' : '';
+  if (phaseEl) phaseEl.style.display = isIdle ? 'none' : '';
+  if (sessEl)  sessEl.style.display  = isIdle ? 'none' : '';
 
-  // mode toggle: hidden while running
+  // mode toggle: always visible except when running
   const modeToggle = document.getElementById('pomoModeToggle');
-  if (modeToggle) modeToggle.style.display = (isRun || isPause) ? 'none' : '';
+  if (modeToggle) modeToggle.style.display = isRun ? 'none' : '';
 
-  // task btn: dial mode only
-  const taskBtn = document.getElementById('pomoTaskBtn');
-  if (taskBtn) taskBtn.style.display = isDial ? '' : 'none';
+  // task btn + start btn: visible in idle states (dial + ready)
+  const taskBtn  = document.getElementById('pomoTaskBtn');
+  const startBtn = document.getElementById('pomoStartBtn');
+  if (taskBtn)  taskBtn.style.display  = isIdle ? '' : 'none';
+  if (startBtn) startBtn.style.display = isIdle ? '' : 'none';
 
-  // task title: running/pause
+  // task title: visible when session in progress
   const taskTitle = document.getElementById('pomoTaskTitle');
   if (taskTitle) {
-    if (!isDial) {
+    if (!isIdle) {
       taskTitle.textContent = _pomoTask || '专注';
       taskTitle.style.display = '';
     } else {
@@ -6410,23 +6414,17 @@ function _pomoUpdateUI() {
     }
   }
 
-  // session info: running only
+  // info bar: running or paused (mid-session)
   const infoEl = document.getElementById('pomoSessionInfo');
   if (infoEl) infoEl.style.display = (isRun || isPause) ? '' : 'none';
 
-  // start btn: dial mode only
-  const startBtn = document.getElementById('pomoStartBtn');
-  if (startBtn) startBtn.style.display = isDial ? '' : 'none';
-
   // run controls (＋1分 + ⏸): running only
-  const runCtrl = document.getElementById('pomoRunControls');
-  if (runCtrl) runCtrl.style.display = isRun ? 'flex' : 'none';
-
-  // ＋1分 not useful in stopwatch mode
+  const runCtrl    = document.getElementById('pomoRunControls');
   const plusMinBtn = document.getElementById('pomoPlusMin');
+  if (runCtrl)    runCtrl.style.display    = isRun ? 'flex' : 'none';
   if (plusMinBtn) plusMinBtn.style.display = _pomoMode === 'stopwatch' ? 'none' : '';
 
-  // idle controls (↺ + ▶ + ⏭): pause only
+  // idle controls (↺ + ▶ + ⏭): paused mid-session only
   const idleCtrl = document.getElementById('pomoIdleControls');
   if (idleCtrl) idleCtrl.style.display = isPause ? '' : 'none';
 }
