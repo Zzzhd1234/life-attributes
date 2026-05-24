@@ -6115,66 +6115,6 @@ function setPomodoroMode(mode) {
   pomoReset();
 }
 
-function _pomoInitTicks() {
-  const svg = document.getElementById('pomoClockSvg');
-  if (!svg || svg.dataset.ticks) return;
-  svg.dataset.ticks = '1';
-  const cx = 120, cy = 120;
-  const frag = document.createDocumentFragment();
-  for (let i = 0; i < 60; i++) {
-    const a = (i / 60) * 2 * Math.PI - Math.PI / 2;
-    const isMaj = i % 5 === 0;
-    const r1 = 109, r2 = isMaj ? 97 : 104;
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', (cx + r1 * Math.cos(a)).toFixed(2));
-    line.setAttribute('y1', (cy + r1 * Math.sin(a)).toFixed(2));
-    line.setAttribute('x2', (cx + r2 * Math.cos(a)).toFixed(2));
-    line.setAttribute('y2', (cy + r2 * Math.sin(a)).toFixed(2));
-    line.setAttribute('stroke', isMaj ? 'var(--muted)' : 'var(--border)');
-    line.setAttribute('stroke-width', isMaj ? '2' : '1');
-    line.setAttribute('stroke-linecap', 'round');
-    frag.appendChild(line);
-  }
-  svg.insertBefore(frag, svg.firstChild);
-}
-
-function _pomoInitWheel() {
-  const wheel = document.getElementById('pomoDurWheel');
-  if (!wheel || wheel.dataset.init) return;
-  wheel.dataset.init = '1';
-  const pad1 = document.createElement('div'); pad1.className = 'pomo-dur-pad'; wheel.appendChild(pad1);
-  POMO_MINUTES.forEach(m => {
-    const d = document.createElement('div');
-    d.className = 'pomo-dur-item';
-    d.textContent = m;
-    wheel.appendChild(d);
-  });
-  const pad2 = document.createElement('div'); pad2.className = 'pomo-dur-pad'; wheel.appendChild(pad2);
-  requestAnimationFrame(() => {
-    wheel.scrollTop = POMO_MINUTES.indexOf(25) * 50;
-    _pomoWheelSync(wheel);
-  });
-  let t;
-  wheel.addEventListener('scroll', () => {
-    _pomoWheelSync(wheel);
-    clearTimeout(t);
-    t = setTimeout(() => _pomoWheelSync(wheel), 60);
-  }, { passive: true });
-}
-
-function _pomoWheelSync(wheel) {
-  const idx = Math.max(0, Math.min(Math.round(wheel.scrollTop / 50), POMO_MINUTES.length - 1));
-  wheel.querySelectorAll('.pomo-dur-item').forEach((el, i) => el.classList.toggle('sel', i === idx));
-  const newMin = POMO_MINUTES[idx];
-  if (newMin !== _pomoWorkMin) {
-    _pomoWorkMin = newMin;
-    if (!_pomoRunning && _pomoPhase === 'work') {
-      _pomoTotalSec = _pomoWorkMin * 60;
-      _pomoRemSec = _pomoWorkMin * 60;
-      _pomoRender();
-    }
-  }
-}
 
 function pomoToggle() { if (_pomoRunning) pomoStop(); else pomoStart(); }
 function pomoStart() {
@@ -6239,7 +6179,10 @@ function pomoSkip() {
     }
     pomoReset();
   } else {
-    pomoStop(); _pomoRemSec = 0; _pomoPhaseEnd();
+    _pomoRunning = false;
+    clearInterval(_pomoTimer); _pomoTimer = null;
+    _pomoRemSec = 0;
+    _pomoPhaseEnd();
   }
 }
 function _pomoPhaseEnd() {
@@ -6252,7 +6195,7 @@ function _pomoPhaseEnd() {
     const now = new Date();
     const fmt = n => String(n).padStart(2,'0');
     const endT = `${fmt(now.getHours())}:${fmt(now.getMinutes())}`;
-    const startD = new Date(now - _pomoWorkMin * 60 * 1000);
+    const startD = _pomoStartTime || new Date(now - _pomoTotalSec * 1000);
     const startT = `${fmt(startD.getHours())}:${fmt(startD.getMinutes())}`;
     const dateStr = localDateStr(now);
     state.timeLogs.push({ id: Date.now(), title: `🍅 ${task}`, date: dateStr, startTime: startT, endTime: endT, note: '' });
@@ -6281,9 +6224,13 @@ function _pomoRender() {
   if (infoEl) {
     if (_pomoStartTime && _pomoRunning) {
       const s = _pomoStartTime;
-      const endMs = _pomoMode === 'stopwatch' ? Date.now() + 1 : _pomoStartTime.getTime() + _pomoTotalSec * 1000;
-      const end = new Date(endMs);
-      infoEl.textContent = `${fmt(s.getHours())}:${fmt(s.getMinutes())} → ${fmt(end.getHours())}:${fmt(end.getMinutes())}`;
+      const start = `${fmt(s.getHours())}:${fmt(s.getMinutes())}`;
+      if (_pomoMode === 'stopwatch') {
+        infoEl.textContent = `${start} → …`;
+      } else {
+        const end = new Date(Date.now() + _pomoRemSec * 1000);
+        infoEl.textContent = `${start} → ${fmt(end.getHours())}:${fmt(end.getMinutes())}`;
+      }
     } else {
       infoEl.textContent = '';
     }
@@ -6471,17 +6418,17 @@ function _pomoUpdateUI() {
   const startBtn = document.getElementById('pomoStartBtn');
   if (startBtn) startBtn.style.display = isDial ? '' : 'none';
 
-  // run controls (＋1分 + pause pill): running/pause
+  // run controls (＋1分 + ⏸): running only
   const runCtrl = document.getElementById('pomoRunControls');
-  if (runCtrl) runCtrl.style.display = (isRun || isPause) ? 'flex' : 'none';
+  if (runCtrl) runCtrl.style.display = isRun ? 'flex' : 'none';
 
-  // play/pause icon inside run controls
-  const playBtn = document.getElementById('pomoBtnPlay');
-  if (playBtn) playBtn.textContent = isRun ? '⏸' : '▶';
+  // ＋1分 not useful in stopwatch mode
+  const plusMinBtn = document.getElementById('pomoPlusMin');
+  if (plusMinBtn) plusMinBtn.style.display = _pomoMode === 'stopwatch' ? 'none' : '';
 
-  // idle controls (reset/play/skip row): pause only — hidden entirely; use run controls instead
+  // idle controls (↺ + ▶ + ⏭): pause only
   const idleCtrl = document.getElementById('pomoIdleControls');
-  if (idleCtrl) idleCtrl.style.display = 'none';
+  if (idleCtrl) idleCtrl.style.display = isPause ? '' : 'none';
 }
 
 function pomoAddMin() {
