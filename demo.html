@@ -990,9 +990,12 @@ body {
 .habit-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:0 12px 8px; }
 .habit-cal-dow { text-align:center; font-size:11px; color:var(--muted); font-weight:500; padding:4px 0; }
 .habit-cal-day { aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; }
-.habit-cal-day.checked { background:var(--accent); color:white; font-weight:600; }
+.habit-cal-day.checked { background:var(--accent); color:white; font-weight:600; cursor:pointer; }
+.habit-cal-day.can-check { cursor:pointer; border:1.5px dashed var(--border); }
+.habit-cal-day.can-check:active { background:color-mix(in srgb, var(--accent) 15%, transparent); }
 .habit-cal-day.today { box-shadow:0 0 0 1.5px var(--accent); }
 .habit-cal-day.today.checked { box-shadow:none; }
+.habit-cal-day.today.can-check { box-shadow:0 0 0 1.5px var(--accent); border:none; }
 .habit-cal-stat { padding:4px 16px 12px; font-size:13px; color:var(--muted); text-align:center; }
 
 /* ===== CALENDAR PAGE ===== */
@@ -4950,6 +4953,23 @@ function openHabitCalendar(key) {
 }
 function closeHabitCalendar() { toggleSheet('habitCalSheet', 'habitCalOverlay', false); }
 
+function addHabitCheckIn(dateStr) {
+  const key = habitCalKey;
+  const h = state.habits[key];
+  if (!h) return;
+  if (dateStr > TODAY) return;
+  if (!h.history) h.history = [];
+  if (h.history.includes(dateStr)) return;
+  h.history.push(dateStr);
+  h.weekCount = Math.min(7, (h.weekCount || 0) + 1);
+  if (dateStr === TODAY) { h.checkedToday = true; }
+  const src = '补卡：' + h.name;
+  Object.entries(habitFX(key)).forEach(([a, d]) => nudge(a, d, src));
+  save(); renderHabits(); renderAbilities(); renderHabitCalContent();
+  const label = dateStr === TODAY ? '今天' : dateStr;
+  showToast(`${h.name} ${label} 补卡成功`);
+}
+
 function deleteHabitCheckIn(dateStr) {
   const key = habitCalKey;
   const h = state.habits[key];
@@ -4959,8 +4979,9 @@ function deleteHabitCheckIn(dateStr) {
   h.weekCount = Math.max(0, (h.weekCount || 0) - 1);
   if (dateStr === TODAY) { h.checkedToday = false; h.pendingUndo = false; clearTimeout(undoTimers[key]); }
   const src = '打卡：' + h.name;
+  const src2 = '补卡：' + h.name;
   Object.entries(habitFX(key)).forEach(([a, d]) => nudge(a, -d));
-  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === dateStr && e.source === src));
+  state.abilityChangelog = (state.abilityChangelog || []).filter(e => !(e.date === dateStr && (e.source === src || e.source === src2)));
   save(); renderHabits(); renderAbilities(); renderHabitCalContent();
   showToast(`已撤销 ${h.name} ${dateStr} 打卡`);
 }
@@ -4989,7 +5010,16 @@ function renderHabitCalContent() {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isChecked = history.includes(dateStr);
     const isToday = dateStr === TODAY;
-    cells += `<div class="habit-cal-day${isChecked?' checked':''}${isToday?' today':''}"${isChecked ? ` onclick="deleteHabitCheckIn('${dateStr}')" title="点击撤销打卡"` : ''}>${d}</div>`;
+    const isFuture = dateStr > TODAY;
+    const canCheck = !isChecked && !isFuture;
+    let cls = 'habit-cal-day';
+    if (isChecked) cls += ' checked';
+    if (isToday) cls += ' today';
+    if (canCheck) cls += ' can-check';
+    let handler = '';
+    if (isChecked) handler = ` onclick="deleteHabitCheckIn('${dateStr}')" title="点击撤销打卡"`;
+    else if (canCheck) handler = ` onclick="addHabitCheckIn('${dateStr}')" title="点击补卡"`;
+    cells += `<div class="${cls}"${handler}>${d}</div>`;
   }
   document.getElementById('habitCalContent').innerHTML = `
     <div class="habit-cal-header">
